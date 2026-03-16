@@ -5283,22 +5283,32 @@ case 'vcf': {
     await X.sendMessage(m.chat, { react: { text: '📋', key: m.key } })
 if (!m.isGroup) return reply(mess.OnlyGrup)
 try {
-    const realMembers = participants.filter(p => p.id && p.id.endsWith('@s.whatsapp.net'))
-    if (!realMembers.length) return reply('❌ Could not fetch group members.')
+    // always fetch fresh — avoids stale/empty participant list
+    const freshMeta = await X.groupMetadata(m.chat)
+    if (!freshMeta || !freshMeta.participants || !freshMeta.participants.length)
+        return reply('❌ Could not fetch group members. Try again.')
+    // multi-device Baileys uses @lid JIDs — filter them out, keep real phone JIDs
+    const realMembers = freshMeta.participants.filter(p => p.id && !p.id.endsWith('@lid'))
+    if (!realMembers.length) return reply('❌ No exportable members found in this group.')
     let vcfData = ''
+    let exported = 0
     for (const p of realMembers) {
-        const num = p.id.split('@')[0]
-        const saved = store?.contacts?.[p.id]
-        const name = saved?.name || saved?.notify || saved?.verifiedName || `+${num}`
-        vcfData += `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nTEL;TYPE=CELL:+${num}\nEND:VCARD\n`
+        const raw = p.id.split('@')[0].split(':')[0]   // strip device suffix e.g. 2547xxx:4
+        if (!raw || isNaN(raw)) continue
+        // name: try store first, then participant's stored name, fallback to number
+        const storeContact = store?.contacts?.[p.id] || store?.contacts?.[raw + '@s.whatsapp.net']
+        const name = storeContact?.name || storeContact?.notify || storeContact?.verifiedName || `+${raw}`
+        vcfData += `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nTEL;TYPE=CELL:+${raw}\nEND:VCARD\n`
+        exported++
     }
+    if (!exported) return reply('❌ Could not extract valid numbers from this group.')
     const vcfBuf = Buffer.from(vcfData, 'utf8')
-    const filename = `${(groupMetadata.subject || 'group').replace(/[^a-zA-Z0-9]/g, '_')}_contacts.vcf`
+    const gname = (freshMeta.subject || 'group').replace(/[^a-zA-Z0-9]/g, '_')
     await X.sendMessage(from, {
         document: vcfBuf,
-        mimetype: 'text/vcard',
-        fileName: filename,
-        caption: `📋 *${groupMetadata.subject}*\n\n  ├ 👥 *${realMembers.length} contacts* exported\n  └ Import the file into your phone contacts`
+        mimetype: 'text/x-vcard',
+        fileName: `${gname}_contacts.vcf`,
+        caption: `📋 *${freshMeta.subject}*\n\n  ├ 👥 *${exported} contacts* exported\n  └ Save the file then import into your phone contacts`
     }, { quoted: m })
 } catch(e) { reply('❌ Failed to generate VCF: ' + e.message) }
 } break
