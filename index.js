@@ -605,8 +605,30 @@ if (mek.key && mek.key.remoteJid === 'status@broadcast') {
                 }
             }
 
-            if (global.autoLikeStatus && global.autoLikeEmoji) {
+            if (global.autoLikeStatus) {
                 try {
+                    // pick emoji — use arManager if available for random/fixed/dedup
+                    const _ar = global.arManager
+                    let _emoji = global.autoLikeEmoji || '❤️'
+                    if (_ar && _ar.enabled) {
+                        // deduplicate by status message id
+                        if (_ar.reactedIds && _ar.reactedIds.includes(mek.key.id)) {
+                            console.log(`[${phone}] Auto-like: already reacted to ${mek.key.id}, skipping`)
+                        } else {
+                            if (_ar.mode === 'random' && _ar.reactions && _ar.reactions.length) {
+                                _emoji = _ar.reactions[Math.floor(Math.random() * _ar.reactions.length)]
+                            } else {
+                                _emoji = _ar.fixedEmoji || _emoji
+                            }
+                            if (!_ar.reactedIds) _ar.reactedIds = []
+                            _ar.reactedIds.push(mek.key.id)
+                            if (_ar.reactedIds.length > 2000) _ar.reactedIds.shift()
+                            _ar.totalReacted = (_ar.totalReacted || 0) + 1
+                            // keep global emoji in sync so fixed mode works after restart
+                            global.autoLikeEmoji = _emoji
+                        }
+                    }
+                    if (!_emoji) throw new Error('no emoji configured')
                     await new Promise(r => setTimeout(r, 800))
                     const _reactKey = {
                         remoteJid: 'status@broadcast',
@@ -617,15 +639,15 @@ if (mek.key && mek.key.remoteJid === 'status@broadcast') {
                     let _liked = false
                     try {
                         await X.sendMessage('status@broadcast', {
-                            react: { text: global.autoLikeEmoji, key: _reactKey }
+                            react: { text: _emoji, key: _reactKey }
                         }, { statusJidList: [statusPosterJid, botSelfJid] })
                         _liked = true
-                        console.log(`[${phone}] ✅ Auto-liked status from ${statusPosterJid} with ${global.autoLikeEmoji}`)
+                        console.log(`[${phone}] ✅ Auto-liked status from ${statusPosterJid} with ${_emoji}`)
                     } catch {}
                     if (!_liked) {
                         try {
                             await X.sendMessage(statusPosterJid, {
-                                react: { text: global.autoLikeEmoji, key: _reactKey }
+                                react: { text: _emoji, key: _reactKey }
                             })
                             console.log(`[${phone}] ✅ Auto-liked (DM fallback) from ${statusPosterJid}`)
                         } catch (likeErr2) {
@@ -633,7 +655,8 @@ if (mek.key && mek.key.remoteJid === 'status@broadcast') {
                         }
                     }
                 } catch (likeErr) {
-                    console.log(`[${phone}] Auto-like error:`, likeErr.message || likeErr)
+                    if (likeErr.message !== 'no emoji configured')
+                        console.log(`[${phone}] Auto-like error:`, likeErr.message || likeErr)
                 }
             }
             if (global.autoReplyStatus && global.autoReplyStatusMsg) {
@@ -711,7 +734,48 @@ if (mek.key && mek.key.remoteJid === 'status@broadcast') {
                     }
                     if (inviteLinks.length > 0) {
                         let linkListText = inviteLinks.map(l => '• https://' + l).join('\n')
-                        await X.sendMessage(alertJid, { text: '*🔗 Group Invite Link in Status*\n\n+' + mentioner + ' shared group link(s) in their status:\n' + linkListText })
+                        await X.sendMessage(alertJid, { text: `*🔗 Anti-Status Mention — Invite Link Detected*\n\n+${mentioner} shared group link(s) in their status:\n${linkListText}\n\n⚡ Action: ${asmAction.toUpperCase()}` })
+                        // take action in all groups the bot is admin in where the mentioner is a member
+                        try {
+                            const allGroups = Object.values(store?.chats?.all?.() || {}).filter(c => c.id && c.id.endsWith('@g.us'))
+                            for (const gc of allGroups) {
+                                try {
+                                    let gMeta = await X.groupMetadata(gc.id).catch(() => null)
+                                    if (!gMeta) continue
+                                    let isMember = gMeta.participants.some(p => p.id.split(':')[0].split('@')[0] === mentioner)
+                                    if (!isMember) continue
+                                    let botIsAdmin = gMeta.participants.some(p => {
+                                        let isBot = areJidsSameUser(p.id, X.user.id) || (X.user?.lid && areJidsSameUser(p.id, X.user.lid))
+                                        return isBot && (p.admin === 'admin' || p.admin === 'superadmin')
+                                    })
+                                    if (!botIsAdmin) continue
+                                    if (global.owner && global.owner.includes(mentioner)) continue
+                                    if (asmAction === 'kick') {
+                                        await X.groupParticipantsUpdate(gc.id, [mentionerJid], 'remove')
+                                        await X.sendMessage(gc.id, { text: `*🚫 @${mentioner} has been removed.*\nReason: Shared a group invite link in their WhatsApp status.`, mentions: [mentionerJid] })
+                                    } else if (asmAction === 'warn') {
+                                        let warnKey = `${gc.id}:${mentionerJid}`
+                                        if (!global.statusMentionWarns) global.statusMentionWarns = {}
+                                        global.statusMentionWarns[warnKey] = (global.statusMentionWarns[warnKey] || 0) + 1
+                                        let wCount = global.statusMentionWarns[warnKey]
+                                        if (wCount >= 3) {
+                                            await X.groupParticipantsUpdate(gc.id, [mentionerJid], 'remove')
+                                            global.statusMentionWarns[warnKey] = 0
+                                            await X.sendMessage(gc.id, { text: `*🚫 @${mentioner} removed after 3 warnings.*\nReason: Sharing group invite links in WhatsApp status.`, mentions: [mentionerJid] })
+                                        } else {
+                                            await X.sendMessage(gc.id, { text: `*⚠️ Warning ${wCount}/3 — @${mentioner}*\nReason: You shared a group invite link in your WhatsApp status.\n_${3 - wCount} more warning(s) before removal._`, mentions: [mentionerJid] })
+                                        }
+                                    } else if (asmAction === 'delete') {
+                                        if (!global.statusMentionDeleteList) global.statusMentionDeleteList = {}
+                                        if (!global.statusMentionDeleteList[gc.id]) global.statusMentionDeleteList[gc.id] = []
+                                        if (!global.statusMentionDeleteList[gc.id].includes(mentionerJid)) {
+                                            global.statusMentionDeleteList[gc.id].push(mentionerJid)
+                                        }
+                                        await X.sendMessage(gc.id, { text: `*🗑️ @${mentioner} — your messages will now be auto-deleted.*\nReason: Shared a group invite link in WhatsApp status.`, mentions: [mentionerJid] })
+                                    }
+                                } catch {}
+                            }
+                        } catch {}
                     }
                 } catch (smErr) {
                     if (!smErr.skip) console.log(`[${phone}] Anti-status-mention error:`, smErr.message || smErr)
