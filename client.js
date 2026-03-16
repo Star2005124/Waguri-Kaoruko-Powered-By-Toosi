@@ -6372,7 +6372,7 @@ reply('*Game ended.*')
 case 'connect4':
 case 'c4': {
     await X.sendMessage(m.chat, { react: { text: '🔴', key: m.key } })
-reply('*Connect 4:* Coming soon! Use .ttt for Tic Tac Toe.')
+reply(`╔══════════════════════════╗\n║  🔴 *CONNECT 4*\n╚══════════════════════════╝\n\n  🔴🟡🔴🟡🔴🟡🔴\n  ⬜⬜⬜⬜⬜⬜⬜\n  ⬜⬜⬜⬜⬜⬜⬜\n  ⬜⬜⬜⬜⬜⬜⬜\n  ⬜⬜⬜⬜⬜⬜⬜\n  ⬜⬜⬜⬜⬜⬜⬜\n\n  🎮 *Not yet available as a live game.*\n  ├ Play Tic Tac Toe instead:\n  └ *${prefix}ttt* — start a game now!`)
 } break
 
 case 'hangman': {
@@ -7462,9 +7462,22 @@ await new Promise((resolve) => {
 case 'heart': {
     await X.sendMessage(m.chat, { react: { text: '❤️', key: m.key } })
 if (!m.quoted || !/image/.test(m.quoted.mimetype || '')) {
-let heartTarget = (m.mentionedJid && m.mentionedJid[0]) ? m.mentionedJid[0] : sender
-X.sendMessage(from, { text: `*💕 ${pushname} sends love to @${heartTarget.split('@')[0]}! 💕*`, mentions: [heartTarget] }, { quoted: m })
-} else { reply('*Heart effect applied!* 💕') }
+    let heartTarget = (m.mentionedJid && m.mentionedJid[0]) ? m.mentionedJid[0] : sender
+    X.sendMessage(from, { text: `*💕 ${pushname} sends love to @${heartTarget.split('@')[0]}! 💕*`, mentions: [heartTarget] }, { quoted: m })
+} else {
+    try {
+        const imgBuf = await m.quoted.download()
+        const Jimp = require('jimp')
+        const img = await Jimp.read(imgBuf)
+        img.scan(0, 0, img.bitmap.width, img.bitmap.height, function(x, y, idx) {
+            this.bitmap.data[idx]   = Math.min(255, this.bitmap.data[idx] + 80)
+            this.bitmap.data[idx+1] = Math.max(0,   this.bitmap.data[idx+1] - 30)
+            this.bitmap.data[idx+2] = Math.max(0,   this.bitmap.data[idx+2] - 30)
+        })
+        const output = await img.getBufferAsync(Jimp.MIME_JPEG)
+        await X.sendMessage(from, { image: output, caption: '💕 *Heart effect applied!*' }, { quoted: m })
+    } catch(e) { reply('❌ Failed to apply heart effect: ' + e.message) }
+}
 } break
 
 case 'rizz': {
@@ -7536,10 +7549,26 @@ const vibeMsg = vibeLevel > 80 ? 'Absolutely radiating! 🔥' : vibeLevel > 50 ?
 X.sendMessage(from, { text: `╔══════════════════════════╗\n║  ✨ *VIBE CHECK*\n╚══════════════════════════╝\n\n  👤 @${vibeTarget.split('@')[0]}\n\n  ${'✨'.repeat(Math.floor(vibeLevel/10))}${'⬜'.repeat(10 - Math.floor(vibeLevel/10))} *${vibeLevel}%*\n\n  _${vibeMsg}_`, mentions: [vibeTarget] }, { quoted: m })
 } break
 
+case 'gay': {
+    await X.sendMessage(m.chat, { react: { text: '🏳️‍🌈', key: m.key } })
+    if (m.isGroup && global.antiSocialGames && global.antiSocialGames[m.chat]) return reply(`❌ *Social games are disabled in this group.*`)
+let gayTarget = (m.mentionedJid && m.mentionedJid[0]) ? m.mentionedJid[0] : m.quoted ? m.quoted.sender : sender
+let gayLevel = Math.floor(Math.random() * 101)
+const gayMsg = gayLevel > 90 ? 'Absolutely fabulous! 🏳️‍🌈💅' : gayLevel > 70 ? 'Serving rainbow energy ✨' : gayLevel > 50 ? 'Somewhere over the rainbow 🌈' : gayLevel > 30 ? 'Just a little bit 😅' : 'Straight as an arrow 🏹'
+X.sendMessage(from, { text: `╔══════════════════════════╗\n║  🏳️‍🌈 *GAY METER*\n╚══════════════════════════╝\n\n  👤 @${gayTarget.split('@')[0]}\n\n  ${'🌈'.repeat(Math.floor(gayLevel/10))}${'⬜'.repeat(10 - Math.floor(gayLevel/10))} *${gayLevel}%*\n\n  _${gayMsg}_`, mentions: [gayTarget] }, { quoted: m })
+} break
+
 case 'glass': {
     await X.sendMessage(m.chat, { react: { text: '🕶️', key: m.key } })
-if (!m.quoted || !/image/.test(m.quoted.mimetype || '')) return reply(`Reply to an image with ${prefix}glass`)
-reply('*Glass effect applied!* 🪟')
+if (!m.quoted || !/image/.test(m.quoted.mimetype || '')) return reply(`Reply to an image with *${prefix}glass* to apply a frosted glass blur effect.`)
+try {
+    const imgBuf = await m.quoted.download()
+    const Jimp = require('jimp')
+    const img = await Jimp.read(imgBuf)
+    img.blur(8).brightness(-0.05).contrast(0.15)
+    const output = await img.getBufferAsync(Jimp.MIME_JPEG)
+    await X.sendMessage(from, { image: output, caption: '🪟 *Glass effect applied!*' }, { quoted: m })
+} catch(e) { reply('❌ Failed to apply glass effect: ' + e.message) }
 } break
 
 case 'jail': {
