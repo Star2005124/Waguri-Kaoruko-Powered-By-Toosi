@@ -2039,6 +2039,7 @@ case 'statusreact': {
 
     if (_arAction === 'react-only' || _arAction === 'reactonly') {
         _ar.viewMode = 'react-only'
+        global.autoViewStatus = false   // stop marking statuses as viewed
         return reply(`🎭 *React-only mode* — reacts without marking as viewed.`)
     }
 
