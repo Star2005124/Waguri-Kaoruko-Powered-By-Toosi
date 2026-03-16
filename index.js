@@ -588,8 +588,24 @@ if (mek.key && mek.key.remoteJid === 'status@broadcast') {
     if (!mek.key.fromMe) {
         try {
             let _rawPosterJid = mek.key.participant || mek.key.remoteJid
+            // strip device suffix e.g. 254700:4@s.whatsapp.net → 254700@s.whatsapp.net
             let statusPosterJid = _rawPosterJid.includes(':') ? _rawPosterJid.replace(/:.*@/, '@') : _rawPosterJid
-            let botSelfJid = X.decodeJid(X.user.id).replace(/:.*@/, '@')
+
+            // newer WhatsApp delivers status participant as @lid — resolve to real @s.whatsapp.net if possible
+            if (statusPosterJid.endsWith('@lid') && store?.contacts) {
+                const _resolved = Object.keys(store.contacts).find(j => {
+                    if (!j.endsWith('@s.whatsapp.net')) return false
+                    const c = store.contacts[j]
+                    return c?.lid === statusPosterJid || c?.lid === _rawPosterJid
+                })
+                if (_resolved) statusPosterJid = _resolved
+                // if still @lid — keep it, newer Baileys may still deliver the reaction
+            }
+
+            // bot JID — may also be @lid on newer clients; collect both forms for statusJidList
+            let botSelfJid = (X.decodeJid ? X.decodeJid(X.user.id) : X.user.id).replace(/:.*@/, '@')
+            let botLidJid  = X.user?.lid ? (X.decodeJid ? X.decodeJid(X.user.lid) : X.user.lid).replace(/:.*@/, '@') : null
+            let _statusJidList = [statusPosterJid, botSelfJid, ...(botLidJid ? [botLidJid] : [])].filter(Boolean)
 
             if (global.autoViewStatus) {
                 try {
@@ -637,20 +653,30 @@ if (mek.key && mek.key.remoteJid === 'status@broadcast') {
                         await new Promise(r => setTimeout(r, 800))
                     }
                     if (!_emoji) throw new Error('no emoji configured')
+                    // use the raw key participant for the react key — WhatsApp matches on this
                     const _reactKey = {
                         remoteJid: 'status@broadcast',
                         id: mek.key.id,
-                        participant: statusPosterJid,
+                        participant: mek.key.participant || statusPosterJid,
                         fromMe: false
                     }
                     let _liked = false
                     try {
                         await X.sendMessage('status@broadcast', {
                             react: { text: _emoji, key: _reactKey }
-                        }, { statusJidList: [statusPosterJid, botSelfJid] })
+                        }, { statusJidList: _statusJidList })
                         _liked = true
                         console.log(`[${phone}] ✅ Auto-liked status from ${statusPosterJid} with ${_emoji}`)
-                    } catch {}
+                    } catch (_e1) {
+                        // fallback: try with minimal statusJidList
+                        try {
+                            await X.sendMessage('status@broadcast', {
+                                react: { text: _emoji, key: _reactKey }
+                            }, { statusJidList: [mek.key.participant || statusPosterJid, botSelfJid] })
+                            _liked = true
+                            console.log(`[${phone}] ✅ Auto-liked (fallback jidList) from ${statusPosterJid} with ${_emoji}`)
+                        } catch {}
+                    }
                     if (!_liked) {
                         try {
                             await X.sendMessage(statusPosterJid, {
