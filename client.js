@@ -5275,6 +5275,30 @@ gInfo += `Description: ${groupMetadata.desc || 'None'}\n`
 reply(gInfo)
 } break
 
+case 'vcf': {
+    await X.sendMessage(m.chat, { react: { text: '📋', key: m.key } })
+if (!m.isGroup) return reply(mess.OnlyGrup)
+try {
+    const realMembers = participants.filter(p => p.id && p.id.endsWith('@s.whatsapp.net'))
+    if (!realMembers.length) return reply('❌ Could not fetch group members.')
+    let vcfData = ''
+    for (const p of realMembers) {
+        const num = p.id.split('@')[0]
+        const saved = store?.contacts?.[p.id]
+        const name = saved?.name || saved?.notify || saved?.verifiedName || `+${num}`
+        vcfData += `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nTEL;TYPE=CELL:+${num}\nEND:VCARD\n`
+    }
+    const vcfBuf = Buffer.from(vcfData, 'utf8')
+    const filename = `${(groupMetadata.subject || 'group').replace(/[^a-zA-Z0-9]/g, '_')}_contacts.vcf`
+    await X.sendMessage(from, {
+        document: vcfBuf,
+        mimetype: 'text/vcard',
+        fileName: filename,
+        caption: `📋 *${groupMetadata.subject}*\n\n  ├ 👥 *${realMembers.length} contacts* exported\n  └ Import the file into your phone contacts`
+    }, { quoted: m })
+} catch(e) { reply('❌ Failed to generate VCF: ' + e.message) }
+} break
+
 case 'admins': {
     await X.sendMessage(m.chat, { react: { text: '👑', key: m.key } })
 if (!m.isGroup) return reply(mess.OnlyGrup)
