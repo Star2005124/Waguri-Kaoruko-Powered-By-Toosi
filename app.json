@@ -1,0 +1,32 @@
+{
+  "name": "TOOSII-XD ULTRA",
+  "description": "TOOSII-XD ULTRA WhatsApp Multi-Device Bot",
+  "repository": "https://github.com/TOOSII102/TOOSII-XD-ULTRA",
+  "logo": "https://files.catbox.moe/qbcebp.jpg",
+  "keywords": ["whatsapp", "bot", "multi-device"],
+  "env": {
+    "OWNER_NUMBER": {
+      "description": "Your WhatsApp number with country code. No + or leading 0. Example: 254748340864",
+      "required": true
+    },
+    "SESSION_ID": {
+      "description": "Your TOOSII~ session ID from the session generator. Leave blank to use terminal pairing on first run.",
+      "required": false,
+      "value": ""
+    },
+    "SESSION_URL": {
+      "description": "URL of your session generator (optional). Shown in the bot connection message.",
+      "required": false,
+      "value": "https://toosii-xd-session-generator-woyo.onrender.com/pair"
+    }
+  },
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  },
+  "buildpacks": [
+    { "url": "heroku/nodejs" }
+  ]
+}

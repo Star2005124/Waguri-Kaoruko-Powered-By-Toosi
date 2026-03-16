@@ -1,0 +1,8 @@
+node_modules/
+sessions/
+tmp/
+*.log
+.env
+auth_info_baileys/
+attached_assets/
+package-lock.json
