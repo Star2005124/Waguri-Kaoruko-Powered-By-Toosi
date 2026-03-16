@@ -506,6 +506,41 @@ if (!X.authState.creds.registered) {
 
 store.bind(X.ev)
 
+//━━━━━━━━━━━━━━━━━━━━━━━━//
+// Anti-Delete Message Cache
+// Independent of the store — NOT cleared by messages.delete events.
+// Stores recent messages by ID so antidelete can retrieve them even
+// after WhatsApp's deletion event wipes them from the in-memory store.
+if (!global._adCache) global._adCache = new Map() // Map<msgId, {msg, chatJid, ts}>
+const _AD_CACHE_MAX = 800          // max number of messages to keep
+const _AD_CACHE_TTL = 30 * 60 * 1000 // purge entries older than 30 min
+
+X.ev.on('messages.upsert', ({ messages: _adMsgs }) => {
+    try {
+        for (const _adMsg of (_adMsgs || [])) {
+            if (!_adMsg?.key?.id || !_adMsg.message) continue
+            if (_adMsg.key.remoteJid === 'status@broadcast') continue // skip statuses
+            // Prune old entries if cache is full
+            if (global._adCache.size >= _AD_CACHE_MAX) {
+                const _now = Date.now()
+                for (const [_id, _entry] of global._adCache) {
+                    if (_now - _entry.ts > _AD_CACHE_TTL) global._adCache.delete(_id)
+                }
+                // If still over limit, remove oldest
+                if (global._adCache.size >= _AD_CACHE_MAX) {
+                    const _oldest = global._adCache.keys().next().value
+                    global._adCache.delete(_oldest)
+                }
+            }
+            global._adCache.set(_adMsg.key.id, {
+                msg: _adMsg,
+                chatJid: _adMsg.key.remoteJid,
+                ts: Date.now()
+            })
+        }
+    } catch (_) {}
+})
+
 // ── FIX 5: Suppress Bad MAC / libsignal decryption errors ────────────────
 // These errors occur when WhatsApp re-keys a session (normal behaviour).
 // Baileys already retries via msgRetryCounterCache; we just silence the noise.
@@ -1429,94 +1464,173 @@ X.ev.on('messages.update', async (updates) => {
         let botJid = X.decodeJid(X.user.id)
         let selfJid = botJid.replace(/:.*@/, '@')
 
-        // Helper: resolve @lid JID to real @s.whatsapp.net via store contacts
+        // Resolve @lid to real @s.whatsapp.net via store contacts map
         const _resolveJid = (jid) => {
-            if (!jid || !jid.endsWith('@lid')) return jid
+            if (!jid) return jid
+            if (!jid.endsWith('@lid')) return jid
             if (store?.contacts) {
-                for (const [realJid, contact] of Object.entries(store.contacts)) {
-                    if (contact && (contact.lid === jid || contact.id === jid)) return realJid
+                // store.contacts may be Map or plain object
+                const _entries = typeof store.contacts.entries === 'function'
+                    ? store.contacts.entries()
+                    : Object.entries(store.contacts)
+                for (const [realJid, contact] of _entries) {
+                    if (!contact) continue
+                    if (contact.lid === jid || contact.id === jid) return realJid
                 }
             }
-            // fallback: strip @lid, return raw number
-            return jid.split('@')[0].split(':')[0]
+            // fallback: strip @lid suffix, keep the number only
+            return jid.split(':')[0].split('@')[0]
         }
 
         for (let update of updates) {
-            if (update.update && (update.update.messageStubType === proto.WebMessageInfo.StubType.REVOKE || update.update.messageStubType === 1)) {
-                let chat = update.key.remoteJid
-                let senderJid = update.key.participant || update.key.remoteJid
+            if (!update.update) continue
+            const stubType = update.update.messageStubType
+            const isRevoke = stubType === 1 ||
+                (proto?.WebMessageInfo?.StubType?.REVOKE && stubType === proto.WebMessageInfo.StubType.REVOKE)
+            if (!isRevoke) continue
 
-                // Resolve @lid JIDs for both chat and sender
-                let resolvedSender = _resolveJid(senderJid)
-                let resolvedChat   = _resolveJid(chat)
+            let chat      = update.key.remoteJid
+            let senderJid = update.key.participant || update.key.remoteJid
+            let msgId     = update.key.id
 
-                let senderNum = (resolvedSender || senderJid).replace('@s.whatsapp.net', '').replace('@lid', '').split(':')[0]
+            // Resolve @lid JIDs
+            let resolvedSender = _resolveJid(senderJid)
+            let resolvedChat   = _resolveJid(chat)
 
-                // Format chat name cleanly — no @lid leaking into the display
-                let chatName
-                if (chat.endsWith('@g.us')) {
-                    // group — try to get group name from store
-                    let grpMeta = store?.chats?.get ? store.chats.get(chat) : (store?.chats?.[chat])
-                    chatName = (grpMeta && grpMeta.name) ? grpMeta.name : chat
-                } else {
-                    let displayNum = (resolvedChat || chat).replace('@s.whatsapp.net', '').replace('@lid', '').split(':')[0]
-                    chatName = displayNum ? `+${displayNum}` : chat
-                }
+            // Skip if the bot itself deleted the message
+            const _botNums = [botJid, selfJid, resolvedSender].map(j => j?.replace(/:.*@/, '@'))
+            if (_botNums.some(j => j && (j === selfJid || j === botJid))) {
+                if (resolvedSender === selfJid || resolvedSender === botJid ||
+                    senderJid === selfJid || senderJid === botJid) continue
+            }
 
-                if (senderJid === botJid || senderJid === selfJid || resolvedSender === selfJid) return
+            // Format sender number cleanly
+            let senderNum = (resolvedSender || senderJid || '')
+                .replace('@s.whatsapp.net', '').replace('@lid', '').split(':')[0]
 
-                try {
-                    let deletedMsg = null
-                    // Try all possible chat key variants in the store
-                    const _keysToTry = [...new Set([chat, resolvedChat, resolvedChat && resolvedChat + '@s.whatsapp.net'].filter(Boolean))]
-                    for (const _chatKey of _keysToTry) {
+            // Format chat name — no @lid in display
+            let chatName
+            if (chat.endsWith('@g.us')) {
+                const _gMeta = typeof store?.chats?.get === 'function'
+                    ? store.chats.get(chat)
+                    : (store?.chats?.[chat])
+                chatName = _gMeta?.name || _gMeta?.subject || chat
+            } else {
+                const _dispNum = (resolvedChat || chat)
+                    .replace('@s.whatsapp.net', '').replace('@lid', '').split(':')[0]
+                chatName = _dispNum ? `+${_dispNum}` : chat
+            }
+
+            // Determine where to send the alert
+            const _isPublic = global.antiDeleteMode === 'public'
+            const _alertDest = _isPublic ? (resolvedChat || chat) : selfJid
+
+            try {
+                let deletedMsg = null
+
+                // ── Priority 1: our own anti-delete cache (never wiped by deletion events)
+                const _cached = global._adCache?.get(msgId)
+                if (_cached?.msg?.message) deletedMsg = _cached.msg
+
+                // ── Priority 2: store lookup with multiple JID key variants
+                if (!deletedMsg) {
+                    const _keys = [...new Set([
+                        chat,
+                        resolvedChat,
+                        resolvedChat && !resolvedChat.includes('@') ? resolvedChat + '@s.whatsapp.net' : null
+                    ].filter(Boolean))]
+                    for (const _k of _keys) {
                         if (deletedMsg) break
                         if (!store?.messages) continue
-                        let chatMsgs = typeof store.messages.get === 'function'
-                            ? store.messages.get(_chatKey)
-                            : store.messages[_chatKey]
-                        if (!chatMsgs) continue
-                        if (typeof chatMsgs.get === 'function') {
-                            deletedMsg = chatMsgs.get(update.key.id) || null
-                        } else if (chatMsgs.array) {
-                            deletedMsg = chatMsgs.array.find(m => m.key.id === update.key.id) || null
-                        } else if (typeof chatMsgs[Symbol.iterator] === 'function') {
-                            for (const [, msg] of chatMsgs) {
-                                if (msg && msg.key && msg.key.id === update.key.id) { deletedMsg = msg; break }
+                        const _cm = typeof store.messages.get === 'function'
+                            ? store.messages.get(_k)
+                            : store.messages[_k]
+                        if (!_cm) continue
+                        if (typeof _cm.get === 'function') {
+                            deletedMsg = _cm.get(msgId) || null
+                        } else if (typeof _cm[Symbol.iterator] === 'function') {
+                            for (const [, _m] of _cm) {
+                                if (_m?.key?.id === msgId) { deletedMsg = _m; break }
                             }
                         }
                     }
-                    // Last resort: loadMessage
-                    if (!deletedMsg && typeof store?.loadMessage === 'function') {
-                        for (const _chatKey of _keysToTry) {
-                            try { deletedMsg = await store.loadMessage(_chatKey, update.key.id) || null; if (deletedMsg) break } catch (_) {}
+                }
+
+                // ── Priority 3: store.loadMessage
+                if (!deletedMsg && typeof store?.loadMessage === 'function') {
+                    for (const _k of [chat, resolvedChat].filter(Boolean)) {
+                        try {
+                            deletedMsg = await store.loadMessage(_k, msgId) || null
+                            if (deletedMsg) break
+                        } catch (_) {}
+                    }
+                }
+
+                if (deletedMsg?.message) {
+                    let delType = getContentType(deletedMsg.message)
+                    let delBody = deletedMsg.message.conversation ||
+                                  deletedMsg.message.extendedTextMessage?.text ||
+                                  deletedMsg.message.imageMessage?.caption ||
+                                  deletedMsg.message.videoMessage?.caption ||
+                                  deletedMsg.message.audioMessage?.caption || ''
+
+                    let notifText =
+                        `*🗑️ 𝔄𝔫𝔱𝔦-𝔇𝔢𝔩𝔢𝔱𝔢 𝔄𝔩𝔢𝔯𝔱*\n\n` +
+                        `👤 *𝔉𝔯𝔬𝔪:* @${senderNum}\n` +
+                        `💬 *ℭ𝔥𝔞𝔱:* ${chatName}\n` +
+                        `📄 *𝔗𝔶𝔭𝔢:* ${delType}` +
+                        (delBody ? `\n📝 *ℭ𝔬𝔫𝔱𝔢𝔫𝔱:* ${delBody}` : `\n📝 *ℭ𝔬𝔫𝔱𝔢𝔫𝔱:* [media / no text]`)
+
+                    await X.sendMessage(_alertDest, { text: notifText, mentions: [resolvedSender || senderJid] })
+
+                    // Forward media if present
+                    const _hasMedia = deletedMsg.message.imageMessage ||
+                                      deletedMsg.message.videoMessage ||
+                                      deletedMsg.message.audioMessage ||
+                                      deletedMsg.message.documentMessage ||
+                                      deletedMsg.message.stickerMessage
+                    if (_hasMedia) {
+                        try { await X.sendMessage(_alertDest, { forward: deletedMsg }) }
+                        catch (_fe) {
+                            // forward failed — try re-downloading and resending
+                            try {
+                                const _mtype = Object.keys(deletedMsg.message)[0]
+                                const _mobj  = deletedMsg.message[_mtype]
+                                const _mime  = _mobj?.mimetype || ''
+                                const _mediaType = _mtype.replace('Message', '')
+                                const _stream = await downloadContentFromMessage(_mobj, _mediaType)
+                                let _chunks = []; for await (const c of _stream) _chunks.push(c)
+                                const _buf = Buffer.concat(_chunks)
+                                if (_mime.startsWith('image')) {
+                                    await X.sendMessage(_alertDest, { image: _buf, caption: delBody || '' })
+                                } else if (_mime.startsWith('video')) {
+                                    await X.sendMessage(_alertDest, { video: _buf, caption: delBody || '', mimetype: _mime })
+                                } else if (_mime.startsWith('audio')) {
+                                    await X.sendMessage(_alertDest, { audio: _buf, mimetype: _mime, ptt: !!deletedMsg.message.audioMessage?.ptt })
+                                }
+                            } catch (_re) { console.log('[Anti-Delete] Media re-send failed:', _re.message) }
                         }
                     }
 
-                    if (deletedMsg && deletedMsg.message) {
-                        let delType = getContentType(deletedMsg.message)
-                        let delBody = deletedMsg.message.conversation ||
-                                     (deletedMsg.message.extendedTextMessage?.text) ||
-                                     (deletedMsg.message.imageMessage?.caption) ||
-                                     (deletedMsg.message.videoMessage?.caption) || ''
-                        let notifText = `*🗑️ 𝔄𝔫𝔱𝔦-𝔇𝔢𝔩𝔢𝔱𝔢 𝔄𝔩𝔢𝔯𝔱*\n\n👤 *𝔉𝔯𝔬𝔪:* @${senderNum}\n💬 *ℭ𝔥𝔞𝔱:* ${chatName}\n📄 *𝔗𝔶𝔭𝔢:* ${delType}${delBody ? '\n📝 *ℭ𝔬𝔫𝔱𝔢𝔫𝔱:* ' + delBody : '\n📝 *ℭ𝔬𝔫𝔱𝔢𝔫𝔱:* [media/no text]'}`
-                        await X.sendMessage(selfJid, { text: notifText, mentions: [resolvedSender || senderJid] })
-                        if (deletedMsg.message.imageMessage || deletedMsg.message.videoMessage || deletedMsg.message.audioMessage || deletedMsg.message.documentMessage || deletedMsg.message.stickerMessage) {
-                            try { await X.sendMessage(selfJid, { forward: deletedMsg }, { quoted: null }) }
-                            catch (fwdErr) { console.log('[Anti-Delete] Forward error:', fwdErr.message || fwdErr) }
-                        }
-                    } else {
-                        // Message not in store — still alert but without content
-                        let notifText = `*🗑️ 𝔄𝔫𝔱𝔦-𝔇𝔢𝔩𝔢𝔱𝔢 𝔄𝔩𝔢𝔯𝔱*\n\n👤 *𝔉𝔯𝔬𝔪:* @${senderNum}\n💬 *ℭ𝔥𝔞𝔱:* ${chatName}\n📝 *ℭ𝔬𝔫𝔱𝔢𝔫𝔱:* ⚠️ _Message was too old or arrived before store was ready_`
-                        await X.sendMessage(selfJid, { text: notifText, mentions: [resolvedSender || senderJid] })
-                    }
-                } catch (e) {
-                    console.log('[Anti-Delete] Store error:', e.message || e)
+                    // Remove from our cache after delivery
+                    global._adCache?.delete(msgId)
+
+                } else {
+                    // Not found in any cache — message arrived before bot started or is too old
+                    await X.sendMessage(_alertDest, {
+                        text: `*🗑️ 𝔄𝔫𝔱𝔦-𝔇𝔢𝔩𝔢𝔱𝔢 𝔄𝔩𝔢𝔯𝔱*\n\n` +
+                              `👤 *𝔉𝔯𝔬𝔪:* @${senderNum}\n` +
+                              `💬 *ℭ𝔥𝔞𝔱:* ${chatName}\n` +
+                              `📝 *ℭ𝔬𝔫𝔱𝔢𝔫𝔱:* ⚠️ _Message sent before bot was online — content unavailable_`,
+                        mentions: [resolvedSender || senderJid]
+                    })
                 }
+            } catch (e) {
+                console.log('[Anti-Delete] Error:', e.message || e)
             }
         }
     } catch (err) {
-        console.log('[Anti-Delete] Error:', err.message || err)
+        console.log('[Anti-Delete] Top-level error:', err.message || err)
     }
 })
 
