@@ -14,7 +14,6 @@ const toolsMenu = `
   ├ .locate     › [place]
   ├ .pp         › [@user/reply]
   ├ .shazam     › reply audio
-  ├ .transcribe › reply audio
   ├ .totalfitur ├ .pair
   ├ .prefix
   └ .save       › reply msg
@@ -31,11 +30,20 @@ const toolsMenu = `
   └ .robottext  › [text]
 
 ╔══════════════════════════╗
+║  🤖  *AI CHAT*
+╚══════════════════════════╝
+  ├ .gpt4o      › [question]
+  ├ .gemini     › [question]
+  └ .transcript › [youtube url]
+
+╔══════════════════════════╗
 ║  🎨  *AI CREATION*
 ╚══════════════════════════╝
-  ├ .deepimg    › [prompt]
-  ├ .aiart      › [prompt]
-  ├ .imagine    › [prompt]
+  ├ .magicstudio › [prompt]
+  ├ .fluximg     › [prompt]
+  ├ .deepimg     › [prompt]
+  ├ .aiart       › [prompt]
+  ├ .imagine     › [prompt]
   └ .songgenerator › [prompt]
 
 ╔══════════════════════════╗
