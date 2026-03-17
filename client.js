@@ -355,11 +355,17 @@ if (global.fakePresence && global.fakePresence !== 'off' && !m.key.fromMe) {
 //━━━━━━━━━━━━━━━━━━━━━━━━//
 // Reply / Reply Message
 const reply = (teks) => {
-    X.sendMessage(from, { text: teks }, { quoted: m })
+    if (!teks && teks !== 0) return
+    const _t = typeof teks === 'string' ? teks.trim() : String(teks)
+    if (!_t) return
+    X.sendMessage(from, { text: _t }, { quoted: m })
 }
 
 const reply2 = (teks) => {
-X.sendMessage(from, { text : teks }, { quoted : m })
+    if (!teks && teks !== 0) return
+    const _t = typeof teks === 'string' ? teks.trim() : String(teks)
+    if (!_t) return
+    X.sendMessage(from, { text: _t }, { quoted: m })
 }
 //━━━━━━━━━━━━━━━━━━━━━━━━//
 // Function Area
