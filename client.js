@@ -6044,88 +6044,96 @@ case 'movie':
 case 'film':
 case 'series': {
     await X.sendMessage(m.chat, { react: { text: '🎬', key: m.key } })
-    if (!text) return reply(`╔══════════════════════════╗\n║  🎬 *MOVIE SEARCH*\n╚══════════════════════════╝\n\n  Search any movie or TV series.\n\n  ├ ${prefix}movie Inception\n  ├ ${prefix}movie Breaking Bad\n  └ ${prefix}movie Avengers 2019`)
+    if (!text) return reply(
+        `╔══════════════════════════╗\n` +
+        `║  🎬 *MOVIE SEARCH*\n` +
+        `╚══════════════════════════╝\n\n` +
+        `  Search any movie or TV series.\n\n` +
+        `  ├ *${prefix}movie* Inception\n` +
+        `  ├ *${prefix}movie* Breaking Bad\n` +
+        `  └ *${prefix}movie* Avengers 2019`
+    )
     try {
         await reply(`🎬 _Searching for_ *${text}*_..._`)
 
-        // ── Step 1: Search OMDB (title + optional year) ──────────────
-        const _movieQ = text.trim()
-        const _yearMatch = _movieQ.match(/(19|20)\d{2}/)
-        const _year = _yearMatch ? _yearMatch[0] : ''
-        const _title = _movieQ.replace(_year, '').trim()
+        const _TMDB = '8265bd1679663a7ea12ac168da84d2e8'
+        const _BASE = 'https://api.themoviedb.org/3'
+        const _IMG  = 'https://image.tmdb.org/t/p/w500'
+        const _na   = (v) => (v !== null && v !== undefined && v !== '') ? v : '—'
+        const _q    = text.trim()
+        const _ym   = _q.match(/(19|20)\d{2}/)
+        const _year = _ym ? _ym[0] : ''
+        const _titl = _q.replace(_year, '').trim()
 
-        let _omdbUrl = `https://www.omdbapi.com/?t=${encodeURIComponent(_title)}&apikey=742b79da&plot=full`
-        if (_year) _omdbUrl += `&y=${_year}`
+        // Search movies + TV in parallel
+        const [_mRes, _tRes] = await Promise.all([
+            fetch(`${_BASE}/search/movie?api_key=${_TMDB}&query=${encodeURIComponent(_titl)}${_year ? `&year=${_year}` : ''}`).then(r => r.json()),
+            fetch(`${_BASE}/search/tv?api_key=${_TMDB}&query=${encodeURIComponent(_titl)}${_year ? `&first_air_date_year=${_year}` : ''}`).then(r => r.json())
+        ])
 
-        let _res = await fetch(_omdbUrl)
-        let _data = await _res.json()
+        const _all = [
+            ...(_mRes.results || []).map(x => ({ ...x, _mt: 'movie' })),
+            ...(_tRes.results  || []).map(x => ({ ...x, _mt: 'tv'    }))
+        ].sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
 
-        // Try search if exact title fails
-        if (_data.Response === 'False') {
-            let _searchUrl = `https://www.omdbapi.com/?s=${encodeURIComponent(_title)}&apikey=742b79da`
-            if (_year) _searchUrl += `&y=${_year}`
-            let _searchRes = await fetch(_searchUrl)
-            let _searchData = await _searchRes.json()
-            if (_searchData.Response === 'True' && _searchData.Search?.length) {
-                // Get full details of first result
-                let _firstId = _searchData.Search[0].imdbID
-                let _detailRes = await fetch(`https://www.omdbapi.com/?i=${_firstId}&apikey=742b79da&plot=full`)
-                _data = await _detailRes.json()
-            }
+        if (!_all.length) return reply(
+            `╔══════════════════════════╗\n` +
+            `║  🎬 *MOVIE SEARCH*\n` +
+            `╚══════════════════════════╝\n\n` +
+            `  ❌ *Not found:* _${text}_\n\n` +
+            `  _Try a different spelling or add the year._\n` +
+            `  _Example:_ *${prefix}movie Inception 2010*`
+        )
+
+        const _pick = _all[0]
+        const _mt   = _pick._mt
+
+        // Full details
+        const _d = await fetch(`${_BASE}/${_mt}/${_pick.id}?api_key=${_TMDB}&append_to_response=credits`).then(r => r.json())
+
+        const _isTV   = _mt === 'tv'
+        const _icon   = _isTV ? '📺' : '🎬'
+        const _tStr   = _isTV ? 'TV SERIES INFO' : 'MOVIE INFO'
+        const _title2 = _na(_d.title || _d.name)
+        const _yr2    = (_d.release_date || _d.first_air_date || '').slice(0, 4)
+        const _genres = (_d.genres || []).map(g => g.name).join(', ') || '—'
+        const _rt     = _isTV
+            ? (_d.episode_run_time?.[0] ? `${_d.episode_run_time[0]} min/ep` : '—')
+            : (_d.runtime ? `${_d.runtime} min` : '—')
+        const _lang   = _na((_d.original_language || '').toUpperCase())
+        const _score  = _d.vote_average
+            ? `${_d.vote_average.toFixed(1)}/10 (${(_d.vote_count || 0).toLocaleString()} votes)`
+            : '—'
+        const _status = _na(_d.status)
+        const _plot   = _na(_d.overview)
+        const _poster = _d.poster_path ? `${_IMG}${_d.poster_path}` : null
+        const _dir    = !_isTV
+            ? (_d.credits?.crew?.find(c => c.job === 'Director')?.name || '—')
+            : (_d.created_by?.map(c => c.name).join(', ') || '—')
+        const _cast   = (_d.credits?.cast || []).slice(0, 5).map(c => c.name).join(', ') || '—'
+        const _imdbId = _d.imdb_id || ''
+
+        let _cap  = `╔══════════════════════════╗\n`
+            _cap += `║  ${_icon} *${_tStr}*\n`
+            _cap += `╚══════════════════════════╝\n\n`
+            _cap += `  *${_title2}*  _(${_yr2 || '?'})_\n\n`
+            _cap += `  ├ 🎭 *Genre*     › ${_genres}\n`
+            _cap += `  ├ ⏱️  *Runtime*  › ${_rt}\n`
+            _cap += `  ├ 🌍 *Language* › ${_lang}\n`
+            _cap += `  ├ ⭐ *Rating*    › ${_score}\n`
+            _cap += `  ├ 📋 *Status*   › ${_status}\n`
+        if (_isTV) {
+            _cap += `  ├ 📺 *Seasons*  › ${_na(_d.number_of_seasons)} seasons · ${_na(_d.number_of_episodes)} episodes\n`
         }
+            _cap += `  ├ 🎬 *${_isTV ? 'Creator ' : 'Director'}* › ${_dir}\n`
+            _cap += `  └ 🎭 *Cast*     › ${_cast}\n`
+            _cap += `\n  *📝 Plot:*\n  _${_plot}_\n`
+        if (_imdbId) _cap += `\n  🔗 https://www.imdb.com/title/${_imdbId}`
 
-        if (!_data || _data.Response === 'False') {
-            return reply(`╔══════════════════════════╗\n║  🎬 *MOVIE SEARCH*\n╚══════════════════════════╝\n\n  ❌ *Not found:* _${text}_\n\n  _Try a different spelling or add the year._\n  _Example:_ ${prefix}movie Inception 2010`)
-        }
-
-        // ── Step 2: Build ratings string ─────────────────────────────
-        let _ratings = ''
-        if (_data.Ratings && _data.Ratings.length) {
-            _ratings = _data.Ratings.map(r => {
-                if (r.Source === 'Internet Movie Database') return `⭐ *IMDb* › ${r.Value}`
-                if (r.Source === 'Rotten Tomatoes')        return `🍅 *Rotten Tomatoes* › ${r.Value}`
-                if (r.Source === 'Metacritic')             return `🎯 *Metacritic* › ${r.Value}`
-                return `› ${r.Source}: ${r.Value}`
-            }).map(l => `  ├ ${l}`).join('\n')
-        } else if (_data.imdbRating && _data.imdbRating !== 'N/A') {
-            _ratings = `  ├ ⭐ *IMDb* › ${_data.imdbRating}/10 (${_data.imdbVotes || '?'} votes)`
-        }
-
-        // ── Step 3: Build caption ─────────────────────────────────────
-        const _na = (v) => (v && v !== 'N/A') ? v : '—'
-        const _type = (_data.Type || 'movie').charAt(0).toUpperCase() + (_data.Type || 'movie').slice(1)
-        const _typeIcon = _data.Type === 'series' ? '📺' : _data.Type === 'episode' ? '🎞️' : '🎬'
-
-        let _caption = `╔══════════════════════════╗\n║  ${_typeIcon} *${_type.toUpperCase()} INFO*\n╚══════════════════════════╝\n\n`
-        _caption += `  *${_na(_data.Title)}* (${_na(_data.Year)})\n\n`
-        _caption += `  ├ 🎭 *Genre*    › ${_na(_data.Genre)}\n`
-        _caption += `  ├ ⏱️  *Runtime*  › ${_na(_data.Runtime)}\n`
-        _caption += `  ├ 🌍 *Language* › ${_na(_data.Language)}\n`
-        _caption += `  ├ 🏳️  *Country*  › ${_na(_data.Country)}\n`
-        _caption += `  ├ 📅 *Released* › ${_na(_data.Released)}\n`
-        if (_data.Type === 'series') {
-            _caption += `  ├ 📺 *Seasons*  › ${_na(_data.totalSeasons)}\n`
-        }
-        _caption += `  ├ 🎬 *Director* › ${_na(_data.Director)}\n`
-        _caption += `  ├ ✍️  *Writer*   › ${_na(_data.Writer)}\n`
-        _caption += `  ├ 🎭 *Cast*     › ${_na(_data.Actors)}\n`
-        if (_ratings) _caption += `\n  *Ratings:*\n${_ratings}\n`
-        if (_data.Awards && _data.Awards !== 'N/A') {
-            _caption += `\n  ├ 🏆 *Awards*   › ${_data.Awards}\n`
-        }
-        _caption += `\n  *📝 Plot:*\n  _${_na(_data.Plot)}_\n`
-        if (_data.imdbID) {
-            _caption += `\n  └ 🔗 *IMDb* › https://www.imdb.com/title/${_data.imdbID}`
-        }
-
-        // ── Step 4: Send with poster if available ─────────────────────
-        if (_data.Poster && _data.Poster !== 'N/A') {
-            await X.sendMessage(m.chat, {
-                image: { url: _data.Poster },
-                caption: _caption
-            }, { quoted: m })
+        if (_poster) {
+            await X.sendMessage(m.chat, { image: { url: _poster }, caption: _cap }, { quoted: m })
         } else {
-            reply(_caption)
+            reply(_cap)
         }
 
     } catch(e) {
