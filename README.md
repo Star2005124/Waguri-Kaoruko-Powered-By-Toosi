@@ -10,7 +10,7 @@
 
 <br/>
 
-[![Version](https://img.shields.io/badge/Version-2.0.0-25D366?style=for-the-badge&logo=whatsapp&logoColor=white)](https://github.com/TOOSII102/TOOSII-XD-ULTRA)
+[![Version](https://img.shields.io/badge/Version-2.1.0-25D366?style=for-the-badge&logo=whatsapp&logoColor=white)](https://github.com/TOOSII102/TOOSII-XD-ULTRA)
 [![Node](https://img.shields.io/badge/Node.js-18%2B-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org)
 [![Platform](https://img.shields.io/badge/Platform-WhatsApp-25D366?style=for-the-badge&logo=whatsapp&logoColor=white)](https://whatsapp.com)
 [![Stars](https://img.shields.io/github/stars/TOOSII102/TOOSII-XD-ULTRA?style=for-the-badge&color=FFD700&logo=github)](https://github.com/TOOSII102/TOOSII-XD-ULTRA/stargazers)
@@ -33,7 +33,7 @@
 
 </div>
 
-**TOOSII-XD ULTRA** is a blazing-fast, feature-rich WhatsApp Multi-Device Bot built on the @whiskeysockets/baileys protocol. With **250+ commands** spanning AI, media, group management, games, and more — it's the only bot you'll ever need.
+**TOOSII-XD ULTRA** is a blazing-fast, feature-rich WhatsApp Multi-Device Bot built on the @whiskeysockets/baileys protocol. With **300+ commands** spanning AI, media, group management, games, font effects, TextPro image art, and more — it's the only bot you'll ever need.
 
 > 🛡️ Built for reliability &nbsp;•&nbsp; ⚡ Instant responses &nbsp;•&nbsp; 🎨 Fully customizable &nbsp;•&nbsp; 🔌 Plugin-ready
 
@@ -86,6 +86,16 @@ railway up
 Set the start command to `node index.js` in your Railway project settings.
 </details>
 
+<details>
+<summary><b>📋 bot-hosting.net Setup</b></summary>
+
+1. Upload all files via the file manager or Git import
+2. Set startup file to `index.js`
+3. Add your `.env` variables in the **Environment** tab
+4. Click **Start** — the bot connects automatically
+
+</details>
+
 ---
 
 ## 🔑 Session Setup
@@ -110,21 +120,29 @@ OWNER_NUMBER=254748340864               # your WhatsApp number (no + or spaces)
 
 <div align="center">
 
-| 🤖 AI & Chat | 📥 Downloaders | 🖼️ Stickers |
+| 🤖 AI & Chat | 📥 Downloaders | 🖼️ Stickers & Art |
 |:---:|:---:|:---:|
-| 15+ AI models | YouTube Audio/Video | Image → Sticker |
+| 37+ AI models | YouTube Audio/Video | Image → Sticker |
 | Auto ChatBot mode | Instagram Reels | Video → Sticker |
-| Pollinations AI | TikTok Videos | Emoji Mix |
-| Gemini, GPT-4o | Facebook Videos | Telegram Packs |
-| DeepSeek, Mistral | MediaFire Files | BRAT Generator |
+| GPT-4o, Gemini | TikTok Videos | Emoji Mix |
+| DeepSeek, Grok, Mistral | Facebook Videos | BRAT Generator |
+| AI Image Generation | MediaFire Files | TextPro Art (25+ styles) |
 
 | 👥 Group Tools | 🎮 Games | 🛠️ Tools |
 |:---:|:---:|:---:|
 | Add / Kick / Promote | Truth or Dare | Translate |
 | Warn System | 8-Ball | Remove BG |
 | Anti-Link / Anti-Tag | Coin Flip | Screenshot |
-| Anti-BadWord | Trivia | Shazam |
-| Accept/Reject Joins | Tic-Tac-Toe | Location |
+| Anti-BadWord | Trivia | Shazam / Lyrics |
+| Accept/Reject Joins | Tic-Tac-Toe | QR Reader |
+
+| 🔤 Font Tools | 🎵 Music | ⚽ Sports |
+|:---:|:---:|:---:|
+| 38 Unicode font styles | YouTube play | EPL standings |
+| Auto font mode | Song lyrics | La Liga standings |
+| Bold, Script, Gothic | Shazam ID | Live scores |
+| Bubble, Fraktur, Tiny | SoundCloud search | Football predictions |
+| Aesthetic, Mirror, Wide | Spotify info | Sports news |
 
 </div>
 
@@ -135,29 +153,60 @@ OWNER_NUMBER=254748340864               # your WhatsApp number (no + or spaces)
 <details>
 <summary><b>📌 General</b></summary>
 
-| Command | Description |
-|---|---|
-| `.menu` | Full command list |
-| `.help` | Quick start guide |
-| `.ping` | Bot speed & uptime |
-| `.botinfo` | Bot info card |
-| `.repo` | GitHub repository |
-| `.sc` / `.source` | Source code |
+| Command | Description | Who Can Use |
+|---|---|---|
+| `.menu` | Full command list | Everyone |
+| `.help` | Quick start guide | Everyone |
+| `.ping` | Bot speed & uptime | Everyone |
+| `.botinfo` | Bot info card | Everyone |
+| `.owner` | Show bot owner contact details | Everyone |
+| `.repo` / `.sc` | GitHub repository / source code | Everyone |
+| `.runtime` | Bot uptime | Everyone |
+| `.speed` | Connection speed test | Everyone |
+
+> **`.owner`** sends the owner's name, Telegram, bot version, session URL, and three WhatsApp contact cards (+254748340864 · +254746677793 · +254788781373) so anyone can reach the creator directly.
 
 </details>
 
 <details>
-<summary><b>🤖 AI & Chat</b></summary>
+<summary><b>🤖 AI & Chat (37+ Models)</b></summary>
 
 | Command | Description |
 |---|---|
-| `.ai <prompt>` | Pollinations AI |
-| `.chatai <prompt>` | General AI chat |
-| `.gemini-ai <prompt>` | Google Gemini |
-| `.gpt-4o <prompt>` | OpenAI GPT-4o |
-| `.deepseek <prompt>` | DeepSeek AI |
+| `.ai <prompt>` | General AI (auto-selects best model) |
+| `.gpt4o <prompt>` | GPT-4o via GiftedTech |
+| `.gemini <prompt>` | Google Gemini via GiftedTech |
+| `.deepseek <prompt>` | DeepSeek-style AI |
 | `.mistral <prompt>` | Mistral AI |
-| `.chatbot on/off` | Auto-reply mode |
+| `.grok <prompt>` | Grok by xAI |
+| `.copilot <prompt>` | Microsoft Copilot style |
+| `.wormgpt <prompt>` | WormGPT creative AI |
+| `.perplexity <prompt>` | Perplexity research AI |
+| `.claudeai <prompt>` | Claude-style AI |
+| `.birdai <prompt>` | BirdAI concise answers |
+| `.chatbot on/off` | Auto-reply chatbot mode |
+| `.vision` | Analyse an image with AI (reply to image) |
+| `.analyse` | Same as `.vision` |
+| `.transcript <yt-url>` | Transcribe a YouTube video |
+
+> All 37 AI models share the same robust fallback chain: **GiftedTech GPT-4o → GiftedTech Gemini → Pollinations POST → Pollinations GET → Anthropic** (if key set). This ensures responses even when individual services are down.
+
+</details>
+
+<details>
+<summary><b>🎨 AI Image Generation</b></summary>
+
+| Command | Description |
+|---|---|
+| `.deepimg <prompt>` | AI image via Flux model |
+| `.aiart <prompt>` | Same as `.deepimg` |
+| `.genimage <prompt>` | Same as `.deepimg` |
+| `.fluximg <prompt>` | Flux AI image generation |
+| `.magicstudio <prompt>` | Magic Studio AI art |
+| `.imagine <prompt>` | Pollinations image |
+| `.txt2img <prompt>` | Text to image |
+| `.songgenerator <desc>` | AI-generated song (audio) |
+| `.makesong <desc>` | Same as `.songgenerator` |
 
 </details>
 
@@ -166,27 +215,167 @@ OWNER_NUMBER=254748340864               # your WhatsApp number (no + or spaces)
 
 | Command | Description |
 |---|---|
-| `.play <query>` | YouTube audio |
-| `.ytv <query>` | YouTube video |
-| `.ig <url>` | Instagram media |
+| `.play <query>` | YouTube audio (MP3) |
+| `.ytv <query>` | YouTube video (MP4) |
+| `.ig <url>` | Instagram photo/reel |
 | `.tt <url>` | TikTok video |
 | `.fb <url>` | Facebook video |
+| `.mediafire <url>` | MediaFire file download |
+| `.mfdl <url>` | Same as `.mediafire` |
 | `.spotify <query>` | Spotify track info |
-| `.mediafire <url>` | MediaFire download |
+| `.savefrom <url>` | Generic video saver |
+| `.pinterest <query>` | Pinterest image |
 
 </details>
 
 <details>
-<summary><b>🖼️ Stickers</b></summary>
+<summary><b>🖼️ Stickers & Image Tools</b></summary>
 
 | Command | Description |
 |---|---|
 | `.sticker` / `.s` | Media → sticker |
 | `.take` / `.steal` | Re-pack a sticker |
 | `.emojimix 😀+😎` | Mix two emojis |
-| `.qc <text>` | Quote card |
+| `.qc <text>` | Quote card sticker |
 | `.telestick <url>` | Telegram sticker pack |
 | `.toimage` | Sticker → image |
+| `.brat <text>` | BRAT-style image |
+| `.bratvid <text>` | BRAT animated video sticker |
+| `.removebg` | Remove image background |
+
+</details>
+
+<details>
+<summary><b>✍️ TextPro Image Art</b></summary>
+
+| Command | Description |
+|---|---|
+| `.textpro <style> <text>` | Generate any TextPro effect |
+| `.neontext <text>` | Neon glow text |
+| `.lavatext <text>` | Lava / fire text |
+| `.toxictext <text>` | Toxic green text |
+| `.steeltext <text>` | Steel metallic text |
+| `.jokerlogo <text>` | Joker logo style |
+| `.halloweenfire <text>` | Halloween fire text |
+| `.captainamerica <text>` | Captain America shield |
+| `.redfoilballoon <text>` | Red foil balloon letters |
+| `.fireworksparkle <text>` | Firework sparkle text |
+| `.wickertext <text>` | Wicker weave text |
+| `.naturalleaves <text>` | Natural leaves style |
+| `.ultragloss <text>` | Ultra-gloss shine |
+| `.denimtext <text>` | Denim fabric text |
+| `.rocktext <text>` | Rock stone text |
+| `.yellowglass <text>` | Yellow glass text |
+| `.purpleglass <text>` | Purple glass text |
+| `.rainboequalizer <text>` | Rainbow equalizer |
+| `.chocolatecake <text>` | Chocolate cake text |
+| `.xmascard3d <text>` | Christmas 3D card |
+| `.robotr2d2 <text>` | R2D2 robot style |
+
+> Available styles for `.textpro`: `neonText` `lavaText` `toxicText` `steelText` `jokerLogo` `halloweenFire` `captainAmerica` `redFoilBalloon` `fireworkSparkle` `wickerText` `naturalLeaves` `ultraGloss` `denimText` `rockText` `yellowGlass` `purpleGlass` `orangeGlass` `greenGlass` `cyanGlass` `blueGlass` `redGlass` `rainbowEqualizer` `chocolateCake` `xmasCard3d` `robotR2d2`
+
+</details>
+
+<details>
+<summary><b>🔤 Font Converter (Owner)</b></summary>
+
+| Command | Description |
+|---|---|
+| `.font <text>` | Preview text in all 18+ font styles at once |
+| `.allfonts <text>` | Same as `.font` |
+| `.bold <text>` | **Bold sans** |
+| `.italic <text>` | *Italic sans* |
+| `.bolditalic <text>` | ***Bold italic*** |
+| `.mono <text>` | Monospace |
+| `.serif <text>` | Serif bold |
+| `.serifbold <text>` | Serif bold (alt) |
+| `.serifitalic <text>` | Serif italic |
+| `.scriptfont <text>` | 𝒮𝒸𝓇𝒾𝓅𝓉 style |
+| `.scriptbold <text>` | 𝓑𝓸𝓵𝓭 𝓼𝓬𝓻𝓲𝓹𝓽 |
+| `.fraktur <text>` | 𝔉𝔯𝔞𝔨𝔱𝔲𝔯 |
+| `.frakturbold <text>` | 𝕭𝖔𝖑𝖉 𝕱𝖗𝖆𝖐𝔱𝖚𝖗 |
+| `.doublestruck <text>` | 𝔻𝕠𝕦𝕓𝕝𝕖 𝕊𝕥𝕣𝕦𝕔𝕜 |
+| `.smallcaps <text>` | ꜱᴍᴀʟʟ ᴄᴀᴘꜱ |
+| `.bubble <text>` | ⓑⓤⓑⓑⓛⓔ |
+| `.bubblebold <text>` | 🅑🅤🅑🅑🅛🅔 |
+| `.square <text>` | 🄰🄱🄲 squares |
+| `.squarebold <text>` | 🅰🅱🅲 bold squares |
+| `.wide <text>` | Ａｅｓｔｈｅｔｉｃ wide |
+| `.aesthetic <text>` | Same as `.wide` |
+| `.upsidedown <text>` | ʇxǝʇ uʍop ǝpᴉsdn |
+| `.strikethrough <text>` | S̶t̶r̶i̶k̶e̶t̶h̶r̶o̶u̶g̶h̶ |
+| `.underline <text>` | U͟n͟d͟e͟r͟l͟i͟n͟e͟ |
+| `.tiny <text>` | ᵗⁱⁿʸ ˢᵘᵖᵉʳˢᶜʳⁱᵖᵗ |
+| `.gothic <text>` | 𝕲𝖔𝖙𝖍𝖎𝖈 |
+| `.cursive <text>` | 𝓒𝓾𝓻𝓼𝓲𝓿𝓮 |
+| `.medieval <text>` | 𝔐𝔢𝔡𝔦𝔢𝔳𝔞𝔩 |
+| `.mirror <text>` | Mirrored text |
+| `.inverted <text>` | ¡pǝʇɹǝʌuI |
+| `.circled <text>` | Ⓒⓘⓡⓒⓛⓔⓓ |
+| `.dotted <text>` | Ḋȯṫṫėḋ |
+| `.currency <text>` | ₵µ®®€₦₵¥ |
+| `.oldeng <text>` | 𝒪𝓁𝒹 𝐸𝓃𝑔𝓁𝒾𝓈𝒽 |
+| `.setfont <name>` | Auto-convert every message you send to a font |
+| `.fontoff` | Disable auto font mode |
+
+> **Auto font mode** (`.setfont bold`): Every message the owner sends is automatically converted to the chosen style and shows as *"Edited"* — no "deleted" flash.
+
+</details>
+
+<details>
+<summary><b>🎵 Music & Search</b></summary>
+
+| Command | Description |
+|---|---|
+| `.lyrics <song>` | Song lyrics (multi-source) |
+| `.shazam` | Identify a song from audio |
+| `.soundcloud <query>` | Search SoundCloud |
+| `.google <query>` | Google search results |
+| `.define <term>` | Urban Dictionary definition |
+| `.dictionary <word>` | Word definition & phonetics |
+| `.playstore <app>` | Google Play Store search |
+| `.weather <city>` | Current weather |
+| `.wiki <query>` | Wikipedia summary |
+
+</details>
+
+<details>
+<summary><b>🎭 Fun & Inspiration</b></summary>
+
+| Command | Description |
+|---|---|
+| `.joke` | Random joke |
+| `.quote` | Inspirational quote |
+| `.fact` | Random interesting fact |
+| `.advice` | Life advice |
+| `.lovemsg` | Romantic love message |
+| `.gratitude` | Gratitude message |
+| `.thankyou` | Thank-you message |
+| `.friendship` | Friendship quote |
+| `.shayari` | Urdu/Hindi shayari |
+| `.goodnight` | Goodnight message |
+| `.roseday` | Rose Day message |
+| `.pickupline` | Pickup line |
+| `.trivia` | Trivia question |
+| `.8ball <question>` | Magic 8-ball |
+| `.coinflip` | Heads or tails |
+
+</details>
+
+<details>
+<summary><b>🌸 Anime</b></summary>
+
+| Command | Description |
+|---|---|
+| `.animequote` | Random anime quote |
+| `.aniquote` | Same as `.animequote` |
+| `.animerandom` | Random anime info |
+| `.waifu` | Waifu image |
+| `.neko` | Neko image |
+| `.hug` | Hug GIF/image |
+| `.kiss` | Kiss GIF/image |
+| `.pat` | Pat GIF/image |
+| `.poke` | Poke GIF/image |
 
 </details>
 
@@ -200,12 +389,18 @@ OWNER_NUMBER=254748340864               # your WhatsApp number (no + or spaces)
 | `.promote @user` | Make admin |
 | `.demote @user` | Remove admin |
 | `.warn @user` | Issue warning |
-| `.mute` / `.unmute` | Mute group |
-| `.open` / `.close` | Toggle messaging |
+| `.unwarn @user` | Remove warning |
+| `.mute` / `.unmute` | Mute/unmute group |
+| `.open` / `.close` | Toggle group messaging |
 | `.tagall` | Tag everyone |
+| `.everyone` | Same as `.tagall` |
 | `.link` | Get invite link |
-| `.setgname <n>` | Rename group |
-| `.acceptjoin` | Approve join requests |
+| `.revoke` | Reset invite link |
+| `.setgname <name>` | Rename group |
+| `.setgdesc <desc>` | Set group description |
+| `.acceptjoin` | Approve pending join requests |
+| `.rejectjoin` | Reject pending join requests |
+| `.groupinfo` | Show group info |
 
 </details>
 
@@ -220,6 +415,58 @@ OWNER_NUMBER=254748340864               # your WhatsApp number (no + or spaces)
 | `.antisticker on/off` | Block stickers |
 | `.antidemote on/off` | Auto re-promote admins |
 | `.antidelete on/off` | Detect deleted messages |
+| `.antibot on/off` | Block other bots |
+| `.welcome on/off` | Welcome new members |
+| `.bye on/off` | Farewell messages |
+
+</details>
+
+<details>
+<summary><b>⚽ Football & Sports</b></summary>
+
+| Command | Description |
+|---|---|
+| `.epl` | EPL standings |
+| `.eplscorers` | EPL top scorers |
+| `.eplfixtures` | Upcoming EPL matches |
+| `.laliga` | La Liga standings |
+| `.laligascorers` | La Liga top scorers |
+| `.laligafixtures` | Upcoming La Liga matches |
+| `.livescore` | All live football scores |
+| `.footballnews` | Latest football news |
+| `.predictions` | Match predictions |
+| `.sports` | All live sports |
+| `.sportscategories` | Available sports categories |
+
+</details>
+
+<details>
+<summary><b>🛠️ Utility Tools</b></summary>
+
+| Command | Description |
+|---|---|
+| `.translate <lang> <text>` | Translate text |
+| `.tts <text>` | Text-to-speech |
+| `.removebg` | Remove image background |
+| `.screenshot <url>` | Screenshot a website |
+| `.ssphone <url>` | Mobile screenshot |
+| `.tinyurl <url>` | Shorten a URL |
+| `.readqr` | Read a QR code (reply to image) |
+| `.location <place>` | Share location |
+| `.weather <city>` | Weather forecast |
+| `.calc <expr>` | Calculator |
+| `.whois <number>` | WhatsApp number info |
+| `.stalk <number>` | Profile info lookup |
+| `.tolink` | Convert sticker to link |
+
+</details>
+
+<details>
+<summary><b>🎭 Text Effects (Local — No API)</b></summary>
+
+These generate styled images locally using Python/PIL — no API required, always available.
+
+`.neon` `.fire` `.matrix` `.ice` `.glitch` `.thunder` `.devil` `.hacker` `.sand` `.blackpink` `.metallic` `.light` `.arena` `.1917` `.leaves` `.purple` `.snow` `.impressive`
 
 </details>
 
@@ -228,23 +475,22 @@ OWNER_NUMBER=254748340864               # your WhatsApp number (no + or spaces)
 
 | Command | Description |
 |---|---|
-| `.self` / `.public` | Bot mode toggle |
-| `.setprefix <char>` | Change prefix |
-| `.botname <n>` | Rename bot |
-| `.botpic` | Change bot profile pic |
-| `.autobio on/off` | Auto status bio |
-| `.autoread on/off` | Auto-read messages |
-| `.anticall on/off` | Block calls |
-| `.broadcast <msg>` | Message all chats |
-| `.addplugin <url>` | Install plugin |
-| `.restart` | Restart bot |
+| `.owner` | Show your contact cards to anyone who asks |
+| `.self` / `.public` | Toggle private / public mode |
+| `.setprefix <char>` | Change the command prefix |
+| `.botname <name>` | Rename the bot |
+| `.botpic` | Change bot profile picture |
+| `.autobio on/off` | Auto-update status bio |
+| `.autoread on/off` | Auto-read all messages |
+| `.anticall on/off` | Block incoming calls |
+| `.broadcast <msg>` | Send message to all chats |
+| `.addplugin <url>` | Install a plugin |
+| `.restart` | Restart the bot |
+| `.setfont <name>` | Auto-style every message you send |
+| `.fontoff` | Disable auto font mode |
+| `.cleartmp` | Clear temp files |
 
-</details>
-
-<details>
-<summary><b>🎭 Text Effects</b></summary>
-
-`.neon` `.fire` `.matrix` `.ice` `.glitch` `.thunder` `.devil` `.hacker` `.sand` `.blackpink` `.metallic` `.light` `.arena` `.1917` and many more!
+> **About `.owner`:** When any user sends `.owner`, the bot replies with your name, Telegram handle, bot version, session generator link, and three WhatsApp contact cards. They can tap a card to start a chat with you instantly.
 
 </details>
 
@@ -257,18 +503,22 @@ Set these in your **`.env`** file — no code editing needed:
 ```env
 SESSION_ID=TOOSII~eyJub2lzZUtleS...   # from Session Generator
 OWNER_NUMBER=254748340864               # your WhatsApp number (no + or spaces)
+
+# Optional — for enhanced features
+REMOVEBG_KEY=your_key                  # remove.bg API key (bot has free fallback)
+CLIPDROP_KEY=your_key                  # Clipdrop key (optional extra fallback)
+ANTHROPIC_API_KEY=your_key             # Claude AI key (bot works without it)
 ```
 
-The bot reads your number on startup and grants you owner access automatically.
-
-To further customise display names, timezone, sticker info, etc., edit `setting.js`:
+To customise display names, timezone, and sticker info, edit **`setting.js`**:
 
 ```javascript
 global.botname     = "TOOSII-XD ULTRA"   // Bot display name
-global.ownername   = "Toosii Tech"       // Your name
+global.ownername   = "Toosii Tech"       // Your name (shown in .owner)
 global.botTimezone = "Africa/Nairobi"    // Your timezone
 global.packname    = "TOOSII-XD ULTRA"   // Sticker pack name
-global.author      = "© Toosii Tech"    // Sticker author
+global.author      = "© Toosii Tech"    // Sticker author tag
+global.sessionUrl  = "https://toosii-xd-session-generator-woyo.onrender.com/pair"
 ```
 
 ---
@@ -278,17 +528,34 @@ global.author      = "© Toosii Tech"    // Sticker author
 ```
 TOOSII-XD-ULTRA/
 ├── 📄 index.js          ← Bot entry point & WhatsApp socket
-├── 📄 client.js         ← Command handler (250+ commands)
+├── 📄 client.js         ← Command handler (300+ commands)
 ├── 📄 setting.js        ← Global configuration
-├── 📄 .env              ← Environment variables
+├── 📄 .env              ← Environment variables (never commit this)
 ├── 📁 sessions/         ← Auth data (auto-generated)
 ├── 📁 database/         ← Games, warnings, user data
 ├── 📁 plugin/           ← External plugin modules
 └── 📁 library/
     ├── 📁 lib/          ← Core utils (exif, myfunc, store)
     ├── 📁 scrape/       ← Web scrapers
-    └── 📁 menulist/     ← Menu templates
+    └── 📁 menulist/     ← Menu templates per category
 ```
+
+---
+
+## 🔌 Powered By
+
+| Service | Used For |
+|---|---|
+| **GiftedTech API** | GPT-4o, Gemini, TextPro, lyrics, football, weather, fun commands |
+| **Pollinations AI** | Image generation, AI text fallback |
+| **Piped (projectsegfau.lt)** | YouTube audio streaming |
+| **lrclib.net / lyrics.ovh** | Song lyrics |
+| **waifu.pics / nekos.life** | Anime images |
+| **zenquotes.io** | Inspirational quotes |
+| **jikan.moe** | Anime database |
+| **OpenTDB** | Trivia questions |
+| **aqul-brat.hf.space** | BRAT-style images |
+| **emojik.vercel.app** | Emoji mixing |
 
 ---
 
