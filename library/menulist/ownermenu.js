@@ -12,11 +12,11 @@ const ownerMenu = `
   ├◈  \`.sudo\`        › add/remove [num]
   ├◈  \`.setowner\`    › [number]
   ├◈  \`.clearsession\`
-  └◈  `.cleartmp
+  └◈  \`.cleartmp\`
 
 ╔══════════════════════════╗
 ║  ⚙️  *BOT SETTINGS*
-╚══════════════════════════╝`
+╚══════════════════════════╝
   ├◈  \`.botname\`    › [name]
   ├◈  \`.author\`     › [name]
   ├◈  \`.packname\`   › [name]
@@ -27,11 +27,11 @@ const ownerMenu = `
   ├◈  \`.setpp\`      › reply img
   ├◈  \`.menuimage\`  › [url/reply img]
   ├◈  \`.configimage\` ├◈  \`.setmenu\`
-  └◈  `.botsettings
+  └◈  \`.botsettings\`
 
 ╔══════════════════════════╗
 ║  🛡️  *PROTECTION*
-╚══════════════════════════╝`
+╚══════════════════════════╝
   ├◈  \`.anticall\`          › on/off
   ├◈  \`.antilink\`          › on/off
   ├◈  \`.antidelete\`        › on/off
@@ -61,13 +61,13 @@ const ownerMenu = `
   ├◈  \`.setaimode dm add/remove [num]\`
   ├◈  \`.setaimode group\`  › on/off
   ├◈  \`.setaimode group\`  › add/remove/list
-  └◈  `.setaimode reset
+  └◈  \`.setaimode reset\`
 
 ╔══════════════════════════╗
 ║  🚫  *BLOCK MANAGEMENT*
-╚══════════════════════════╝`
+╚══════════════════════════╝
   ├◈  \`.block\`    › @user
   ├◈  \`.unblock\`  › @user
   └◈  \`.listblock\`
-
-module.exports = ownerMenu`
+`
+module.exports = ownerMenu
