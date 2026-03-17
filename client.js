@@ -1235,8 +1235,6 @@ case 'music':
 case 'ytplay': {
     await X.sendMessage(m.chat, { react: { text: '🎵', key: m.key } })
     if (!text) return reply('What song do you want to search for?\n\nExample: .play Juice WRLD Lucid Dreams')
-    const _MAX_DURATION_SEC = 600   // 10 minutes max
-    const _MAX_SIZE_BYTES   = 15 * 1024 * 1024  // 15 MB max
     let _tmpFile = null
     try {
         let search = await yts(text)
@@ -1245,16 +1243,6 @@ case 'ytplay': {
         let videoTitle  = firstVideo.title || 'Unknown Title'
         let videoAuthor = firstVideo.author?.name || firstVideo.author || 'Unknown Artist'
         let cleanName   = `${videoAuthor} - ${videoTitle}.mp3`.replace(/[<>:"/\\|?*]/g, '')
-
-        // Duration check — reject anything over 10 minutes
-        let durSec = firstVideo.seconds || 0
-        if (!durSec && firstVideo.timestamp) {
-            let parts = firstVideo.timestamp.split(':').map(Number)
-            durSec = parts.length === 3 ? parts[0]*3600 + parts[1]*60 + parts[2] : parts[0]*60 + (parts[1]||0)
-        }
-        if (durSec > _MAX_DURATION_SEC) {
-            return reply(`⚠️ *Song too long* (${firstVideo.timestamp})\n\nMax allowed: 10 minutes.\nTry searching for a shorter version.`)
-        }
 
         await reply(`🔍 _Searching: *${videoTitle}*_ (${firstVideo.timestamp})\n_Please wait..._`)
 
@@ -1273,7 +1261,7 @@ case 'ytplay': {
                     let progData = await progRes.json()
                     if (progData.success === 1 && progData.progress >= 1000 && progData.download_url) {
                         let buf = await getBuffer(progData.download_url)
-                        if (buf && buf.length > 10000 && buf.length <= _MAX_SIZE_BYTES) { audioBuffer = buf; downloaded = true }
+                        if (buf && buf.length > 10000) { audioBuffer = buf; downloaded = true }
                         break
                     }
                     if (progData.progress < 0) break
@@ -1294,27 +1282,21 @@ case 'ytplay': {
                 let format = audioFormats.find(f => (f.audioBitrate || 0) >= 96) || audioFormats[audioFormats.length - 1]
                 if (!format) format = ytdl.chooseFormat(info.formats, { filter: f => f.hasAudio })
                 if (format) {
-                    let chunks = [], totalSize = 0, aborted = false
+                    let chunks = []
                     await new Promise((resolve, reject) => {
                         let stream = ytdl(firstVideo.url, { format })
-                        stream.on('data', chunk => {
-                            totalSize += chunk.length
-                            if (totalSize > _MAX_SIZE_BYTES) { aborted = true; stream.destroy(); reject(new Error('size limit exceeded')) }
-                            else chunks.push(chunk)
-                        })
+                        stream.on('data', chunk => chunks.push(chunk))
                         stream.on('end', resolve)
                         stream.on('error', reject)
-                        setTimeout(() => { stream.destroy(); reject(new Error('timeout')) }, 90000)
+                        setTimeout(() => { stream.destroy(); reject(new Error('timeout')) }, 300000)
                     })
-                    if (!aborted) {
-                        audioBuffer = Buffer.concat(chunks)
-                        if (audioBuffer.length > 10000) downloaded = true
-                    }
+                    audioBuffer = Buffer.concat(chunks)
+                    if (audioBuffer.length > 10000) downloaded = true
                 }
             } catch (e2) { console.log('[play] ytdl-core:', e2.message) }
         }
 
-        // Method 3: yt-dlp — 128kbps quality, 15MB cap
+        // Method 3: yt-dlp — 128kbps quality, no size limit
         if (!downloaded) {
             try {
                 let tmpDir = path.join(__dirname, 'tmp')
@@ -1323,8 +1305,8 @@ case 'ytplay': {
                 _tmpFile = tmpBase + '.mp3'
                 await new Promise((resolve, reject) => {
                     exec(
-                        `yt-dlp -x --audio-format mp3 --audio-quality 5 --no-playlist --max-filesize 15M -o "${tmpBase}.%(ext)s" "${firstVideo.url}"`,
-                        { timeout: 90000 },
+                        `yt-dlp -x --audio-format mp3 --audio-quality 5 --no-playlist -o "${tmpBase}.%(ext)s" "${firstVideo.url}"`,
+                        { timeout: 300000 },
                         (err) => err ? reject(err) : resolve()
                     )
                 })
@@ -1335,11 +1317,8 @@ case 'ytplay': {
                     if (found) _tmpFile = path.join(tmpDir, found)
                 }
                 if (fs.existsSync(_tmpFile)) {
-                    let stat = fs.statSync(_tmpFile)
-                    if (stat.size <= _MAX_SIZE_BYTES) {
-                        audioBuffer = fs.readFileSync(_tmpFile)
-                        if (audioBuffer.length > 10000) downloaded = true
-                    }
+                    audioBuffer = fs.readFileSync(_tmpFile)
+                    if (audioBuffer.length > 10000) downloaded = true
                 }
             } catch (e3) { console.log('[play] yt-dlp:', e3.message) }
         }
