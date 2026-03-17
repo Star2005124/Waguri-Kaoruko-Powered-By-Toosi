@@ -15,6 +15,26 @@ by Toosii Tech • 2024 - 2026
 require('dotenv').config()          // ← FIX 1: load .env FIRST so SESSION_ID is available
 require("./setting")
 
+// ── Suppress libsignal / gifted-baileys internal session state dumps ──────────
+// libsignal/session_record.js calls console.warn("Session already closed", session)
+// where `session` is a large Signal crypto object full of Buffer dumps.
+// We silence those specific warnings — all other console output is unaffected.
+;(function suppressSignalNoise() {
+    const _origWarn  = console.warn.bind(console)
+    const _origError = console.error.bind(console)
+    const _noisy = (args) => {
+        const s = args[0]
+        if (typeof s !== 'string') return false
+        return s.includes('Session already') ||
+               s.includes('V1 session storage migration') ||
+               s.includes('No sessions') ||
+               s.includes('bad mac') ||
+               s.includes('Failed to decrypt')
+    }
+    console.warn  = (...args) => { if (!_noisy(args)) _origWarn(...args)  }
+    console.error = (...args) => { if (!_noisy(args)) _origError(...args) }
+})()
+
 // Auto-inject OWNER_NUMBER from .env into global.owner
 // Deployers only need to set OWNER_NUMBER in .env — no editing of setting.js needed
 ;(function autoInjectOwner() {
