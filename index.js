@@ -1609,16 +1609,39 @@ X.ev.on('messages.update', async (updates) => {
             try {
                 let deletedMsg = null
 
-                // ── Priority 1: exact ID lookup (works when IDs match)
-                const _altId  = _stubParams[0] !== update.key.id ? update.key.id : null
-                let _cached   = global._adCache?.get(msgId)
-                if (!_cached && _altId) _cached = global._adCache?.get(_altId)
-                if (_cached?.msg?.message && !_cached._adConsumed) deletedMsg = _cached.msg
+                // Helper: true if a cached message is a WhatsApp internal protocol msg
+                const _isProtoMsg = (m) => !!(m?.message?.protocolMessage || m?.message?.senderKeyDistributionMessage)
 
-                // ── Priority 1b: JID-based recency search
-                // gifted-baileys REVOKE uses a brand-new ID unrelated to the original msg.
-                // So fall back to: find the most recent un-consumed cached message from the
-                // same chat JID within a 10-minute window.
+                // ── Priority 1: exact ID lookup
+                const _altId = _stubParams[0] !== update.key.id ? update.key.id : null
+                let _cached  = global._adCache?.get(msgId)
+                if (!_cached && _altId) _cached = global._adCache?.get(_altId)
+
+                if (_cached?.msg?.message && !_cached._adConsumed) {
+                    // If what we got is a protocolMessage (the revoke wrapper itself),
+                    // follow the pointer inside it to find the REAL original message
+                    if (_isProtoMsg(_cached.msg)) {
+                        const _realId = _cached.msg.message?.protocolMessage?.key?.id
+                        if (_realId) {
+                            const _realEntry = global._adCache?.get(_realId)
+                            if (_realEntry?.msg?.message && !_realEntry._adConsumed && !_isProtoMsg(_realEntry.msg)) {
+                                deletedMsg = _realEntry.msg
+                                _realEntry._adConsumed = true
+                                global._adCache.set(_realId, _realEntry)
+                            }
+                        }
+                        // Mark the proto wrapper as consumed too
+                        _cached._adConsumed = true
+                        global._adCache.set(msgId, _cached)
+                    } else {
+                        deletedMsg = _cached.msg
+                        _cached._adConsumed = true
+                        global._adCache.set(msgId, _cached)
+                    }
+                }
+
+                // ── Priority 1b: JID-based recency search (skips protocol messages)
+                // Fallback when ID lookup fails or only found a proto wrapper with no pointer
                 if (!deletedMsg && global._adCache) {
                     const _revokeJids = [...new Set([chat, resolvedChat, senderJid, resolvedSender].filter(Boolean))]
                     const _window     = 10 * 60 * 1000  // 10 minutes
@@ -1629,7 +1652,7 @@ X.ev.on('messages.update', async (updates) => {
                         if (_entry._adConsumed) continue
                         if (!_entry.msg?.message) continue
                         if (_entry.ts < _cutoff) continue
-                        // Match by remoteJid (direct equality or both after resolving @lid)
+                        if (_isProtoMsg(_entry.msg)) continue  // skip internal protocol msgs
                         const _entryJid = _entry.chatJid || _entry.msg?.key?.remoteJid || ''
                         const _match = _revokeJids.some(rj =>
                             rj === _entryJid ||
@@ -1643,13 +1666,12 @@ X.ev.on('messages.update', async (updates) => {
                     }
                     if (_bestEntry) {
                         deletedMsg = _bestEntry.msg
-                        // Mark consumed so a second delete in the same chat doesn't reuse it
                         _bestEntry._adConsumed = true
                         global._adCache.set(_bestKey, _bestEntry)
                     }
                 }
 
-                console.log(`[Anti-Delete] cache size=${global._adCache?.size} | msgId=${msgId} | found=${!!deletedMsg} | method=${deletedMsg ? (global._adCache?.get(msgId) ? 'id' : 'jid-recency') : 'none'}`)
+                console.log(`[Anti-Delete] cache size=${global._adCache?.size} | msgId=${msgId} | found=${!!deletedMsg} | type=${getContentType(deletedMsg?.message) || 'none'}`)
 
                 // ── Priority 2: store lookup with multiple JID key variants
                 if (!deletedMsg) {
