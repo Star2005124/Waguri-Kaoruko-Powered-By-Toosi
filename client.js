@@ -8231,7 +8231,7 @@ case 'premierleague': {
         let msg = `╔══════════════════════════╗\n║  🏆 *EPL STANDINGS ${new Date().getFullYear()}*\n╚══════════════════════════╝\n\n`
         msg += `${'#'.padEnd(3)} ${'Team'.padEnd(22)} ${'P'.padEnd(3)} ${'W'.padEnd(3)} ${'D'.padEnd(3)} ${'L'.padEnd(3)} ${'GD'.padEnd(5)} Pts\n`
         msg += `${'─'.repeat(50)}\n`
-        for (let t of teams.slice(0, 20)) {
+        for (let t of teams) {
             let pos = String(t.position).padEnd(3)
             let team = (t.team || '').substring(0, 20).padEnd(22)
             let p = String(t.played || 0).padEnd(3)
@@ -8257,7 +8257,7 @@ case 'epltopscorers': {
         let scorers = d.result.scorers || d.result
         if (!Array.isArray(scorers) || scorers.length === 0) throw new Error('No scorers')
         let msg = `╔══════════════════════════╗\n║  ⚽ *EPL TOP SCORERS*\n╚══════════════════════════╝\n\n`
-        for (let s of scorers.slice(0, 15)) {
+        for (let s of scorers) {
             let rank = s.rank || s.position || ''
             msg += `${rank}. *${s.player || s.name}* (${s.team || s.club || ''})\n`
             msg += `   🥅 Goals: *${s.goals}*`
@@ -8281,7 +8281,7 @@ case 'eplupcoming': {
         let matches = d.result.matches || d.result
         if (!Array.isArray(matches) || matches.length === 0) throw new Error('No matches')
         let msg = `╔══════════════════════════╗\n║  📅 *EPL UPCOMING FIXTURES*\n╚══════════════════════════╝\n`
-        for (let _fm of matches.slice(0, 12)) {
+        for (let _fm of matches) {
             msg += `\n📆 *${_fm.date || ''}* ${_fm.time ? '⏰ ' + _fm.time : ''}\n`
             msg += `  ⚽ *${_fm.homeTeam}* vs *${_fm.awayTeam}*\n`
             if (_fm.venue || _fm.stadium) msg += `  🏟️ ${_fm.venue || _fm.stadium}\n`
@@ -8306,7 +8306,7 @@ case 'laligastandings': {
         let msg = `╔══════════════════════════╗\n║  🏆 *LA LIGA STANDINGS ${new Date().getFullYear()}*\n╚══════════════════════════╝\n\n`
         msg += `${'#'.padEnd(3)} ${'Team'.padEnd(22)} ${'P'.padEnd(3)} ${'W'.padEnd(3)} ${'D'.padEnd(3)} ${'L'.padEnd(3)} ${'GD'.padEnd(5)} Pts\n`
         msg += `${'─'.repeat(50)}\n`
-        for (let t of teams.slice(0, 20)) {
+        for (let t of teams) {
             let pos = String(t.position).padEnd(3)
             let team = (t.team || '').substring(0, 20).padEnd(22)
             let p = String(t.played || 0).padEnd(3)
@@ -8332,7 +8332,7 @@ case 'laligatopscorers': {
         let scorers = d.result.scorers || d.result
         if (!Array.isArray(scorers) || scorers.length === 0) throw new Error('No scorers')
         let msg = `╔══════════════════════════╗\n║  ⚽ *LA LIGA TOP SCORERS*\n╚══════════════════════════╝\n\n`
-        for (let s of scorers.slice(0, 15)) {
+        for (let s of scorers) {
             let rank = s.rank || s.position || ''
             msg += `${rank}. *${s.player || s.name}* (${s.team || s.club || ''})\n`
             msg += `   🥅 Goals: *${s.goals}*`
@@ -8366,7 +8366,7 @@ case 'laligaupcoming': {
         }
         if (!matches || !matches.length) throw new Error('No matches')
         let msg = `╔══════════════════════════╗\n║  📅 *LA LIGA FIXTURES*\n╚══════════════════════════╝\n`
-        for (let _fm of matches.slice(0, 12)) {
+        for (let _fm of matches) {
             msg += `\n📆 *${_fm.date || ''}* ${_fm.time ? '⏰ ' + _fm.time : ''}\n`
             msg += `  ⚽ *${_fm.homeTeam}* vs *${_fm.awayTeam}*\n`
             if (_fm.venue || _fm.stadium) msg += `  🏟️ ${_fm.venue || _fm.stadium}\n`
