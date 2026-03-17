@@ -51,16 +51,16 @@ const toolsMenu = `
 ╚══════════════════════════╝
   ├◈  \`.vv\`          ├◈  \`.autoonline\`
   ├◈  \`.autorecording\` ├◈  \`.autotyping\`
-  └◈  `.fakestatus
+  └◈  \`.fakestatus\`
 
 ╔══════════════════════════╗
 ║  📊  *STATUS TOOLS*
-╚══════════════════════════╝`
+╚══════════════════════════╝
   ├◈  \`.autostatus\`
   ├◈  \`.autoviewstatus\`
   ├◈  \`.autolikestatus\`     › [emoji/off]
   ├◈  \`.autoreplystatus\`    › [msg/off]
   ├◈  \`.togroupstatus\`      › [text/on/off]
-  └◈  \`.antistatusmention\`  › [on/warn/kick/del]`
-
+  └◈  \`.antistatusmention\`  › [on/warn/kick/del]
+`
 module.exports = toolsMenu
