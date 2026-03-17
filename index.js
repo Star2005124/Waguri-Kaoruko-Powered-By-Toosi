@@ -22,17 +22,28 @@ require("./setting")
 ;(function suppressSignalNoise() {
     const _origWarn  = console.warn.bind(console)
     const _origError = console.error.bind(console)
+    const _origLog   = console.log.bind(console)
     const _noisy = (args) => {
-        const s = args[0]
-        if (typeof s !== 'string') return false
-        return s.includes('Session already') ||
-               s.includes('V1 session storage migration') ||
-               s.includes('No sessions') ||
-               s.includes('bad mac') ||
-               s.includes('Failed to decrypt')
+        const combined = args.map(a =>
+            typeof a === 'string' ? a : (a?.message || a?.stack || String(a))
+        ).join(' ').toLowerCase()
+        return combined.includes('bad mac') ||
+               combined.includes('session already') ||
+               combined.includes('v1 session storage') ||
+               combined.includes('no sessions') ||
+               combined.includes('failed to decrypt') ||
+               combined.includes('session error') ||
+               combined.includes('session_cipher') ||
+               combined.includes('libsignal') ||
+               combined.includes('queue_job') ||
+               combined.includes('nosuchsession') ||
+               combined.includes('invalid prekey') ||
+               combined.includes('invalid message') ||
+               combined.includes('no senderkey')
     }
     console.warn  = (...args) => { if (!_noisy(args)) _origWarn(...args)  }
     console.error = (...args) => { if (!_noisy(args)) _origError(...args) }
+    console.log   = (...args) => { if (!_noisy(args)) _origLog(...args)   }
 })()
 
 // Auto-inject OWNER_NUMBER from .env into global.owner
@@ -92,7 +103,7 @@ process.on('uncaughtException', (err) => {
         es.includes('session_cipher') || es.includes('libsignal') || es.includes('queue_job')
     )
     if (isSignal) {
-        console.log('[Suppressed-UncaughtException] Signal noise:', err.message || err)
+        // Fully silent — normal WhatsApp Signal protocol noise
     } else {
         console.error('[UncaughtException]', err.message || err)
     }
@@ -108,7 +119,7 @@ process.on('unhandledRejection', (err) => {
         es.includes('session_cipher') || es.includes('libsignal') || es.includes('queue_job')
     )
     if (isSignal) {
-        console.log('[Suppressed-UnhandledRejection] Signal noise:', err?.message || err)
+        // Fully silent — normal WhatsApp Signal protocol noise
     } else {
         console.error('[UnhandledRejection]', err?.message || err)
     }
