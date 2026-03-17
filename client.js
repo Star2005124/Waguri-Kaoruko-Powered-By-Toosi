@@ -1257,7 +1257,7 @@ case 'ytplay': {
         // Method 1: GiftedTech API — 128kbps, direct download URL
         if (!audioUrl && !audioPath) {
             try {
-                let res = await fetch(`https://api.giftedtech.co.ke/api/download/ytaudio?apikey=gifted&url=${encodeURIComponent(firstVideo.url)}`, {
+                let res = await fetch(`https://api.giftedtech.co.ke/api/download/ytmp3?apikey=gifted&quality=128kbps&url=${encodeURIComponent(firstVideo.url)}`, {
                     signal: AbortSignal.timeout(30000)
                 })
                 let data = await res.json()
@@ -5774,7 +5774,7 @@ let vid = search.all.find(v => v.type === 'video') || search.all[0]
 let audioUrl = null, audioPath = null
 // Method 1: GiftedTech API
 try {
-    let res = await fetch(`https://api.giftedtech.co.ke/api/download/ytaudio?apikey=gifted&url=${encodeURIComponent(vid.url)}`, { signal: AbortSignal.timeout(30000) })
+    let res = await fetch(`https://api.giftedtech.co.ke/api/download/ytmp3?apikey=gifted&quality=128kbps&url=${encodeURIComponent(vid.url)}`, { signal: AbortSignal.timeout(30000) })
     let data = await res.json()
     if (data.success && data.result?.download_url) audioUrl = data.result.download_url
 } catch (e1) { console.log('[ytdocplay] giftedtech:', e1.message) }
