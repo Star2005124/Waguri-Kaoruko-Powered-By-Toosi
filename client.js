@@ -1254,7 +1254,21 @@ case 'ytplay': {
             return m ? m[1] : null
         }
 
-        // Method 1: YouTube InnerTube API — try iOS then TV client (Android gets blocked)
+        // Method 1: GiftedTech API — 128kbps, direct download URL
+        if (!audioUrl && !audioPath) {
+            try {
+                let res = await fetch(`https://api.giftedtech.co.ke/api/download/ytaudio?apikey=gifted&url=${encodeURIComponent(firstVideo.url)}`, {
+                    signal: AbortSignal.timeout(30000)
+                })
+                let data = await res.json()
+                console.log('[play] giftedtech: success=', data.success, 'quality=', data.result?.quality)
+                if (data.success && data.result?.download_url) {
+                    audioUrl = data.result.download_url
+                }
+            } catch (e0) { console.log('[play] giftedtech:', e0.message) }
+        }
+
+        // Method 2: YouTube InnerTube API — try iOS then TV client (Android gets blocked)
         if (!audioUrl && !audioPath) {
             const _innerTube = async (clientName, clientVersion, extra = {}) => {
                 try {
