@@ -8139,22 +8139,24 @@ case 'footballscore': {
         if (!d.success || !d.result) throw new Error('No data')
         let matches = d.result.matches || d.result
         if (!Array.isArray(matches) || matches.length === 0) return reply('⚽ No live matches at the moment.')
-        // Group by league, show max 20 matches
-        let shown = matches.slice(0, 20)
-        let msg = `╔══════════════════════════╗\n║  ⚽ *LIVE FOOTBALL SCORES*\n╚══════════════════════════╝\n`
+        // Group by league — send ALL matches, split into multiple messages if needed
+        let header = `╔══════════════════════════╗\n║  ⚽ *LIVE FOOTBALL SCORES* (${matches.length} matches)\n╚══════════════════════════╝\n`
+        let chunks = [header]
         let currentLeague = ''
-        for (let _lm of shown) {
+        for (let _lm of matches) {
             if (_lm.league !== currentLeague) {
                 currentLeague = _lm.league
-                msg += `\n🏆 *${currentLeague}*\n`
+                chunks[chunks.length - 1] += `\n🏆 *${currentLeague}*\n`
             }
             let score = (_lm.homeScore !== undefined && _lm.awayScore !== undefined) ? `${_lm.homeScore} - ${_lm.awayScore}` : `vs`
-            msg += `  ⚽ ${_lm.homeTeam} *${score}* ${_lm.awayTeam}`
-            if (_lm.status && _lm.status !== 'Unknown') msg += ` _( ${_lm.status})_`
-            msg += '\n'
+            let line = `  ⚽ ${_lm.homeTeam} *${score}* ${_lm.awayTeam}`
+            if (_lm.status && _lm.status !== 'Unknown') line += ` _( ${_lm.status})_`
+            line += '\n'
+            // Split message if approaching WhatsApp's limit
+            if ((chunks[chunks.length - 1] + line).length > 58000) chunks.push(line)
+            else chunks[chunks.length - 1] += line
         }
-        if (matches.length > 20) msg += `\n_...and ${matches.length - 20} more matches today_`
-        await reply(msg)
+        for (let chunk of chunks) await reply(chunk)
     } catch(e) { reply('❌ Could not fetch live scores. Try again later.') }
 } break
 
@@ -8173,9 +8175,8 @@ case 'tips': {
         if (!d.success || !d.result) throw new Error('No data')
         let preds = Array.isArray(d.result) ? d.result : (d.result.items || [])
         if (preds.length === 0) return reply('🔮 No predictions available at the moment.')
-        let shown = preds.slice(0, 10)
-        let msg = `╔══════════════════════════╗\n║  🔮 *FOOTBALL PREDICTIONS*\n╚══════════════════════════╝\n`
-        for (let p of shown) {
+        let msg = `╔══════════════════════════╗\n║  🔮 *FOOTBALL PREDICTIONS* (${preds.length})\n╚══════════════════════════╝\n`
+        for (let p of preds) {
             msg += `\n🏆 *${p.league || 'Unknown League'}*\n`
             msg += `  ⚽ ${p.match}\n`
             if (p.time) msg += `  ⏰ ${p.time}\n`
@@ -8190,7 +8191,6 @@ case 'tips': {
                 msg += `  🎯 BTTS: ${p.predictions.bothTeamToScore.yes?.toFixed(0)}%\n`
             }
         }
-        if (preds.length > 10) msg += `\n_...and ${preds.length - 10} more predictions_`
         msg += `\n\n⚠️ _Predictions are for entertainment only. Bet responsibly._`
         await reply(msg)
     } catch(e) { reply('❌ Could not fetch predictions. Try again later.') }
@@ -8414,14 +8414,13 @@ case 'sportslive': {
         if (!d.success || !d.result) throw new Error('No data')
         let matches = d.result.matches || []
         if (!matches.length) return reply(`🏅 No live *${_sportCat}* events at the moment.\n\nTry: ${prefix}sportscategories to see all categories`)
-        let msg = `╔══════════════════════════╗\n║  🔴 *LIVE ${_sportCat.toUpperCase()}*\n╚══════════════════════════╝\n`
-        for (let ev of matches.slice(0, 15)) {
+        let msg = `╔══════════════════════════╗\n║  🔴 *LIVE ${_sportCat.toUpperCase()}* (${matches.length})\n╚══════════════════════════╝\n`
+        for (let ev of matches) {
             msg += `\n🔴 *${ev.homeTeam || ev.team1 || ''} vs ${ev.awayTeam || ev.team2 || ''}*\n`
             if (ev.league || ev.competition) msg += `   🏆 ${ev.league || ev.competition}\n`
             if (ev.time || ev.status) msg += `   ⏱️ ${ev.time || ev.status}\n`
             if (ev.id) msg += `   🆔 \`${ev.id}\`\n`
         }
-        if (matches.length > 15) msg += `\n_...and ${matches.length - 15} more live events_`
         await reply(msg)
     } catch(e) { reply(`❌ Could not fetch live ${_sportCat} events. Try: ${prefix}sportscategories`) }
 } break
@@ -8438,13 +8437,12 @@ case 'sportsall': {
         let matches = d.result.matches || d.result
         if (!Array.isArray(matches) || !matches.length) return reply(`🏅 No *${_sportCat2}* events found.\n\nTry: ${prefix}sportscategories to see all categories`)
         let msg = `╔══════════════════════════╗\n║  🏅 *ALL ${_sportCat2.toUpperCase()} EVENTS*\n╚══════════════════════════╝\n\n_Total: ${matches.length} events_\n`
-        for (let ev of matches.slice(0, 12)) {
+        for (let ev of matches) {
             msg += `\n⚽ *${ev.homeTeam || ev.team1 || ''} vs ${ev.awayTeam || ev.team2 || ''}*\n`
             if (ev.league || ev.competition) msg += `   🏆 ${ev.league || ev.competition}\n`
             if (ev.date || ev.time) msg += `   📅 ${ev.date || ''} ${ev.time || ''}\n`
             if (ev.id) msg += `   🆔 \`${ev.id}\`\n`
         }
-        if (matches.length > 12) msg += `\n_...and ${matches.length - 12} more events_`
         await reply(msg)
     } catch(e) { reply(`❌ Could not fetch ${_sportCat2} events. Try: ${prefix}sportscategories`) }
 } break
