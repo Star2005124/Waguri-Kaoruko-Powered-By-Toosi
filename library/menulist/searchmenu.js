@@ -14,6 +14,14 @@ const searchMenu = `
   ├ .otakudesu    › [query]
   ├ .kusonimeinfo › [query]
   ├ .kusonimesearch › [query]
-  └ .infogempa`
+  └ .infogempa
+
+╔══════════════════════════╗
+║  🎵  *MUSIC & LYRICS*
+╚══════════════════════════╝
+  ├ .lyrics    › [song - artist]
+  ├ .lyric     › [song name]
+  ├ .shazam    › reply audio
+  └ .weather   › [city]`
 
 module.exports = searchMenu
