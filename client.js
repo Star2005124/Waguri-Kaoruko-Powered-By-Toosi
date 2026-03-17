@@ -5701,175 +5701,189 @@ case 'video':
 case 'ytv': {
     await X.sendMessage(m.chat, { react: { text: '📺', key: m.key } })
 if (!text) return reply(`Example: ${prefix}${command} [youtube url or search query]`)
+let _vidTmp1 = null
 try {
-let url = text
-let title = text
+let url = text, title = text
 if (!text.match(/youtu/gi)) {
-let search = await yts(text)
-if (!search.all.length) return reply('No results found.')
-url = search.all[0].url
-title = search.all[0].title
+    let search = await yts(text)
+    if (!search.all.length) return reply('No results found.')
+    url = search.all[0].url; title = search.all[0].title
 }
-let downloaded = false
-let videoBuffer = null
+let videoUrl = null, videoPath = null
+// Method 1: GiftedTech API — direct 720p MP4 URL
 try {
-let initRes = await fetch(`https://loader.to/ajax/download.php?format=mp4&url=${encodeURIComponent(url)}`)
-let initData = await initRes.json()
-if (initData.success && initData.id) {
-    let attempts = 0
-    while (attempts < 40) {
-        await new Promise(r => setTimeout(r, 3000))
-        let progRes = await fetch(`https://loader.to/ajax/progress.php?id=${initData.id}`)
-        let progData = await progRes.json()
-        if (progData.success === 1 && progData.progress >= 1000 && progData.download_url) {
-            videoBuffer = await getBuffer(progData.download_url)
-            if (videoBuffer && videoBuffer.length > 10000) downloaded = true
-            break
+    let res = await fetch(`https://api.giftedtech.co.ke/api/download/savetubemp4?apikey=gifted&url=${encodeURIComponent(url)}`, { signal: AbortSignal.timeout(30000) })
+    let data = await res.json()
+    console.log('[video] giftedtech: success=', data.success)
+    if (data.success && data.result?.download_url) videoUrl = data.result.download_url
+} catch (e1) { console.log('[video] giftedtech:', e1.message) }
+// Method 2: loader.to — URL-based (no RAM buffer)
+if (!videoUrl && !videoPath) {
+    try {
+        let initData = await (await fetch(`https://loader.to/ajax/download.php?format=mp4&url=${encodeURIComponent(url)}`, { signal: AbortSignal.timeout(10000) })).json()
+        if (initData.success && initData.id) {
+            for (let i = 0; i < 40; i++) {
+                await new Promise(r => setTimeout(r, 3000))
+                let p = await (await fetch(`https://loader.to/ajax/progress.php?id=${initData.id}`)).json()
+                if (p.success === 1 && p.progress >= 1000 && p.download_url) { videoUrl = p.download_url; break }
+                if (p.progress < 0) break
+            }
         }
-        if (progData.progress < 0) break
-        attempts++
-    }
+    } catch (e2) { console.log('[video] loader.to:', e2.message) }
 }
-} catch (e1) { console.log('loader.to video failed:', e1.message) }
-if (!downloaded) {
+// Method 3: ytdl-core — stream to file (no RAM buffer)
+if (!videoUrl && !videoPath) {
     try {
         let ytdl = require('@distube/ytdl-core')
-        let info = await ytdl.getInfo(url)
+        let agent = ytdl.createAgent()
+        let info = await ytdl.getInfo(url, { agent })
         title = info.videoDetails.title
         let format = ytdl.chooseFormat(info.formats, { quality: 'highest', filter: 'videoandaudio' })
         if (format) {
-            let chunks = []
+            let tmpDir = path.join(__dirname, 'tmp')
+            if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true })
+            _vidTmp1 = path.join(tmpDir, `vid_${Date.now()}.mp4`)
             await new Promise((resolve, reject) => {
-                let stream = ytdl(url, { format })
-                stream.on('data', c => chunks.push(c))
-                stream.on('end', resolve)
-                stream.on('error', reject)
-                setTimeout(() => { stream.destroy(); reject(new Error('timeout')) }, 180000)
+                let ws = fs.createWriteStream(_vidTmp1)
+                let ys = ytdl(url, { format, agent })
+                ys.pipe(ws); ws.on('finish', resolve); ws.on('error', reject); ys.on('error', reject)
+                setTimeout(() => { ys.destroy(); reject(new Error('timeout')) }, 300000)
             })
-            videoBuffer = Buffer.concat(chunks)
-            if (videoBuffer.length > 10000) downloaded = true
+            if (fs.existsSync(_vidTmp1) && fs.statSync(_vidTmp1).size > 10000) videoPath = _vidTmp1
         }
-    } catch (e2) { console.log('ytdl-core video failed:', e2.message) }
+    } catch (e3) { console.log('[video] ytdl-core:', e3.message) }
 }
-if (downloaded && videoBuffer) {
-    await X.sendMessage(m.chat, { video: videoBuffer, caption: `*${title}*\n\n${global.packname}`, mimetype: 'video/mp4' }, { quoted: m })
+if (videoUrl || videoPath) {
+    let src = videoUrl ? { url: videoUrl } : { url: `file://${videoPath}` }
+    await X.sendMessage(m.chat, { video: src, caption: `*${title}*\n\n${global.packname}`, mimetype: 'video/mp4' }, { quoted: m })
 } else {
     reply('⚠️ Video download failed. Please try again later.')
 }
 } catch(e) { reply('Error: ' + e.message) }
+finally { if (_vidTmp1 && fs.existsSync(_vidTmp1)) try { fs.unlinkSync(_vidTmp1) } catch {} }
 } break
 
 case 'ytdocplay': {
     await X.sendMessage(m.chat, { react: { text: '🎵', key: m.key } })
 if (!text) return reply(`Example: ${prefix}ytdocplay [search query]`)
+let _ytdocTmp = null
 try {
 let search = await yts(text)
 if (!search.all.length) return reply('No results found.')
 let vid = search.all.find(v => v.type === 'video') || search.all[0]
-let downloaded = false
-let audioBuffer = null
+let audioUrl = null, audioPath = null
+// Method 1: GiftedTech API
 try {
-let initRes = await fetch(`https://loader.to/ajax/download.php?format=mp3&url=${encodeURIComponent(vid.url)}`)
-let initData = await initRes.json()
-if (initData.success && initData.id) {
-    let attempts = 0
-    while (attempts < 30) {
-        await new Promise(r => setTimeout(r, 3000))
-        let progRes = await fetch(`https://loader.to/ajax/progress.php?id=${initData.id}`)
-        let progData = await progRes.json()
-        if (progData.success === 1 && progData.progress >= 1000 && progData.download_url) {
-            audioBuffer = await getBuffer(progData.download_url)
-            if (audioBuffer && audioBuffer.length > 10000) downloaded = true
-            break
+    let res = await fetch(`https://api.giftedtech.co.ke/api/download/ytaudio?apikey=gifted&url=${encodeURIComponent(vid.url)}`, { signal: AbortSignal.timeout(30000) })
+    let data = await res.json()
+    if (data.success && data.result?.download_url) audioUrl = data.result.download_url
+} catch (e1) { console.log('[ytdocplay] giftedtech:', e1.message) }
+// Method 2: loader.to
+if (!audioUrl && !audioPath) {
+    try {
+        let initData = await (await fetch(`https://loader.to/ajax/download.php?format=mp3-128&url=${encodeURIComponent(vid.url)}`, { signal: AbortSignal.timeout(10000) })).json()
+        if (initData.success && initData.id) {
+            for (let i = 0; i < 30; i++) {
+                await new Promise(r => setTimeout(r, 3000))
+                let p = await (await fetch(`https://loader.to/ajax/progress.php?id=${initData.id}`)).json()
+                if (p.success === 1 && p.progress >= 1000 && p.download_url) { audioUrl = p.download_url; break }
+                if (p.progress < 0) break
+            }
         }
-        if (progData.progress < 0) break
-        attempts++
-    }
+    } catch (e2) { console.log('[ytdocplay] loader.to:', e2.message) }
 }
-} catch (e1) { console.log('loader.to ytdocplay failed:', e1.message) }
-if (!downloaded) {
+// Method 3: ytdl-core — stream to file
+if (!audioUrl && !audioPath) {
     try {
         let ytdl = require('@distube/ytdl-core')
-        let info = await ytdl.getInfo(vid.url)
+        let agent = ytdl.createAgent()
+        let info = await ytdl.getInfo(vid.url, { agent })
         let format = ytdl.chooseFormat(info.formats, { quality: 'highestaudio', filter: 'audioonly' })
         if (!format) format = ytdl.chooseFormat(info.formats, { filter: f => f.hasAudio })
         if (format) {
-            let chunks = []
+            let tmpDir = path.join(__dirname, 'tmp')
+            if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true })
+            _ytdocTmp = path.join(tmpDir, `ytdoc_${Date.now()}.mp3`)
             await new Promise((resolve, reject) => {
-                let stream = ytdl(vid.url, { format })
-                stream.on('data', c => chunks.push(c))
-                stream.on('end', resolve)
-                stream.on('error', reject)
-                setTimeout(() => { stream.destroy(); reject(new Error('timeout')) }, 120000)
+                let ws = fs.createWriteStream(_ytdocTmp)
+                let ys = ytdl(vid.url, { format, agent })
+                ys.pipe(ws); ws.on('finish', resolve); ws.on('error', reject); ys.on('error', reject)
+                setTimeout(() => { ys.destroy(); reject(new Error('timeout')) }, 300000)
             })
-            audioBuffer = Buffer.concat(chunks)
-            if (audioBuffer.length > 10000) downloaded = true
+            if (fs.existsSync(_ytdocTmp) && fs.statSync(_ytdocTmp).size > 10000) audioPath = _ytdocTmp
         }
-    } catch (e2) { console.log('ytdl-core ytdocplay failed:', e2.message) }
+    } catch (e3) { console.log('[ytdocplay] ytdl-core:', e3.message) }
 }
-if (downloaded && audioBuffer) {
+if (audioUrl || audioPath) {
     let cleanName = `${vid.author?.name || 'Unknown'} - ${vid.title}.mp3`.replace(/[<>:"/\\|?*]/g, '')
-    await X.sendMessage(m.chat, { document: audioBuffer, mimetype: 'audio/mpeg', fileName: cleanName }, { quoted: m })
+    let src = audioUrl ? { url: audioUrl } : { url: `file://${audioPath}` }
+    await X.sendMessage(m.chat, { document: src, mimetype: 'audio/mpeg', fileName: cleanName }, { quoted: m })
 } else {
     reply('⚠️ Audio download failed. Please try again later.')
 }
 } catch(e) { reply('Error: ' + e.message) }
+finally { if (_ytdocTmp && fs.existsSync(_ytdocTmp)) try { fs.unlinkSync(_ytdocTmp) } catch {} }
 } break
 
 case 'ytdocvideo': {
     await X.sendMessage(m.chat, { react: { text: '📺', key: m.key } })
 if (!text) return reply(`Example: ${prefix}ytdocvideo [search query]`)
+let _ytdocvTmp = null
 try {
 let search = await yts(text)
 if (!search.all.length) return reply('No results found.')
 let vid = search.all.find(v => v.type === 'video') || search.all[0]
-let downloaded = false
-let videoBuffer = null
+let videoUrl = null, videoPath = null
+// Method 1: GiftedTech API
 try {
-let initRes = await fetch(`https://loader.to/ajax/download.php?format=mp4&url=${encodeURIComponent(vid.url)}`)
-let initData = await initRes.json()
-if (initData.success && initData.id) {
-    let attempts = 0
-    while (attempts < 40) {
-        await new Promise(r => setTimeout(r, 3000))
-        let progRes = await fetch(`https://loader.to/ajax/progress.php?id=${initData.id}`)
-        let progData = await progRes.json()
-        if (progData.success === 1 && progData.progress >= 1000 && progData.download_url) {
-            videoBuffer = await getBuffer(progData.download_url)
-            if (videoBuffer && videoBuffer.length > 10000) downloaded = true
-            break
+    let res = await fetch(`https://api.giftedtech.co.ke/api/download/savetubemp4?apikey=gifted&url=${encodeURIComponent(vid.url)}`, { signal: AbortSignal.timeout(30000) })
+    let data = await res.json()
+    if (data.success && data.result?.download_url) videoUrl = data.result.download_url
+} catch (e1) { console.log('[ytdocvideo] giftedtech:', e1.message) }
+// Method 2: loader.to
+if (!videoUrl && !videoPath) {
+    try {
+        let initData = await (await fetch(`https://loader.to/ajax/download.php?format=mp4&url=${encodeURIComponent(vid.url)}`, { signal: AbortSignal.timeout(10000) })).json()
+        if (initData.success && initData.id) {
+            for (let i = 0; i < 40; i++) {
+                await new Promise(r => setTimeout(r, 3000))
+                let p = await (await fetch(`https://loader.to/ajax/progress.php?id=${initData.id}`)).json()
+                if (p.success === 1 && p.progress >= 1000 && p.download_url) { videoUrl = p.download_url; break }
+                if (p.progress < 0) break
+            }
         }
-        if (progData.progress < 0) break
-        attempts++
-    }
+    } catch (e2) { console.log('[ytdocvideo] loader.to:', e2.message) }
 }
-} catch (e1) { console.log('loader.to ytdocvideo failed:', e1.message) }
-if (!downloaded) {
+// Method 3: ytdl-core — stream to file
+if (!videoUrl && !videoPath) {
     try {
         let ytdl = require('@distube/ytdl-core')
-        let info = await ytdl.getInfo(vid.url)
+        let agent = ytdl.createAgent()
+        let info = await ytdl.getInfo(vid.url, { agent })
         let format = ytdl.chooseFormat(info.formats, { quality: 'highest', filter: 'videoandaudio' })
         if (format) {
-            let chunks = []
+            let tmpDir = path.join(__dirname, 'tmp')
+            if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true })
+            _ytdocvTmp = path.join(tmpDir, `ytdocv_${Date.now()}.mp4`)
             await new Promise((resolve, reject) => {
-                let stream = ytdl(vid.url, { format })
-                stream.on('data', c => chunks.push(c))
-                stream.on('end', resolve)
-                stream.on('error', reject)
-                setTimeout(() => { stream.destroy(); reject(new Error('timeout')) }, 180000)
+                let ws = fs.createWriteStream(_ytdocvTmp)
+                let ys = ytdl(vid.url, { format, agent })
+                ys.pipe(ws); ws.on('finish', resolve); ws.on('error', reject); ys.on('error', reject)
+                setTimeout(() => { ys.destroy(); reject(new Error('timeout')) }, 300000)
             })
-            videoBuffer = Buffer.concat(chunks)
-            if (videoBuffer.length > 10000) downloaded = true
+            if (fs.existsSync(_ytdocvTmp) && fs.statSync(_ytdocvTmp).size > 10000) videoPath = _ytdocvTmp
         }
-    } catch (e2) { console.log('ytdl-core ytdocvideo failed:', e2.message) }
+    } catch (e3) { console.log('[ytdocvideo] ytdl-core:', e3.message) }
 }
-if (downloaded && videoBuffer) {
+if (videoUrl || videoPath) {
     let cleanName = `${vid.title}.mp4`.replace(/[<>:"/\\|?*]/g, '')
-    await X.sendMessage(m.chat, { document: videoBuffer, mimetype: 'video/mp4', fileName: cleanName }, { quoted: m })
+    let src = videoUrl ? { url: videoUrl } : { url: `file://${videoPath}` }
+    await X.sendMessage(m.chat, { document: src, mimetype: 'video/mp4', fileName: cleanName }, { quoted: m })
 } else {
     reply('⚠️ Video download failed. Please try again later.')
 }
 } catch(e) { reply('Error: ' + e.message) }
+finally { if (_ytdocvTmp && fs.existsSync(_ytdocvTmp)) try { fs.unlinkSync(_ytdocvTmp) } catch {} }
 } break
 
 case 'spotify': {
