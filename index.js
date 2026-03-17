@@ -506,6 +506,45 @@ if (!X.authState.creds.registered) {
 
 store.bind(X.ev)
 
+// ── Mirror the store's internal message Maps into _adCache ──────────────────
+// The store RELIABLY stores every message via chatMsgs.set(id, msg) BEFORE our
+// ev.on listeners run. We intercept those inner Map.set calls so _adCache gets
+// every message the store sees, including ones that arrive with null content first.
+const _mirrorMsgToCache = (msgId, msg, fallbackJid) => {
+    if (!msgId || !msg || msg.key?.remoteJid === 'status@broadcast') return
+    if (!msg.message) return  // skip null-content entries (can't show content anyway)
+    const _ex = global._adCache?.get(msgId)
+    if (_ex?.msg?.message) return  // already have good data
+    global._adCache?.set(msgId, {
+        msg,
+        chatJid: msg.key?.remoteJid || fallbackJid,
+        ts: _ex?.ts || Date.now()
+    })
+}
+
+const _wrapChatMap = (jid, chatMap) => {
+    if (!chatMap || chatMap.__adWrapped) return
+    chatMap.__adWrapped = true
+    const _origSet = chatMap.set.bind(chatMap)
+    chatMap.set = function(msgId, msg) {
+        _mirrorMsgToCache(msgId, msg, jid)
+        return _origSet(msgId, msg)
+    }
+}
+
+// Wrap all existing chat Maps that the store already created during history sync
+for (const [jid, chatMap] of store.messages) _wrapChatMap(jid, chatMap)
+
+// Intercept outer store.messages.set so NEW chat Maps also get wrapped
+const _origStoreMessagesSet = store.messages.set.bind(store.messages)
+store.messages.set = function(jid, chatMap) {
+    const result = _origStoreMessagesSet(jid, chatMap)
+    // After it's set, wrap the new Map
+    const _actual = store.messages.get(jid)
+    if (_actual instanceof Map) _wrapChatMap(jid, _actual)
+    return result
+}
+
 //━━━━━━━━━━━━━━━━━━━━━━━━//
 // Anti-Delete Message Cache — DISK PERSISTENT
 // Survives bot restarts / 401 reconnections.
