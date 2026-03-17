@@ -1534,10 +1534,14 @@ X.ev.on('messages.update', async (updates) => {
 
             let chat      = update.key.remoteJid
             let senderJid = update.key.participant || update.key.remoteJid
-            let msgId     = update.key.id
 
             // Skip status@broadcast — those are story deletions, not chat deletions
             if (!chat || chat === 'status@broadcast') continue
+
+            // The deleted message ID may be in messageStubParameters[0] (the original msg)
+            // update.key.id is the REVOKE notification's own ID — different from the deleted msg
+            const _stubParams = update.update?.messageStubParameters || []
+            const msgId = _stubParams[0] || update.key.id
 
             // Resolve @lid JIDs
             let resolvedSender = _resolveJid(senderJid)
@@ -1575,8 +1579,13 @@ X.ev.on('messages.update', async (updates) => {
                 let deletedMsg = null
 
                 // ── Priority 1: our own anti-delete cache (never wiped by deletion events)
-                const _cached = global._adCache?.get(msgId)
+                // Try both: messageStubParameters[0] AND update.key.id — different Baileys
+                // versions put the deleted-message ID in different places
+                const _altId  = _stubParams[0] !== update.key.id ? update.key.id : null
+                let _cached   = global._adCache?.get(msgId)
+                if (!_cached && _altId) _cached = global._adCache?.get(_altId)
                 if (_cached?.msg?.message) deletedMsg = _cached.msg
+                if (global._adCache) console.log(`[Anti-Delete] cache size=${global._adCache.size} | msgId=${msgId} | altId=${_altId} | found=${!!deletedMsg}`)
 
                 // ── Priority 2: store lookup with multiple JID key variants
                 if (!deletedMsg) {
@@ -1593,10 +1602,12 @@ X.ev.on('messages.update', async (updates) => {
                             : store.messages[_k]
                         if (!_cm) continue
                         if (typeof _cm.get === 'function') {
-                            deletedMsg = _cm.get(msgId) || null
+                            deletedMsg = _cm.get(msgId) || (_altId ? _cm.get(_altId) : null) || null
                         } else if (typeof _cm[Symbol.iterator] === 'function') {
                             for (const [, _m] of _cm) {
-                                if (_m?.key?.id === msgId) { deletedMsg = _m; break }
+                                if (_m?.key?.id === msgId || (_altId && _m?.key?.id === _altId)) {
+                                    deletedMsg = _m; break
+                                }
                             }
                         }
                     }
@@ -1607,6 +1618,7 @@ X.ev.on('messages.update', async (updates) => {
                     for (const _k of [chat, resolvedChat].filter(Boolean)) {
                         try {
                             deletedMsg = await store.loadMessage(_k, msgId) || null
+                            if (!deletedMsg && _altId) deletedMsg = await store.loadMessage(_k, _altId) || null
                             if (deletedMsg) break
                         } catch (_) {}
                     }
