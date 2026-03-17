@@ -1473,7 +1473,7 @@ _Please read the group rules and enjoy your stay._ 😊`
                     })
                 }
 
-                if (global.welcome && anu.action === 'remove') {
+                if ((global.goodbye ?? global.welcome) && anu.action === 'remove') {
                     let goodbyeBody =
 `┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃       👋 *GOODBYE!*
