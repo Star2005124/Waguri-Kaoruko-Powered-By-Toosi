@@ -957,7 +957,7 @@ break
 case 'menu': {
     await X.sendMessage(m.chat, { react: { text: '📋', key: m.key } })
 // menu list - clear cache to always load fresh
-const menuFiles = ['aimenu','toolsmenu','groupmenu','ownermenu','searchmenu','gamemenu','stickermenu','othermenu','downloadermenu'];
+const menuFiles = ['aimenu','toolsmenu','groupmenu','ownermenu','searchmenu','gamemenu','stickermenu','othermenu','downloadermenu','footballmenu'];
 menuFiles.forEach(f => { try { delete require.cache[require.resolve('./library/menulist/' + f)]; } catch {} });
 const aiMenu = require('./library/menulist/aimenu');
 const toolsMenu = require('./library/menulist/toolsmenu');
@@ -968,6 +968,7 @@ const gameMenu = require('./library/menulist/gamemenu');
 const stickerMenu = require('./library/menulist/stickermenu');
 const otherMenu = require('./library/menulist/othermenu');
 const downloaderMenu = require('./library/menulist/downloadermenu');
+const footballMenu = require('./library/menulist/footballmenu');
 const textmakerMenu = `
 ╔══════════════════════════╗
 ║  ✨  *TEXT EFFECTS*
@@ -1038,6 +1039,7 @@ const textmakerMenu = `
   else if (subcmd === 'other') menu = otherMenu;    
   else if (subcmd === 'downloader') menu = downloaderMenu;
   else if (subcmd === 'textmaker') menu = textmakerMenu;
+  else if (subcmd === 'football' || subcmd === 'sports') menu = footballMenu;
   else if (subcmd === 'all') {
     menu = [
       otherMenu,
@@ -1049,6 +1051,7 @@ const textmakerMenu = `
       gameMenu,
       searchMenu,
       aiMenu,
+      footballMenu,
       textmakerMenu
     ].join('\n');
   } else {
@@ -1062,6 +1065,7 @@ const textmakerMenu = `
       gameMenu,
       searchMenu,
       aiMenu,
+      footballMenu,
       textmakerMenu
     ].join('\n');
   }
@@ -8283,6 +8287,125 @@ case 'laligaupcoming': {
         }
         await reply(msg)
     } catch(e) { reply('❌ Could not fetch La Liga fixtures. Try again later.') }
+} break
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 🏅  SPORTS — LIVE, ALL, CATEGORIES, STREAM
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+case 'sportscategories':
+case 'sportcategories':
+case 'sportcat': {
+    await X.sendMessage(m.chat, { react: { text: '🏅', key: m.key } })
+    try {
+        let r = await fetch(`https://api.giftedtech.co.ke/api/sports/categories?apikey=gifted`, { signal: AbortSignal.timeout(15000) })
+        let d = await r.json()
+        if (!d.success || !d.result) throw new Error('No data')
+        let cats = Array.isArray(d.result) ? d.result : []
+        let msg = `╔══════════════════════════╗\n║  🏅 *SPORTS CATEGORIES*\n╚══════════════════════════╝\n\n`
+        for (let c of cats) {
+            let icon = { football: '⚽', basketball: '🏀', tennis: '🎾', cricket: '🏏', baseball: '⚾', hockey: '🏒', rugby: '🏉', volleyball: '🏐', 'motor-sports': '🏎️', boxing: '🥊', mma: '🥋' }[c.category] || '🏅'
+            msg += `  ${icon} *${c.category}* — ${c.matchCount} matches\n`
+        }
+        msg += `\n_Use ${prefix}livesports [category] to see live events_\n_Use ${prefix}allsports [category] to see all events_`
+        await reply(msg)
+    } catch(e) { reply('❌ Could not fetch sports categories. Try again later.') }
+} break
+
+case 'livesports':
+case 'sportslive': {
+    await X.sendMessage(m.chat, { react: { text: '🏅', key: m.key } })
+    let _sportCat = text?.toLowerCase().trim() || 'football'
+    try {
+        await reply(`🏅 _Fetching live ${_sportCat} events..._`)
+        let r = await fetch(`https://api.giftedtech.co.ke/api/sports/live?apikey=gifted&category=${encodeURIComponent(_sportCat)}`, { signal: AbortSignal.timeout(20000) })
+        let d = await r.json()
+        if (!d.success || !d.result) throw new Error('No data')
+        let matches = d.result.matches || []
+        if (!matches.length) return reply(`🏅 No live *${_sportCat}* events at the moment.\n\nTry: ${prefix}sportscategories to see all categories`)
+        let msg = `╔══════════════════════════╗\n║  🔴 *LIVE ${_sportCat.toUpperCase()}*\n╚══════════════════════════╝\n`
+        for (let ev of matches.slice(0, 15)) {
+            msg += `\n🔴 *${ev.homeTeam || ev.team1 || ''} vs ${ev.awayTeam || ev.team2 || ''}*\n`
+            if (ev.league || ev.competition) msg += `   🏆 ${ev.league || ev.competition}\n`
+            if (ev.time || ev.status) msg += `   ⏱️ ${ev.time || ev.status}\n`
+            if (ev.id) msg += `   🆔 \`${ev.id}\`\n`
+        }
+        if (matches.length > 15) msg += `\n_...and ${matches.length - 15} more live events_`
+        await reply(msg)
+    } catch(e) { reply(`❌ Could not fetch live ${_sportCat} events. Try: ${prefix}sportscategories`) }
+} break
+
+case 'allsports':
+case 'sportsall': {
+    await X.sendMessage(m.chat, { react: { text: '🏅', key: m.key } })
+    let _sportCat2 = text?.toLowerCase().trim() || 'football'
+    try {
+        await reply(`🏅 _Fetching all ${_sportCat2} events..._`)
+        let r = await fetch(`https://api.giftedtech.co.ke/api/sports/all?apikey=gifted&category=${encodeURIComponent(_sportCat2)}`, { signal: AbortSignal.timeout(20000) })
+        let d = await r.json()
+        if (!d.success || !d.result) throw new Error('No data')
+        let matches = d.result.matches || d.result
+        if (!Array.isArray(matches) || !matches.length) return reply(`🏅 No *${_sportCat2}* events found.\n\nTry: ${prefix}sportscategories to see all categories`)
+        let msg = `╔══════════════════════════╗\n║  🏅 *ALL ${_sportCat2.toUpperCase()} EVENTS*\n╚══════════════════════════╝\n\n_Total: ${matches.length} events_\n`
+        for (let ev of matches.slice(0, 12)) {
+            msg += `\n⚽ *${ev.homeTeam || ev.team1 || ''} vs ${ev.awayTeam || ev.team2 || ''}*\n`
+            if (ev.league || ev.competition) msg += `   🏆 ${ev.league || ev.competition}\n`
+            if (ev.date || ev.time) msg += `   📅 ${ev.date || ''} ${ev.time || ''}\n`
+            if (ev.id) msg += `   🆔 \`${ev.id}\`\n`
+        }
+        if (matches.length > 12) msg += `\n_...and ${matches.length - 12} more events_`
+        await reply(msg)
+    } catch(e) { reply(`❌ Could not fetch ${_sportCat2} events. Try: ${prefix}sportscategories`) }
+} break
+
+case 'watchsport':
+case 'streamsport':
+case 'sportsstream': {
+    await X.sendMessage(m.chat, { react: { text: '📺', key: m.key } })
+    if (!text) return reply(`📺 *Stream a Sport Event*\n\nUsage: *${prefix}watchsport [event-id]*\n\nFirst use *${prefix}allsports [category]* to get event IDs\n\nExample:\n${prefix}allsports football\n${prefix}watchsport motor-lublin-vs-korona-kielce-football-1380587`)
+    try {
+        await reply('📺 _Fetching stream link..._')
+        let r = await fetch(`https://api.giftedtech.co.ke/api/sports/stream?apikey=gifted&source=echo&id=${encodeURIComponent(text.trim())}`, { signal: AbortSignal.timeout(25000) })
+        let d = await r.json()
+        if (!d.success || !d.result) throw new Error('No stream found')
+        let streamData = d.result
+        let streamUrl = typeof streamData === 'string' ? streamData : (streamData.url || streamData.stream_url || streamData.link || JSON.stringify(streamData))
+        let msg = `╔══════════════════════════╗\n║  📺 *SPORT STREAM LINK*\n╚══════════════════════════╝\n\n`
+        msg += `🆔 *Event ID:* ${text.trim()}\n`
+        msg += `🔗 *Stream URL:*\n${streamUrl}\n\n`
+        msg += `_Note: Open the link in a browser to watch the stream._`
+        await reply(msg)
+    } catch(e) { reply(`❌ Could not find stream for event *${text}*.\n\nMake sure you are using the correct event ID from ${prefix}allsports`) }
+} break
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 🖼️  TEXTPRO — IMAGE TEXT EFFECTS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+case 'xmascard':
+case 'xmas3d':
+case 'christmascard': {
+    await X.sendMessage(m.chat, { react: { text: '🎄', key: m.key } })
+    if (!text) return reply(`🎄 *Christmas Card Generator*\n\nUsage: *${prefix}xmascard [your text]*\nExample: ${prefix}xmascard Merry Christmas`)
+    try {
+        await reply('🎄 _Generating your Christmas card..._')
+        let r = await fetch(`https://api.giftedtech.co.ke/api/textpro/xmasCard3d?apikey=gifted&text=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(30000) })
+        let d = await r.json()
+        if (!d.success || !d.result?.image_url) throw new Error('Generation failed')
+        await X.sendMessage(m.chat, { image: { url: d.result.image_url }, caption: `🎄 *Christmas Card*\n✏️ _${text}_` }, { quoted: m })
+    } catch(e) { reply('❌ Could not generate Christmas card. Try a shorter text.') }
+} break
+
+case 'robottext':
+case 'r2d2':
+case 'robotwrite': {
+    await X.sendMessage(m.chat, { react: { text: '🤖', key: m.key } })
+    if (!text) return reply(`🤖 *Robot Text Generator*\n\nUsage: *${prefix}robottext [your text]*\nExample: ${prefix}robottext Hello World`)
+    try {
+        await reply('🤖 _Generating your robot text..._')
+        let r = await fetch(`https://api.giftedtech.co.ke/api/textpro/robotR2d2?apikey=gifted&text=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(30000) })
+        let d = await r.json()
+        if (!d.success || !d.result?.image_url) throw new Error('Generation failed')
+        await X.sendMessage(m.chat, { image: { url: d.result.image_url }, caption: `🤖 *Robot Text — R2D2 Style*\n✏️ _${text}_` }, { quoted: m })
+    } catch(e) { reply('❌ Could not generate robot text. Try a shorter text.') }
 } break
 
 //━━━━━━━━━━━━━━━━━━━━━━━━//
