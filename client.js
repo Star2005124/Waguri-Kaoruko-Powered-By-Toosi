@@ -1244,8 +1244,6 @@ case 'ytplay': {
         let videoAuthor = firstVideo.author?.name || firstVideo.author || 'Unknown Artist'
         let cleanName   = `${videoAuthor} - ${videoTitle}.mp3`.replace(/[<>:"/\\|?*]/g, '')
 
-        await reply(`🔍 _Searching: *${videoTitle}*_ (${firstVideo.timestamp})\n_Please wait..._`)
-
         let downloaded = false
         let audioBuffer = null
 
@@ -1327,12 +1325,15 @@ case 'ytplay': {
             let thumbBuffer = null
             try { thumbBuffer = await getBuffer(firstVideo.thumbnail) } catch {}
             let songInfo = `🎵 *Now Playing*\n\n📌 *Title:*  ${videoTitle}\n🎤 *Artist:* ${videoAuthor}\n⏱️ *Duration:* ${firstVideo.timestamp}\n👁️ *Views:* ${firstVideo.views?.toLocaleString?.() || firstVideo.views}`
-            if (thumbBuffer) {
-                await X.sendMessage(m.chat, { image: thumbBuffer, caption: songInfo }, { quoted: m })
-            } else {
-                await X.sendMessage(m.chat, { text: songInfo }, { quoted: m })
+            // Send everything in one message: thumbnail as preview + song info as caption + audio as document
+            let msgPayload = {
+                document: audioBuffer,
+                mimetype: 'audio/mpeg',
+                fileName: cleanName,
+                caption: songInfo
             }
-            await X.sendMessage(m.chat, { audio: audioBuffer, mimetype: 'audio/mpeg', ptt: false, fileName: cleanName }, { quoted: m })
+            if (thumbBuffer) msgPayload.jpegThumbnail = thumbBuffer
+            await X.sendMessage(m.chat, msgPayload, { quoted: m })
             audioBuffer = null  // release memory immediately
         } else {
             reply(`🎵 *${videoTitle}*\nArtist: ${videoAuthor}\nDuration: ${firstVideo.timestamp}\n\n⚠️ Audio download failed. Please try again later.`)
