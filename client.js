@@ -1248,30 +1248,63 @@ case 'ytplay': {
         // audioPath = local file path   (no readFileSync — baileys reads via file:// URL)
         let audioUrl = null, audioPath = null
 
-        // Helper: poll loader.to with a given format, return download URL or null
-        const _loaderTo = async (fmt) => {
-            try {
-                let initRes = await fetch(`https://loader.to/ajax/download.php?format=${fmt}&url=${encodeURIComponent(firstVideo.url)}`)
-                let initData = await initRes.json()
-                if (!initData.success || !initData.id) return null
-                let dlId = initData.id
-                for (let i = 0; i < 20; i++) {
-                    await new Promise(r => setTimeout(r, 3000))
-                    let progData = await (await fetch(`https://loader.to/ajax/progress.php?id=${dlId}`)).json()
-                    if (progData.success === 1 && progData.progress >= 1000 && progData.download_url) return progData.download_url
-                    if (progData.progress < 0) break
-                }
-            } catch {}
-            return null
+        // Extract video ID helper
+        const _getVideoId = (url) => {
+            let m = url.match(/(?:v=|youtu\.be\/|embed\/|shorts\/)([A-Za-z0-9_-]{11})/)
+            return m ? m[1] : null
         }
 
-        // Method 1: loader.to — 128kbps only, if it fails move on (no 320kbps fallback)
-        try {
-            audioUrl = await _loaderTo('mp3-128')
-            if (audioUrl) console.log('[play] loader.to: success')
-        } catch (e1) { console.log('[play] loader.to:', e1.message) }
+        // Method 1: YouTube InnerTube API — direct stream URL, no external service needed
+        if (!audioUrl && !audioPath) {
+            try {
+                let videoId = _getVideoId(firstVideo.url)
+                if (!videoId) throw new Error('no video id')
+                let itRes = await fetch('https://www.youtube.com/youtubei/v1/player?key=AIzaSyB-63vPrdThhKuerbB2N_l7Kwwcxj6yUAc', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'User-Agent': 'com.google.android.youtube/17.31.35 (Linux; U; Android 11) gzip' },
+                    body: JSON.stringify({
+                        videoId,
+                        context: { client: { clientName: 'ANDROID', clientVersion: '17.31.35', androidSdkVersion: 30, hl: 'en', gl: 'US' } }
+                    }),
+                    signal: AbortSignal.timeout(20000)
+                })
+                let itData = await itRes.json()
+                let fmts = [...(itData.streamingData?.adaptiveFormats || []), ...(itData.streamingData?.formats || [])]
+                let audioFmts = fmts.filter(f => f.mimeType?.startsWith('audio/') && f.url)
+                // Pick closest to 128kbps
+                audioFmts.sort((a, b) => Math.abs((a.bitrate || 0) - 128000) - Math.abs((b.bitrate || 0) - 128000))
+                if (audioFmts[0]?.url) {
+                    audioUrl = audioFmts[0].url
+                    console.log('[play] innertube: success bitrate=', audioFmts[0].bitrate)
+                } else {
+                    console.log('[play] innertube: no url in response, status=', itData.playabilityStatus?.status)
+                }
+            } catch (e1) { console.log('[play] innertube:', e1.message) }
+        }
 
-        // Method 2: cobalt.tools — reliable API, returns stream URL directly
+        // Method 2: loader.to — 128kbps mp3
+        if (!audioUrl && !audioPath) {
+            try {
+                let initRes = await fetch(`https://loader.to/ajax/download.php?format=mp3-128&url=${encodeURIComponent(firstVideo.url)}`, { signal: AbortSignal.timeout(10000) })
+                let initData = await initRes.json()
+                console.log('[play] loader.to init:', JSON.stringify(initData).slice(0, 100))
+                if (initData.success && initData.id) {
+                    let dlId = initData.id
+                    for (let i = 0; i < 20; i++) {
+                        await new Promise(r => setTimeout(r, 3000))
+                        let progData = await (await fetch(`https://loader.to/ajax/progress.php?id=${dlId}`)).json()
+                        if (progData.success === 1 && progData.progress >= 1000 && progData.download_url) {
+                            audioUrl = progData.download_url
+                            console.log('[play] loader.to: success')
+                            break
+                        }
+                        if (progData.progress < 0) { console.log('[play] loader.to: progress failed'); break }
+                    }
+                }
+            } catch (e2) { console.log('[play] loader.to:', e2.message) }
+        }
+
+        // Method 3: cobalt.tools — audio stream URL
         if (!audioUrl && !audioPath) {
             try {
                 let cobaltRes = await fetch('https://api.cobalt.tools/', {
@@ -1281,28 +1314,28 @@ case 'ytplay': {
                     signal: AbortSignal.timeout(30000)
                 })
                 let cobaltData = await cobaltRes.json()
+                console.log('[play] cobalt.tools response:', JSON.stringify(cobaltData).slice(0, 150))
                 if ((cobaltData.status === 'tunnel' || cobaltData.status === 'redirect') && cobaltData.url) {
                     audioUrl = cobaltData.url
                     console.log('[play] cobalt.tools: success')
                 }
-            } catch (e2) { console.log('[play] cobalt.tools:', e2.message) }
+            } catch (e3) { console.log('[play] cobalt.tools:', e3.message) }
         }
 
-        // Method 3: fabdl.com — pure HTTP, no binary needed, works on all platforms
+        // Method 4: fabdl.com — pure HTTP API
         if (!audioUrl && !audioPath) {
             try {
-                let fabRes = await fetch(`https://api.fabdl.com/youtube/mp3?url=${encodeURIComponent(firstVideo.url)}`, {
-                    signal: AbortSignal.timeout(30000)
-                })
+                let fabRes = await fetch(`https://api.fabdl.com/youtube/mp3?url=${encodeURIComponent(firstVideo.url)}`, { signal: AbortSignal.timeout(30000) })
                 let fabData = await fabRes.json()
+                console.log('[play] fabdl response:', JSON.stringify(fabData).slice(0, 150))
                 if (fabData.status === 'ok' && fabData.dl_url) {
                     audioUrl = fabData.dl_url
                     console.log('[play] fabdl: success')
                 }
-            } catch (e3) { console.log('[play] fabdl:', e3.message) }
+            } catch (e4) { console.log('[play] fabdl:', e4.message) }
         }
 
-        // Method 4: ytdl-core — stream direct to tmp file (avoids bot check better with agent)
+        // Method 5: ytdl-core with agent
         if (!audioUrl && !audioPath) {
             try {
                 const ytdl = require('@distube/ytdl-core')
@@ -1331,17 +1364,16 @@ case 'ytplay': {
                         console.log('[play] ytdl-core: success')
                     }
                 }
-            } catch (e3) { console.log('[play] ytdl-core:', e3.message) }
+            } catch (e5) { console.log('[play] ytdl-core:', e5.message) }
         }
 
-        // Method 5: yt-dlp — only if installed on the system (skips silently if not found)
+        // Method 6: yt-dlp — only if installed on the system (skips silently if not found)
         if (!audioUrl && !audioPath) {
             try {
                 let tmpDir = path.join(__dirname, 'tmp')
                 if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true })
                 let tmpBase = path.join(tmpDir, `play_${Date.now()}`)
                 _tmpFile = tmpBase + '.mp3'
-                // Check which binary is available
                 let ytdlpBin = null
                 for (let bin of ['yt-dlp', 'youtube-dl', 'yt-dlp_linux']) {
                     try { require('child_process').execSync(`which ${bin} 2>/dev/null`); ytdlpBin = bin; break } catch {}
