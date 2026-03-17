@@ -11,9 +11,11 @@ const otherMenu = `
 ╔══════════════════════════╗
 ║  😄  *FUN & SOCIAL*
 ╚══════════════════════════╝
-  ├ .compliment  › @user
-  ├ .insult      › @user
-  ├ .pickupline  ├ .rizz
+  ├ .advice    ├ .lovemsg
+  ├ .gratitude ├ .thankyou
+  ├ .friendship ├ .pickupline
+  ├ .compliment › @user
+  ├ .insult    › @user
   ├ .flirt    ├ .shayari
   ├ .goodnight ├ .roseday
   ├ .character ├ .joke
@@ -27,14 +29,15 @@ const otherMenu = `
 ╔══════════════════════════╗
 ║  🎌  *ANIME*
 ╚══════════════════════════╝
-  ├ .anime  › [name]
-  ├ .waifu  ├ .neko
-  ├ .loli   ├ .nom
-  ├ .poke   › @user
-  ├ .cry    ├ .wink
-  ├ .kiss   › @user
-  ├ .pat    › @user
-  ├ .hug    › @user
+  ├ .anime      › [name]
+  ├ .animequote ├ .animerandom
+  ├ .waifu    ├ .neko
+  ├ .loli     ├ .nom
+  ├ .poke     › @user
+  ├ .cry      ├ .wink
+  ├ .kiss     › @user
+  ├ .pat      › @user
+  ├ .hug      › @user
   └ .facepalm
 
 ╔══════════════════════════╗
