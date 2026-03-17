@@ -1254,32 +1254,31 @@ case 'ytplay': {
             return m ? m[1] : null
         }
 
-        // Method 1: YouTube InnerTube API — direct stream URL, no external service needed
+        // Method 1: YouTube InnerTube API — try iOS then TV client (Android gets blocked)
         if (!audioUrl && !audioPath) {
-            try {
-                let videoId = _getVideoId(firstVideo.url)
-                if (!videoId) throw new Error('no video id')
-                let itRes = await fetch('https://www.youtube.com/youtubei/v1/player?key=AIzaSyB-63vPrdThhKuerbB2N_l7Kwwcxj6yUAc', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'User-Agent': 'com.google.android.youtube/17.31.35 (Linux; U; Android 11) gzip' },
-                    body: JSON.stringify({
-                        videoId,
-                        context: { client: { clientName: 'ANDROID', clientVersion: '17.31.35', androidSdkVersion: 30, hl: 'en', gl: 'US' } }
-                    }),
-                    signal: AbortSignal.timeout(20000)
-                })
-                let itData = await itRes.json()
-                let fmts = [...(itData.streamingData?.adaptiveFormats || []), ...(itData.streamingData?.formats || [])]
-                let audioFmts = fmts.filter(f => f.mimeType?.startsWith('audio/') && f.url)
-                // Pick closest to 128kbps
-                audioFmts.sort((a, b) => Math.abs((a.bitrate || 0) - 128000) - Math.abs((b.bitrate || 0) - 128000))
-                if (audioFmts[0]?.url) {
-                    audioUrl = audioFmts[0].url
-                    console.log('[play] innertube: success bitrate=', audioFmts[0].bitrate)
-                } else {
-                    console.log('[play] innertube: no url in response, status=', itData.playabilityStatus?.status)
-                }
-            } catch (e1) { console.log('[play] innertube:', e1.message) }
+            const _innerTube = async (clientName, clientVersion, extra = {}) => {
+                try {
+                    let videoId = _getVideoId(firstVideo.url)
+                    if (!videoId) return null
+                    let itRes = await fetch('https://www.youtube.com/youtubei/v1/player', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-YouTube-Client-Name': '5', 'X-YouTube-Client-Version': clientVersion },
+                        body: JSON.stringify({ videoId, context: { client: { clientName, clientVersion, hl: 'en', gl: 'US', ...extra } } }),
+                        signal: AbortSignal.timeout(20000)
+                    })
+                    let itData = await itRes.json()
+                    let fmts = [...(itData.streamingData?.adaptiveFormats || []), ...(itData.streamingData?.formats || [])]
+                    let audioFmts = fmts.filter(f => f.mimeType?.startsWith('audio/') && f.url)
+                    audioFmts.sort((a, b) => Math.abs((a.bitrate || 0) - 128000) - Math.abs((b.bitrate || 0) - 128000))
+                    if (audioFmts[0]?.url) return { url: audioFmts[0].url, bitrate: audioFmts[0].bitrate }
+                    console.log(`[play] innertube(${clientName}): status=`, itData.playabilityStatus?.status || 'no streamingData')
+                } catch (e) { console.log(`[play] innertube(${clientName}):`, e.message) }
+                return null
+            }
+            let it = await _innerTube('IOS', '19.29.1', { deviceModel: 'iPhone16,2' })
+                   || await _innerTube('TVHTML5', '7.20220325')
+                   || await _innerTube('WEB', '2.20231121.01.00')
+            if (it) { audioUrl = it.url; console.log('[play] innertube: success bitrate=', it.bitrate) }
         }
 
         // Method 2: loader.to — 128kbps mp3
@@ -1304,35 +1303,65 @@ case 'ytplay': {
             } catch (e2) { console.log('[play] loader.to:', e2.message) }
         }
 
-        // Method 3: cobalt.tools — audio stream URL
+        // Method 3: y2mate — no auth needed, 128kbps mp3
         if (!audioUrl && !audioPath) {
             try {
-                let cobaltRes = await fetch('https://api.cobalt.tools/', {
+                let videoId = _getVideoId(firstVideo.url)
+                if (!videoId) throw new Error('no video id')
+                let analyzeRes = await fetch('https://www.y2mate.com/mates/analyzeV2/ajax', {
                     method: 'POST',
-                    headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: firstVideo.url, downloadMode: 'audio', audioFormat: 'mp3', audioBitrate: '128' }),
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `k_query=${encodeURIComponent(firstVideo.url)}&k_page=youtube&hl=en&q_auto=0`,
                     signal: AbortSignal.timeout(30000)
                 })
-                let cobaltData = await cobaltRes.json()
-                console.log('[play] cobalt.tools response:', JSON.stringify(cobaltData).slice(0, 150))
-                if ((cobaltData.status === 'tunnel' || cobaltData.status === 'redirect') && cobaltData.url) {
-                    audioUrl = cobaltData.url
-                    console.log('[play] cobalt.tools: success')
+                let analyzeData = await analyzeRes.json()
+                let vid = analyzeData.vid
+                let mp3Links = analyzeData.links?.mp3
+                console.log('[play] y2mate analyze: vid=', vid, 'keys=', mp3Links ? Object.keys(mp3Links) : 'none')
+                if (vid && mp3Links) {
+                    let quality = mp3Links['128k'] || mp3Links['mp3128'] || Object.values(mp3Links)[0]
+                    if (quality?.k) {
+                        let convertRes = await fetch('https://www.y2mate.com/mates/convertV2/index', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                            body: `vid=${vid}&k=${quality.k}`,
+                            signal: AbortSignal.timeout(30000)
+                        })
+                        let convertData = await convertRes.json()
+                        console.log('[play] y2mate convert status:', convertData.status)
+                        if (convertData.dlink) { audioUrl = convertData.dlink; console.log('[play] y2mate: success') }
+                    }
                 }
-            } catch (e3) { console.log('[play] cobalt.tools:', e3.message) }
+            } catch (e3) { console.log('[play] y2mate:', e3.message) }
         }
 
-        // Method 4: fabdl.com — pure HTTP API
+        // Method 4: yt5s — alternative converter, no auth
         if (!audioUrl && !audioPath) {
             try {
-                let fabRes = await fetch(`https://api.fabdl.com/youtube/mp3?url=${encodeURIComponent(firstVideo.url)}`, { signal: AbortSignal.timeout(30000) })
-                let fabData = await fabRes.json()
-                console.log('[play] fabdl response:', JSON.stringify(fabData).slice(0, 150))
-                if (fabData.status === 'ok' && fabData.dl_url) {
-                    audioUrl = fabData.dl_url
-                    console.log('[play] fabdl: success')
+                let analyzeRes = await fetch('https://yt5s.io/api/ajaxSearch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `q=${encodeURIComponent(firstVideo.url)}&vt=mp3`,
+                    signal: AbortSignal.timeout(20000)
+                })
+                let analyzeData = await analyzeRes.json()
+                console.log('[play] yt5s analyze:', JSON.stringify(analyzeData).slice(0, 150))
+                let links = analyzeData.links?.mp3
+                if (links) {
+                    let q128 = links['128k'] || Object.values(links)[0]
+                    if (q128?.f && analyzeData.vid) {
+                        let convRes = await fetch('https://yt5s.io/api/ajaxConvert', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                            body: `vid=${analyzeData.vid}&f=${q128.f}`,
+                            signal: AbortSignal.timeout(30000)
+                        })
+                        let convData = await convRes.json()
+                        console.log('[play] yt5s convert:', JSON.stringify(convData).slice(0, 100))
+                        if (convData.dlink) { audioUrl = convData.dlink; console.log('[play] yt5s: success') }
+                    }
                 }
-            } catch (e4) { console.log('[play] fabdl:', e4.message) }
+            } catch (e4) { console.log('[play] yt5s:', e4.message) }
         }
 
         // Method 5: ytdl-core with agent
