@@ -1288,7 +1288,21 @@ case 'ytplay': {
             } catch (e2) { console.log('[play] cobalt.tools:', e2.message) }
         }
 
-        // Method 3: ytdl-core — stream direct to tmp file (avoids bot check better with agent)
+        // Method 3: fabdl.com — pure HTTP, no binary needed, works on all platforms
+        if (!audioUrl && !audioPath) {
+            try {
+                let fabRes = await fetch(`https://api.fabdl.com/youtube/mp3?url=${encodeURIComponent(firstVideo.url)}`, {
+                    signal: AbortSignal.timeout(30000)
+                })
+                let fabData = await fabRes.json()
+                if (fabData.status === 'ok' && fabData.dl_url) {
+                    audioUrl = fabData.dl_url
+                    console.log('[play] fabdl: success')
+                }
+            } catch (e3) { console.log('[play] fabdl:', e3.message) }
+        }
+
+        // Method 4: ytdl-core — stream direct to tmp file (avoids bot check better with agent)
         if (!audioUrl && !audioPath) {
             try {
                 const ytdl = require('@distube/ytdl-core')
@@ -1320,7 +1334,7 @@ case 'ytplay': {
             } catch (e3) { console.log('[play] ytdl-core:', e3.message) }
         }
 
-        // Method 4: yt-dlp — only if installed on the system
+        // Method 5: yt-dlp — only if installed on the system (skips silently if not found)
         if (!audioUrl && !audioPath) {
             try {
                 let tmpDir = path.join(__dirname, 'tmp')
