@@ -25,5 +25,5 @@ const stickerMenu = `
   ├◈  \`.toppt\`    › audio → voice
   ├◈  \`.tourl\`    › media → url
   └◈  \`.removebg\`
-
-module.exports = stickerMenu`
+`
+module.exports = stickerMenu
