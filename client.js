@@ -1250,7 +1250,7 @@ case 'ytplay': {
 
         // Method 1: loader.to — get the download URL, don't buffer it
         try {
-            let initRes = await fetch(`https://loader.to/ajax/download.php?format=mp3&url=${encodeURIComponent(firstVideo.url)}`)
+            let initRes = await fetch(`https://loader.to/ajax/download.php?format=mp3-128&url=${encodeURIComponent(firstVideo.url)}`)
             let initData = await initRes.json()
             if (initData.success && initData.id) {
                 let dlId = initData.id, attempts = 0
