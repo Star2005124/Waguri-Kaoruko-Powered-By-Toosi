@@ -395,7 +395,10 @@ if (global.pmBlocker && !m.isGroup && !isOwner && !isBot && !m.key.fromMe) {
 }
 
 if (global.autoReact && m.key && !m.key.fromMe) {
-    try { await X.sendMessage(m.chat, { react: { text: global.autoReactEmoji || '👍', key: m.key } }) } catch {}
+    const _skipReactTypes = ['reactionMessage','protocolMessage','senderKeyDistributionMessage','messageContextInfo']
+    if (!_skipReactTypes.includes(m.mtype)) {
+        try { await X.sendMessage(m.chat, { react: { text: global.autoReactEmoji || '👍', key: m.key } }) } catch {}
+    }
 }
 
 if (m.isGroup && !isAdmins && !isOwner) {
@@ -848,9 +851,10 @@ if (m.key.fromMe && global.ownerFontMode && global.ownerFontMode !== 'off' && bu
             } else {
                 _converted = [...budy].map(c=>_map[c]||c).join('')
             }
-            // Only act if conversion actually changed something
-            if (_converted !== budy) {
-                await X.sendMessage(m.chat, { text: _converted, edit: m.key })
+            // Only act if conversion actually changed something, and result is non-empty
+            if (_converted && _converted.trim() && _converted !== budy) {
+                try { await X.sendMessage(m.chat, { delete: m.key }) } catch {}
+                await X.sendMessage(m.chat, { text: _converted })
             }
         }
     } catch (_fe) {
