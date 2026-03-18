@@ -1883,17 +1883,19 @@ X.ev.on('messages.update', async (updates) => {
                         : new Date().toLocaleString('en-US', { month:'2-digit', day:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', hour12: true })
 
                     let notifText =
-                        `*MESSAGE DELETED*\n` +
-                        `Deleted by: @${senderNum}` + (_deleterName ? ` (${_deleterName})` : ``) + `\n` +
-                        (!_sameDeleter ? `Sender: @${_origSenderNum}` + (_origName ? ` (${_origName})` : ``) + `\n` : ``) +
-                        `Name: ${_origName || _deleterName || senderNum}\n` +
-                        `Time: ${_ts}\n` +
-                        (delBody ? `\n*DELETED MESSAGE:*\n${delBody}` : `\n*DELETED MESSAGE:*\n[media / no text]`)
+                        `╔══════════════════════════╗\n` +
+                        `║  🗑️ *ANTI-DELETE*\n` +
+                        `╚══════════════════════════╝\n\n` +
+                        `  ├ 🗑️ *Deleted by* › @${senderNum}` + (_deleterName ? ` (${_deleterName})` : ``) + `\n` +
+                        (!_sameDeleter ? `  ├ 📤 *Sender*     › @${_origSenderNum}` + (_origName ? ` (${_origName})` : ``) + `\n` : ``) +
+                        `  ├ 👤 *Name*       › ${_origName || _deleterName || senderNum}\n` +
+                        `  └ 🕐 *Time*       › ${_ts}\n\n` +
+                        `  *DELETED MESSAGE:*\n` +
+                        (delBody ? `  ${delBody}` : `  [media / no text]`)
 
                     for (const _dest of _destinations) {
                         await X.sendMessage(_dest, { text: notifText, mentions: [resolvedSender || senderJid, _origSenderJid].filter(Boolean) })
                     }
-                    // Forward media if present
                     const _hasMedia = deletedMsg.message.imageMessage ||
                                       deletedMsg.message.videoMessage ||
                                       deletedMsg.message.audioMessage ||
