@@ -20,54 +20,55 @@ require("./setting")
 // where `session` is a large Signal crypto object full of Buffer dumps.
 // We silence those specific warnings — all other console output is unaffected.
 ;(function suppressSignalNoise() {
-    const _origWarn  = console.warn.bind(console)
-    const _origError = console.error.bind(console)
-    const _origLog   = console.log.bind(console)
+    // ── Core noise-detection patterns ─────────────────────────────────────────
+    const _NOISY_STRINGS = [
+        '_chains','currentratchet','ephemeralkeypair','registrationid','rootkey',
+        'indexinfo','basekeytype','senderkey','signedprekey','identitykey','prekey',
+        'chainkey','chaintype','messagekeys','privkey','pubkey','remoteidentikey',
+        'remoteidentitykey','previouscounter','lastsessionsaved','lastsynctime',
+        'bad mac','session already','v1 session storage','no sessions',
+        'failed to decrypt','session error','session_cipher','libsignal',
+        'queue_job','nosuchsession','invalid prekey','invalid message','no senderkey',
+        'closing open session','closing session','sessionentry','prekey bundle',
+        'incoming prekey','open session in favor','privsenderkey','__signal_obj__'
+    ]
+    const _isNoisy = (s) => {
+        const lower = (typeof s === 'string' ? s : String(s)).toLowerCase()
+        return _NOISY_STRINGS.some(p => lower.includes(p))
+    }
     const _serialize = (a) => {
         if (typeof a === 'string') return a
         if (a && typeof a === 'object') {
-            // Fast path: check object keys directly (catches session state objects)
             const keys = Object.keys(a).join(' ').toLowerCase()
-            if (keys.includes('_chains') || keys.includes('currentratchet') ||
-                keys.includes('registrationid') || keys.includes('rootkey') ||
-                keys.includes('indexinfo') || keys.includes('ephemeralkeyp') ||
-                keys.includes('basekeytype') || keys.includes('senderkey') ||
-                keys.includes('signedprekey') || keys.includes('identitykey') ||
-                keys.includes('prekey') || keys.includes('chainkey') ||
-                keys.includes('chaintype') || keys.includes('messagekeys') ||
-                keys.includes('privkey') || keys.includes('pubkey')) return '__signal_obj__'
-            try { return JSON.stringify(a).slice(0, 800) } catch { return a?.message || a?.stack || '[object]' }
+            if (_isNoisy(keys)) return '__signal_obj__'
+            try { return JSON.stringify(a).slice(0, 600) } catch { return a?.message || a?.stack || '[object]' }
         }
         return a?.message || a?.stack || String(a)
     }
     const _noisy = (args) => {
-        const combined = args.map(_serialize).join(' ').toLowerCase()
-        return combined.includes('__signal_obj__') ||
-               combined.includes('bad mac') ||
-               combined.includes('session already') ||
-               combined.includes('v1 session storage') ||
-               combined.includes('no sessions') ||
-               combined.includes('failed to decrypt') ||
-               combined.includes('session error') ||
-               combined.includes('session_cipher') ||
-               combined.includes('libsignal') ||
-               combined.includes('queue_job') ||
-               combined.includes('nosuchsession') ||
-               combined.includes('invalid prekey') ||
-               combined.includes('invalid message') ||
-               combined.includes('no senderkey') ||
-               combined.includes('_chains') ||
-               combined.includes('currentratchet') ||
-               combined.includes('ephemeralkeyp') ||
-               combined.includes('registrationid') ||
-               combined.includes('privsenderkey') ||
-               combined.includes('basekeytype') ||
-               combined.includes('signedprekey') ||
-               combined.includes('identitykeypair')
+        const combined = args.map(_serialize).join(' ')
+        return _isNoisy(combined)
     }
+    // ── Override console methods ───────────────────────────────────────────────
+    const _origWarn  = console.warn.bind(console)
+    const _origError = console.error.bind(console)
+    const _origLog   = console.log.bind(console)
     console.warn  = (...args) => { if (!_noisy(args)) _origWarn(...args)  }
     console.error = (...args) => { if (!_noisy(args)) _origError(...args) }
     console.log   = (...args) => { if (!_noisy(args)) _origLog(...args)   }
+    // ── Override process.stdout.write to catch pino & direct writes ───────────
+    const _origStdout = process.stdout.write.bind(process.stdout)
+    const _origStderr = process.stderr.write.bind(process.stderr)
+    process.stdout.write = function(chunk, ...rest) {
+        if (typeof chunk === 'string' && _isNoisy(chunk)) return true
+        if (Buffer.isBuffer(chunk) && _isNoisy(chunk.toString())) return true
+        return _origStdout(chunk, ...rest)
+    }
+    process.stderr.write = function(chunk, ...rest) {
+        if (typeof chunk === 'string' && _isNoisy(chunk)) return true
+        if (Buffer.isBuffer(chunk) && _isNoisy(chunk.toString())) return true
+        return _origStderr(chunk, ...rest)
+    }
 })()
 
 // Auto-inject OWNER_NUMBER from .env into global.owner
