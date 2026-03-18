@@ -6082,7 +6082,7 @@ await reply('🎵 _Listening and identifying the song, please wait..._')
 let mediaBuf = await m.quoted.download()
 if (!mediaBuf || mediaBuf.length < 100) throw new Error('Failed to download media')
 // Save to a temp file
-let tmpFile = `${require("path").join(__dirname, "tmp", `shazam_${Date.now()}.mp3`)}`
+let tmpFile = require("path").join(__dirname, "tmp", `shazam_${Date.now()}.mp3`)
 fs.writeFileSync(tmpFile, mediaBuf)
 // Upload to CatBox to get a public URL
 let audioUrl = await CatBox(tmpFile)
@@ -6295,7 +6295,7 @@ try {
     const _mime = m.quoted.mimetype || m.quoted.msg?.mimetype || 'application/octet-stream'
     const _extMap = {'image/jpeg':'jpg','image/png':'png','image/webp':'webp','image/gif':'gif','video/mp4':'mp4','audio/mpeg':'mp3','audio/ogg':'ogg','audio/mp4':'m4a','application/pdf':'pdf'}
     const _ext = _extMap[_mime.split(';')[0].trim()] || 'bin'
-    const _tmp = `${require("path").join(__dirname, "tmp", `tourl_${Date.now()}.${_ext}`)}`
+    const _tmp = require("path").join(__dirname, "tmp", `tourl_${Date.now()}.${_ext}`)
     require('fs').writeFileSync(_tmp, _buf)
     const _url = await CatBox(_tmp)
     require('fs').unlinkSync(_tmp)
@@ -6320,7 +6320,7 @@ try {
     const _buf = await m.quoted.download()
     if (!_buf || _buf.length < 100) throw new Error('Sticker download failed')
     // Use jimp to convert webp → jpeg since WA webp may be animated
-    const _outPath = `${require("path").join(__dirname, "tmp", `toimage_${Date.now()}`)}`
+    const _outPath = require("path").join(__dirname, "tmp", `toimage_${Date.now()}`)
     require('fs').writeFileSync(`${_outPath}.webp`, _buf)
     // ffmpeg: webp → png (handles both static and animated, takes first frame)
     await new Promise((resolve, reject) => {
@@ -6362,7 +6362,7 @@ try {
     } catch {}
     // Fallback: upload to catbox then use URL
     if (!_extracted) {
-        const _tmp = `${require("path").join(__dirname, "tmp", `totext_${Date.now()}.jpg`)}`
+        const _tmp = require("path").join(__dirname, "tmp", `totext_${Date.now()}.jpg`)
         require('fs').writeFileSync(_tmp, _imgBuf)
         const _uploadUrl = await CatBox(_tmp)
         require('fs').unlinkSync(_tmp)
@@ -6392,8 +6392,8 @@ try {
     await reply('🔄 _Extracting audio from video..._')
     const _vBuf = await m.quoted.download()
     if (!_vBuf || _vBuf.length < 100) throw new Error('Video download failed')
-    const _vPath = `${require("path").join(__dirname, "tmp", `tomp3_in_${Date.now()}.mp4`)}`
-    const _aPath = `${require("path").join(__dirname, "tmp", `tomp3_out_${Date.now()}.mp3`)}`
+    const _vPath = require("path").join(__dirname, "tmp", `tomp3_in_${Date.now()}.mp4`)
+    const _aPath = require("path").join(__dirname, "tmp", `tomp3_out_${Date.now()}.mp3`)
     require('fs').writeFileSync(_vPath, _vBuf)
     await new Promise((resolve, reject) => {
         require('child_process').exec(
@@ -6422,8 +6422,8 @@ try {
     const _inBuf = await m.quoted.download()
     if (!_inBuf || _inBuf.length < 100) throw new Error('Media download failed')
     const _inExt = /video/.test(_qmime3) ? 'mp4' : 'mp3'
-    const _inPath = `${require("path").join(__dirname, "tmp", `toppt_in_${Date.now()}.${_inExt}`)}`
-    const _outPath = `${require("path").join(__dirname, "tmp", `toppt_out_${Date.now()}.ogg`)}`
+    const _inPath = require("path").join(__dirname, "tmp", `toppt_in_${Date.now()}.${_inExt}`)
+    const _outPath = require("path").join(__dirname, "tmp", `toppt_out_${Date.now()}.ogg`)
     require('fs').writeFileSync(_inPath, _inBuf)
     await new Promise((resolve, reject) => {
         require('child_process').exec(
@@ -6461,7 +6461,7 @@ try {
     // ── Method 1: GiftedTech removebgv2 (returns JSON with result URL) ──
     if (!_result) {
         try {
-            const _tmpG = `${require("path").join(__dirname, "tmp", `rbg_${Date.now()}.jpg`)}`
+            const _tmpG = require("path").join(__dirname, "tmp", `rbg_${Date.now()}.jpg`)
             require('fs').writeFileSync(_tmpG, _rBuf)
             const _catUrl = await CatBox(_tmpG)
             try { require('fs').unlinkSync(_tmpG) } catch {}
@@ -8061,7 +8061,7 @@ case 'qrread': {
         await reply('📷 _Scanning QR code..._')
         let _buf = await m.quoted.download()
         if (!_buf || _buf.length < 100) throw new Error('Image download failed')
-        let _tmp = `${require("path").join(__dirname, "tmp", `qr_${Date.now()}.png`)}`
+        let _tmp = require("path").join(__dirname, "tmp", `qr_${Date.now()}.png`)
         fs.writeFileSync(_tmp, _buf)
         let _url = await CatBox(_tmp)
         try { fs.unlinkSync(_tmp) } catch {}
