@@ -664,54 +664,998 @@ const _adCacheFlush = () => {
 }
 
 // Helper — feed a batch of messages into _adCache
-// ════════════════════════════════════════════════════════════════
-  // ANTI-DELETE  —  gifted-baileys port of reference storeMessage/handleMessageRevocation
-  // ════════════════════════════════════════════════════════════════
+const _adCachePut = (msgs) => {
+    try {
+        let _added = 0
+        for (const _adMsg of (msgs || [])) {
+            if (!_adMsg?.key?.id) continue
+            if (_adMsg.key.remoteJid === 'status@broadcast') continue
 
-  // ── tmp dir ─────────────────────────────────────────────────────
+            const _existingEntry = global._adCache.get(_adMsg.key.id)
+            // If already cached WITH content — skip (don't overwrite good data with null)
+            if (_existingEntry?.msg?.message) continue
+            // If no content and still no new content — skip (nothing gained)
+            if (!_adMsg.message && _existingEntry) continue
+
+            // Prune by TTL first
+            if (!_existingEntry && global._adCache.size >= _AD_CACHE_MAX) {
+                const _now = Date.now()
+                for (const [_id, _entry] of global._adCache) {
+                    if (_now - _entry.ts > _AD_CACHE_TTL) global._adCache.delete(_id)
+                }
+                if (global._adCache.size >= _AD_CACHE_MAX) {
+                    global._adCache.delete(global._adCache.keys().next().value)
+                }
+            }
+            global._adCache.set(_adMsg.key.id, {
+                msg: _adMsg,
+                chatJid: _adMsg.key.remoteJid,
+                ts: _existingEntry?.ts || Date.now() // keep original timestamp for TTL
+            })
+            _added++
+        }
+        if (_added) _adCacheFlush()
+    } catch (_) {}
+}
+
+// Capture live messages (upsert fires with content — or null on first delivery)
+X.ev.on('messages.upsert', ({ messages: _adMsgs }) => _adCachePut(_adMsgs))
+// Capture history sync on reconnect
+X.ev.on('messaging-history.set', ({ messages: _adMsgs }) => _adCachePut(_adMsgs || []))
+// Older Baileys history sync event
+X.ev.on('messages.set', ({ messages: _adMsgs }) => _adCachePut(_adMsgs || []))
+
+// When a message content arrives via update (e.g. decrypted after initial null delivery)
+// update the cache entry so antidelete can use the real content
+X.ev.on('messages.update', (_adUpdates) => {
+    try {
+        for (const _u of (_adUpdates || [])) {
+            if (!_u?.key?.id || !_u.update?.message) continue
+            const _ex = global._adCache.get(_u.key.id)
+            // Only upgrade: fill in null-content entries or merge missing content
+            if (!_ex || _ex.msg?.message) continue
+            _ex.msg = { ..._ex.msg, message: _u.update.message }
+            global._adCache.set(_u.key.id, _ex)
+        }
+    } catch (_) {}
+})
+
+// ── FIX 5: Suppress Bad MAC / libsignal decryption errors ────────────────
+// These errors occur when WhatsApp re-keys a session (normal behaviour).
+// Baileys already retries via msgRetryCounterCache; we just silence the noise.
+X.ev.on('CB:error', () => {})
+if (X.ws && X.ws.on) {
+    X.ws.on('error', (err) => {
+        const msg = (err?.message || String(err)).toLowerCase()
+        if (msg.includes('bad mac') || msg.includes('failed to decrypt') ||
+            msg.includes('no sessions') || msg.includes('invalid prekey') ||
+            msg.includes('invalid message')) return
+        console.error(`[${phone}] WS Error:`, err.message || err)
+    })
+}
+// Swallow unhandled signal errors inside this socket context
+const _origEmit = X.ev.emit.bind(X.ev)
+X.ev.emit = function(event, ...args) {
+    try { return _origEmit(event, ...args) } catch(e) {
+        const em = (e?.message || '').toLowerCase()
+        if (em.includes('bad mac') || em.includes('failed to decrypt') ||
+            em.includes('no sessions') || em.includes('nosuchsession')) return false
+        throw e
+    }
+}
+
+// ── FIX 4: messages.upsert — correct type check ──────────────────────────
+// The original was missing the type === 'notify' guard at the top level,
+// which caused history sync messages to also trigger commands.
+X.ev.on('messages.upsert', async chatUpdate => {
+try {
+// NOTE: 'Message yourself' commands do NOT fire here — gifted-baileys drops msmsg-encrypted
+      // messages (same-account device-to-device traffic) at the library level. Commands from
+      // OTHER numbers and groups work correctly. Use a second number to test, not 'Message yourself'.
+      // Accept ALL message types (notify, append, etc.) — "Message yourself" comes as 'append'
+    // Only filter is age: ignore messages older than 2 minutes (prevents history sync commands)
+    mek = chatUpdate.messages[0]
+    const _msgTs = (mek?.messageTimestamp || 0) * 1000
+    if (Date.now() - _msgTs > 120000) return  // older than 2 min — history sync, skip
+    if (!mek.message) {
+          // SELF-DM FIX: "Message yourself" arrives as a fromMe device-sync message.
+          // Do NOT wipe session files for own JID — that kills the retry handshake.
+          // Just request a retry receipt and the phone will re-encrypt for this device.
+          if (mek.key?.fromMe) {
+              try {
+                  if (mek.key?.remoteJid && mek.key?.id)
+                      await X.sendReceipt(mek.key.remoteJid, null, [mek.key.id], 'retry')
+              } catch {}
+              return
+          }
+
+          // Message failed to decrypt (Bad MAC / no known Signal session).
+          // SURGICAL FIX: only clear the specific failing sender's session — NOT all sessions.
+          // Wiping all sessions in a group (many members) would force fresh Signal
+          // handshakes with every contact simultaneously, flooding the 401 handler.
+          try {
+              const _fJid = mek.key?.remoteJid
+              const _sJid = mek.key?.participant || _fJid
+              const _sNum = _sJid ? _sJid.split('@')[0].split(':')[0] : null
+
+              // Wipe ONLY session files belonging to this specific sender.
+              // Session files contain the sender's number or JID in their filename.
+              const _sessionDir = path.join(SESSIONS_DIR, phone)
+              if (fs.existsSync(_sessionDir) && _sNum) {
+                  let _wiped = 0
+                  fs.readdirSync(_sessionDir).forEach(i => {
+                      // Match files that reference this sender (e.g. session-254xxx@s.whatsapp.net.json)
+                      if (i !== 'creds.json' && i.includes(_sNum)) {
+                          try { fs.unlinkSync(path.join(_sessionDir, i)); _wiped++ } catch {}
+                      }
+                  })
+                  if (_wiped) console.log(`[TOOSII-XD] Bad MAC: wiped ${_wiped} stale session file(s) for ${_sJid} — fresh session pending`)
+              }
+
+              // Clear from in-memory key store for both regular JID and @lid variant
+              if (_sJid) {
+                  try { await state.keys.set({ 'session': { [_sJid]: null } }) } catch {}
+                  const _lidJid = _sJid.includes('@') ? _sJid.split('@')[0] + ':0@lid' : null
+                  if (_lidJid) try { await state.keys.set({ 'session': { [_lidJid]: null } }) } catch {}
+                  try { await saveCreds() } catch {}
+              }
+
+              // Ask sender to re-deliver with fresh encryption
+              if (_fJid && mek.key?.id && !_fJid.includes('broadcast')) {
+                  try { await X.sendReceipt(_fJid, mek.key.participant || null, [mek.key.id], 'retry') } catch {}
+              }
+          } catch (e) { console.log('[TOOSII-XD] Bad MAC recovery error:', e.message) }
+          return
+      }
+
+  // Unwrap deviceSentMessage — WhatsApp wraps all "Message yourself" (self-DM) messages in this
+    if (mek.message?.deviceSentMessage?.message) mek.message = mek.message.deviceSentMessage.message
+    // Unwrap ephemeral messages
+    mek.message = (Object.keys(mek.message)[0] === 'ephemeralMessage') ? mek.message.ephemeralMessage.message : mek.message
+if (mek.key && mek.key.remoteJid === 'status@broadcast') {
+    if (!mek.key.fromMe) {
+        try {
+            // ── Step 1: resolve participant to a phone @s.whatsapp.net JID ──────────
+            // gifted-baileys / xmd-baileys may expose the real phone JID directly on
+            // these fields when the participant's primary address is a @lid.
+            // Priority: direct pn fields → store.contacts LID map → strip device suffix
+            const _rawParticipant = mek.key.participant || mek.participant || mek.key.remoteJid
+
+            let statusPosterJid = [
+                mek.key.participantPn,
+                mek.key.participantAlt,
+                mek.key.senderPn,
+                mek.participantPn,
+                mek.senderPn,
+            ].find(j => j && j.endsWith('@s.whatsapp.net'))
+
+            if (!statusPosterJid) {
+                // strip device suffix and check if it's already a phone JID
+                const _stripped = _rawParticipant.replace(/:.*@/, '@')
+                if (_stripped.endsWith('@s.whatsapp.net')) {
+                    statusPosterJid = _stripped
+                } else if (_stripped.endsWith('@lid') && store?.contacts) {
+                    // LID → scan store.contacts for the matching phone JID
+                    const _entries = typeof store.contacts.entries === 'function'
+                        ? [...store.contacts.entries()]
+                        : Object.entries(store.contacts)
+                    const _found = _entries.find(([j, ct]) =>
+                        j.endsWith('@s.whatsapp.net') &&
+                        (ct?.lid === _stripped || ct?.lid === _rawParticipant || ct?.id === _stripped)
+                    )
+                    if (_found) statusPosterJid = _found[0]
+                }
+            }
+
+            // Last resort: keep the raw participant (may be @lid — WhatsApp will still
+            // accept readMessages with it on some clients)
+            if (!statusPosterJid) statusPosterJid = _rawParticipant.replace(/:.*@/, '@')
+
+            // Bot's own JID (phone + lid forms for statusJidList)
+            const botSelfJid = (X.decodeJid ? X.decodeJid(X.user.id) : X.user.id).replace(/:.*@/, '@')
+            const botLidJid  = X.user?.lid ? (X.decodeJid ? X.decodeJid(X.user.lid) : X.user.lid).replace(/:.*@/, '@') : null
+
+            // ── Auto-view: mark the status as seen ───────────────────────────────
+            if (global.autoViewStatus) {
+                // Try with resolved phone JID first, fall back to raw key
+                const _viewKey1 = { remoteJid: 'status@broadcast', id: mek.key.id, participant: statusPosterJid }
+                const _viewKey2 = { ...mek.key }
+                let _viewed = false
+                try {
+                    await X.readMessages([_viewKey1])
+                    _viewed = true
+                    console.log(`[${phone}] ✅ Auto-viewed status from ${statusPosterJid}`)
+                } catch {}
+                if (!_viewed) {
+                    try {
+                        await X.readMessages([_viewKey2])
+                        console.log(`[${phone}] ✅ Auto-viewed status (raw key fallback) from ${statusPosterJid}`)
+                    } catch (ve) {
+                        console.log(`[${phone}] Auto-view failed:`, ve.message || ve)
+                    }
+                }
+            }
+
+            // ── Auto-like: react to the status ───────────────────────────────────
+            if (global.autoLikeStatus) {
+                try {
+                    await new Promise(r => setTimeout(r, 800))
+                    const _emojis = ['💛', '❤️', '💜', '🤍', '💙', '🧡', '💚', '🔥', '😍', '👍']
+                    const _emoji  = global.autoLikeEmoji || _emojis[Math.floor(Math.random() * _emojis.length)]
+
+                    // React key always uses the raw participant from the message key
+                    const _reactKey = {
+                        remoteJid: 'status@broadcast',
+                        id: mek.key.id,
+                        participant: _rawParticipant,
+                        fromMe: false,
+                    }
+
+                    let _liked = false
+
+                    // Method 1 (most reliable for LID): send react to poster's private DM JID
+                    if (statusPosterJid.endsWith('@s.whatsapp.net')) {
+                        try {
+                            await X.sendMessage(statusPosterJid, { react: { text: _emoji, key: _reactKey } })
+                            _liked = true
+                            console.log(`[${phone}] ✅ Auto-liked status from ${statusPosterJid} with ${_emoji}`)
+                        } catch {}
+                    }
+
+                    // Method 2: statusJidList approach (works when participant is phone JID)
+                    if (!_liked) {
+                        const _jidList = [statusPosterJid, botSelfJid, ...(botLidJid ? [botLidJid] : [])].filter(Boolean)
+                        try {
+                            await X.sendMessage('status@broadcast', {
+                                react: { text: _emoji, key: _reactKey }
+                            }, { statusJidList: _jidList })
+                            _liked = true
+                            console.log(`[${phone}] ✅ Auto-liked (statusJidList) from ${statusPosterJid} with ${_emoji}`)
+                        } catch {}
+                    }
+
+                    // Method 3: raw participant JID as target
+                    if (!_liked && _rawParticipant !== statusPosterJid) {
+                        try {
+                            await X.sendMessage(_rawParticipant, { react: { text: _emoji, key: _reactKey } })
+                            _liked = true
+                            console.log(`[${phone}] ✅ Auto-liked (raw JID) from ${_rawParticipant} with ${_emoji}`)
+                        } catch {}
+                    }
+
+                    if (!_liked) console.log(`[${phone}] Auto-like: all methods failed for ${statusPosterJid}`)
+                } catch (likeErr) {
+                    console.log(`[${phone}] Auto-like error:`, likeErr.message || likeErr)
+                }
+            }
+            if (global.autoReplyStatus && global.autoReplyStatusMsg) {
+                try {
+                    await X.sendMessage(statusPosterJid, { text: global.autoReplyStatusMsg })
+                    console.log(`[${phone}] ✅ Auto-replied to status from ${statusPosterJid}`)
+                } catch (arErr) {
+                    console.log(`[${phone}] Auto-reply status error:`, arErr.message || arErr)
+                }
+            }
+            if (global.antiStatusMention) {
+                try {
+                    let msgContent2 = mek.message
+                    let ct = Object.keys(msgContent2)[0]
+                    let msgObj = msgContent2[ct] || {}
+                    let mentionedJids = msgObj.contextInfo?.mentionedJid || []
+                    let statusText = msgObj.text || msgObj.caption || msgObj.description || ''
+                    let _mentionerRaw = mek.key.participant || mek.key.remoteJid
+                    let mentioner = _mentionerRaw.replace(/:.*@/, '@').split('@')[0]
+                    let mentionerJid = mentioner + '@s.whatsapp.net'
+                    let botSelfJid = X.decodeJid(X.user.id).replace(/:.*@/, '@')
+                    let alertJid = botSelfJid
+                    let groupsMentioned = mentionedJids.filter(jid => jid.endsWith('@g.us'))
+                    let inviteLinks = statusText.match(/chat\.whatsapp\.com\/([A-Za-z0-9]{20,24})/g) || []
+                    if (groupsMentioned.length === 0 && inviteLinks.length === 0) throw Object.assign(new Error('no_mention'), { skip: true })
+                    let asmAction = global.antiStatusMentionAction || 'warn'
+                    for (let gJid of groupsMentioned) {
+                        try {
+                            let gMeta = await X.groupMetadata(gJid).catch(() => null)
+                            if (!gMeta) {
+                                await X.sendMessage(alertJid, { text: `*⚠️ Anti-Status Mention*\n\n+${mentioner} tagged a group in their status.\nGroup: ${gJid}\n_Bot is not a member of this group._` })
+                                continue
+                            }
+                            let gName = gMeta.subject || gJid
+                            let isMember = gMeta.participants.some(p => p.id.split(':')[0].split('@')[0] === mentioner)
+                            let botIsAdmin = gMeta.participants.some(p => {
+                                let isBot = areJidsSameUser(p.id, X.user.id) || (X.user?.lid && areJidsSameUser(p.id, X.user.lid))
+                                return isBot && (p.admin === 'admin' || p.admin === 'superadmin')
+                            })
+                            let isMentionerOwner = global.owner.includes(mentioner)
+                            await X.sendMessage(alertJid, { text: `*⚠️ Anti-Status Mention Alert*\n\n👤 User: +${mentioner}\n🏘️ Group tagged: *${gName}*\n⚡ Action: ${asmAction.toUpperCase()}\n🤖 Bot is admin: ${botIsAdmin ? 'Yes' : 'No'}` })
+                            if (!isMember) continue
+                            if (isMentionerOwner) continue
+                            if (!botIsAdmin) {
+                                await X.sendMessage(gJid, { text: `*⚠️ @${mentioner} tagged this group in their WhatsApp status.*\n_Make the bot admin to enable auto-actions._`, mentions: [mentionerJid] })
+                                continue
+                            }
+                            if (asmAction === 'kick') {
+                                await X.groupParticipantsUpdate(gJid, [mentionerJid], 'remove')
+                                await X.sendMessage(gJid, { text: `*🚫 @${mentioner} has been removed.*\nReason: Tagged this group in their WhatsApp status.`, mentions: [mentionerJid] })
+                            } else if (asmAction === 'warn') {
+                                if (!global.statusMentionWarns) global.statusMentionWarns = {}
+                                let warnKey = `${gJid}:${mentionerJid}`
+                                global.statusMentionWarns[warnKey] = (global.statusMentionWarns[warnKey] || 0) + 1
+                                let wCount = global.statusMentionWarns[warnKey]
+                                let maxW = 3
+                                if (wCount >= maxW) {
+                                    await X.groupParticipantsUpdate(gJid, [mentionerJid], 'remove')
+                                    global.statusMentionWarns[warnKey] = 0
+                                    await X.sendMessage(gJid, { text: `*🚫 @${mentioner} has been removed after ${maxW} warnings.*\nReason: Repeatedly tagging this group in their WhatsApp status.`, mentions: [mentionerJid] })
+                                } else {
+                                    await X.sendMessage(gJid, { text: `*⚠️ Warning ${wCount}/${maxW} — @${mentioner}*\nReason: You tagged this group in your WhatsApp status.\n_${maxW - wCount} more warning(s) before removal._`, mentions: [mentionerJid] })
+                                }
+                            } else if (asmAction === 'delete') {
+                                if (!global.statusMentionDeleteList) global.statusMentionDeleteList = {}
+                                if (!global.statusMentionDeleteList[gJid]) global.statusMentionDeleteList[gJid] = []
+                                if (!global.statusMentionDeleteList[gJid].includes(mentionerJid)) {
+                                    global.statusMentionDeleteList[gJid].push(mentionerJid)
+                                }
+                                await X.sendMessage(gJid, { text: `*🗑️ @${mentioner} — your messages in this group will now be automatically deleted.*\nReason: You tagged this group in your WhatsApp status.\n_Contact an admin to appeal._`, mentions: [mentionerJid] })
+                            }
+                        } catch (gErr) {
+                            console.log(`[${phone}] Anti-status-mention group error:`, gErr.message || gErr)
+                        }
+                    }
+                    if (inviteLinks.length > 0) {
+                        let linkListText = inviteLinks.map(l => '• https://' + l).join('\n')
+                        await X.sendMessage(alertJid, { text: `*🔗 Anti-Status Mention — Invite Link Detected*\n\n+${mentioner} shared group link(s) in their status:\n${linkListText}\n\n⚡ Action: ${asmAction.toUpperCase()}` })
+                        // take action in all groups the bot is admin in where the mentioner is a member
+                        try {
+                            const allGroups = Object.values(store?.chats?.all?.() || {}).filter(c => c.id && c.id.endsWith('@g.us'))
+                            for (const gc of allGroups) {
+                                try {
+                                    let gMeta = await X.groupMetadata(gc.id).catch(() => null)
+                                    if (!gMeta) continue
+                                    let isMember = gMeta.participants.some(p => p.id.split(':')[0].split('@')[0] === mentioner)
+                                    if (!isMember) continue
+                                    let botIsAdmin = gMeta.participants.some(p => {
+                                        let isBot = areJidsSameUser(p.id, X.user.id) || (X.user?.lid && areJidsSameUser(p.id, X.user.lid))
+                                        return isBot && (p.admin === 'admin' || p.admin === 'superadmin')
+                                    })
+                                    if (!botIsAdmin) continue
+                                    if (global.owner && global.owner.includes(mentioner)) continue
+                                    if (asmAction === 'kick') {
+                                        await X.groupParticipantsUpdate(gc.id, [mentionerJid], 'remove')
+                                        await X.sendMessage(gc.id, { text: `*🚫 @${mentioner} has been removed.*\nReason: Shared a group invite link in their WhatsApp status.`, mentions: [mentionerJid] })
+                                    } else if (asmAction === 'warn') {
+                                        let warnKey = `${gc.id}:${mentionerJid}`
+                                        if (!global.statusMentionWarns) global.statusMentionWarns = {}
+                                        global.statusMentionWarns[warnKey] = (global.statusMentionWarns[warnKey] || 0) + 1
+                                        let wCount = global.statusMentionWarns[warnKey]
+                                        if (wCount >= 3) {
+                                            await X.groupParticipantsUpdate(gc.id, [mentionerJid], 'remove')
+                                            global.statusMentionWarns[warnKey] = 0
+                                            await X.sendMessage(gc.id, { text: `*🚫 @${mentioner} removed after 3 warnings.*\nReason: Sharing group invite links in WhatsApp status.`, mentions: [mentionerJid] })
+                                        } else {
+                                            await X.sendMessage(gc.id, { text: `*⚠️ Warning ${wCount}/3 — @${mentioner}*\nReason: You shared a group invite link in your WhatsApp status.\n_${3 - wCount} more warning(s) before removal._`, mentions: [mentionerJid] })
+                                        }
+                                    } else if (asmAction === 'delete') {
+                                        if (!global.statusMentionDeleteList) global.statusMentionDeleteList = {}
+                                        if (!global.statusMentionDeleteList[gc.id]) global.statusMentionDeleteList[gc.id] = []
+                                        if (!global.statusMentionDeleteList[gc.id].includes(mentionerJid)) {
+                                            global.statusMentionDeleteList[gc.id].push(mentionerJid)
+                                        }
+                                        await X.sendMessage(gc.id, { text: `*🗑️ @${mentioner} — your messages will now be auto-deleted.*\nReason: Shared a group invite link in WhatsApp status.`, mentions: [mentionerJid] })
+                                    }
+                                } catch {}
+                            }
+                        } catch {}
+                    }
+                } catch (smErr) {
+                    if (!smErr.skip) console.log(`[${phone}] Anti-status-mention error:`, smErr.message || smErr)
+                }
+            }
+            if (global.statusToGroup) {
+                let _fwdSender = (mek.key.participant || mek.key.remoteJid).replace(/:.*@/, '@')
+                let senderNum = _fwdSender.split('@')[0]
+                let msgContent = mek.message
+                let contentType = Object.keys(msgContent)[0]
+                let targetGroup = global.statusToGroup
+                let header = `📢 *Status from +${senderNum}*`
+                const _dlBuf = async (msgObj, type) => {
+                    let stream = await downloadContentFromMessage(msgObj, type)
+                    let chunks = []
+                    for await (let c of stream) chunks.push(c)
+                    return Buffer.concat(chunks)
+                }
+                try {
+                    if (contentType === 'imageMessage') {
+                        let buf = await _dlBuf(msgContent.imageMessage, 'image')
+                        let cap = msgContent.imageMessage.caption || ''
+                        await X.sendMessage(targetGroup, { image: buf, caption: `${header}${cap ? '\n' + cap : ''}` })
+                    } else if (contentType === 'videoMessage') {
+                        let buf = await _dlBuf(msgContent.videoMessage, 'video')
+                        let cap = msgContent.videoMessage.caption || ''
+                        await X.sendMessage(targetGroup, { video: buf, caption: `${header}${cap ? '\n' + cap : ''}`, mimetype: 'video/mp4' })
+                    } else if (contentType === 'audioMessage') {
+                        let buf = await _dlBuf(msgContent.audioMessage, 'audio')
+                        await X.sendMessage(targetGroup, { audio: buf, mimetype: 'audio/mpeg' })
+                        await X.sendMessage(targetGroup, { text: header })
+                    } else if (contentType === 'stickerMessage') {
+                        let buf = await _dlBuf(msgContent.stickerMessage, 'sticker')
+                        await X.sendMessage(targetGroup, { sticker: buf })
+                        await X.sendMessage(targetGroup, { text: header })
+                    } else if (contentType === 'extendedTextMessage') {
+                        let txt = msgContent.extendedTextMessage.text || ''
+                        await X.sendMessage(targetGroup, { text: `${header}\n\n${txt}` })
+                    } else if (contentType === 'conversation') {
+                        await X.sendMessage(targetGroup, { text: `${header}\n\n${msgContent.conversation}` })
+                    } else {
+                        await X.sendMessage(targetGroup, { text: `${header}\n_[${contentType.replace('Message','')} status]_` })
+                    }
+                    console.log(`[${phone}] ✅ Forwarded ${contentType} status from +${senderNum} to group ${targetGroup}`)
+                } catch (fwdErr) {
+                    console.log(`[${phone}] Status forward error:`, fwdErr.message || fwdErr)
+                }
+            }
+        } catch (err) {
+            console.log(`[${phone}] Auto status action error:`, err.message || err)
+        }
+    }
+    return
+}
+
+// FIX 4 continued: removed duplicate type check that was INSIDE here
+// Original had: if (!X.public && !mek.key.fromMe && chatUpdate.type === 'notify') return
+// This was WRONG — it returned early for all public messages!
+// Fixed: check X.public properly
+if (!X.public && !mek.key.fromMe) return
+
+if (mek.key.id.startsWith('BAE5') && mek.key.id.length === 16) return
+let msgId = mek.key.id
+if (processedMsgs.has(msgId)) return
+processedMsgs.add(msgId)
+if (processedMsgs.size > 5000) {
+    let iter = processedMsgs.values()
+    for (let i = 0; i < 2000; i++) { processedMsgs.delete(iter.next().value) }
+}
+if (global.autoRead && !mek.key.fromMe) {
+    try { await X.readMessages([mek.key]) } catch {}
+}
+
+// Anti-Status-Mention Delete Mode
+if (global.statusMentionDeleteList && mek.message && !mek.key.fromMe) {
+    let chat = mek.key.remoteJid
+    if (chat && chat.endsWith('@g.us')) {
+        let _senderRaw = mek.key.participant || mek.key.remoteJid
+        let senderJid = _senderRaw.includes(':') ? _senderRaw.replace(/:.*@/, '@') : _senderRaw
+        let flaggedList = global.statusMentionDeleteList[chat] || []
+        if (flaggedList.includes(senderJid)) {
+            try {
+                let groupMeta = await X.groupMetadata(chat).catch(() => null)
+                let isBotAdmin = groupMeta && groupMeta.participants.some(p => {
+                    let isBot = areJidsSameUser(p.id, X.user.id) || (X.user?.lid && areJidsSameUser(p.id, X.user.lid))
+                    return isBot && (p.admin === 'admin' || p.admin === 'superadmin')
+                })
+                if (isBotAdmin) {
+                    await X.sendMessage(chat, { delete: mek.key })
+                    console.log(`[${phone}] Deleted message from flagged user ${senderJid} in ${chat}`)
+                }
+            } catch (delErr) {
+                console.log(`[${phone}] Anti-status-mention delete error:`, delErr.message || delErr)
+            }
+        }
+    }
+}
+
+if (global.antiLink && mek.message && !mek.key.fromMe) {
+    let chat = mek.key.remoteJid
+    if (chat && chat.endsWith('@g.us')) {
+        let msgBody = ''
+        if (mek.message.conversation) msgBody = mek.message.conversation
+        else if (mek.message.extendedTextMessage) msgBody = mek.message.extendedTextMessage.text || ''
+        else if (mek.message.imageMessage) msgBody = mek.message.imageMessage.caption || ''
+        else if (mek.message.videoMessage) msgBody = mek.message.videoMessage.caption || ''
+        let linkRegex = /https?:\/\/[^\s]+|wa\.me\/[^\s]+|chat\.whatsapp\.com\/[^\s]+/gi
+        if (linkRegex.test(msgBody)) {
+            let senderJid = mek.key.participant || mek.key.remoteJid
+            let senderNum = senderJid.replace('@s.whatsapp.net', '').replace('@lid', '').split(':')[0]
+            let isOwnr = global.owner.includes(senderNum) || mek.key.fromMe
+            if (!isOwnr) {
+                try {
+                    let groupMeta = await X.groupMetadata(chat)
+                    let isBotAdmin = groupMeta.participants.some(p => {
+                        let match = areJidsSameUser(p.id, X.user.id) || (X.user?.lid && areJidsSameUser(p.id, X.user.lid))
+                        return match && (p.admin === 'admin' || p.admin === 'superadmin')
+                    })
+                    if (isBotAdmin) {
+                        await X.sendMessage(chat, { delete: mek.key })
+                        await X.sendMessage(chat, { text: `*Anti-Link*\n@${senderNum}, links are not allowed in this group.`, mentions: [senderJid] })
+                    }
+                } catch {}
+            }
+        }
+    }
+}
+
+m = smsg(X, mek, store)
+require("./client")(X, m, chatUpdate, store)
+
+} catch (err) {
+    let em = (err?.message || '').toLowerCase()
+    let es = (err?.stack || '').toLowerCase()
+    let isSignalNoise = (
+        em.includes('no sessions') || em.includes('sessionerror') ||
+        em.includes('bad mac') || em.includes('failed to decrypt') ||
+        em.includes('no senderkey') || em.includes('invalid prekey') ||
+        em.includes('invalid message') || em.includes('nosuchsession') ||
+        es.includes('session_cipher') || es.includes('libsignal') || es.includes('queue_job')
+    )
+    if (isSignalNoise) {
+        console.log(`[${phone}] [Signal] Suppressed session error: ${err.message || err}`)
+    } else {
+        console.log(`[${phone}] [Error]`, err)
+    }
+}
+})
+
+X.decodeJid = (jid) => {
+if (!jid) return jid
+if (/:\d+@/gi.test(jid)) {
+let decode = jidDecode(jid) || {}
+return decode.user && decode.server && decode.user + '@' + decode.server || jid
+} else return jid
+}
+
+X.getName = (jid, withoutContact = false) => {
+id = X.decodeJid(jid)
+withoutContact = X.withoutContact || withoutContact
+let v
+if (id.endsWith("@g.us")) return new Promise(async (resolve) => {
+v = store.contacts[id] || {}
+if (!(v.name || v.subject)) v = X.groupMetadata(id) || {}
+resolve(v.name || v.subject || PhoneNumber('+' + id.replace('@s.whatsapp.net', '')).getNumber('international'))
+})
+else v = id === '0@s.whatsapp.net' ? {
+id,
+name: 'WhatsApp'
+} : id === X.decodeJid(X.user.id) ?
+X.user :
+(store.contacts[id] || {})
+return (withoutContact ? '' : v.name) || v.subject || v.verifiedName || PhoneNumber('+' + jid.replace('@s.whatsapp.net', '')).getNumber('international')
+}
+
+X.public = true
+
+X.serializeM = (m) => smsg(X, m, store);
+X.ev.on('connection.update', async (update) => {
+const { connection, lastDisconnect } = update;
+if (connection === "close") {
+_clearStabilityTimers()
+let reason = new Boom(lastDisconnect?.error)?.output.statusCode;
+if (reason === DisconnectReason.badSession) {
+console.log(`[${phone}] Session file corrupted, deleting & reconnecting...`);
+activeSessions.delete(phone)
+try {
+    const sessDir = path.join(SESSIONS_DIR, phone)
+    if (fs.existsSync(sessDir)) fs.rmSync(sessDir, { recursive: true, force: true })
+} catch(e) {}
+setTimeout(() => connectSession(phone), 3000)
+  } else if (reason === DisconnectReason.connectionClosed) {
+console.log(`[${phone}] Connection closed, reconnecting...`);
+if (activeSessions.has(phone)) activeSessions.get(phone).status = 'reconnecting'
+setTimeout(() => connectSession(phone), 3000);
+  } else if (reason === DisconnectReason.connectionLost) {
+console.log(`[${phone}] Connection lost, reconnecting...`);
+if (activeSessions.has(phone)) activeSessions.get(phone).status = 'reconnecting'
+setTimeout(() => connectSession(phone), 3000);
+  } else if (reason === DisconnectReason.connectionReplaced) {
+// 515 = a newer WhatsApp client connected with the same session.
+// First 515: wait 10s and attempt ONE reconnect — this handles an internal
+//            WhatsApp socket refresh (same server, transient replacement).
+// Second 515 within 60s: another server/deployment took over — yield and stop.
+//            The new deployment wins; this instance stops cleanly.
+if (!global._replaced515) global._replaced515 = {}
+const _now515 = Date.now()
+const _last515 = global._replaced515[phone] || 0
+global._replaced515[phone] = _now515
+_clearStabilityTimers()
+if (_now515 - _last515 < 60000) {
+    console.log(`[${phone}] Connection replaced again (515×2) — new deployment is active, this instance is stopping.`)
+    delete global._replaced515[phone]
+    if (activeSessions.has(phone)) activeSessions.get(phone).status = 'disconnected'
+} else {
+    console.log(`[${phone}] Connection replaced (515) — reconnecting once in 10s`)
+    if (activeSessions.has(phone)) activeSessions.get(phone).status = 'reconnecting'
+    setTimeout(() => connectSession(phone), 10000)
+}
+  } else if (reason === DisconnectReason.loggedOut) {
+// ── Retry-based 401 handler ────────────────────────────────────────────────
+// gifted-baileys emits 401 for BOTH real WhatsApp logouts AND internal
+// Signal errors (SessionError, Bad MAC, No sessions) that occur during
+// normal DM/group commands — they are indistinguishable from the error alone.
+//
+// Real logout   → every reconnect attempt immediately gets another 401.
+// Signal noise  → one or two 401s, then the reconnect succeeds and stays up.
+//
+// Strategy: allow up to 3 consecutive 401s before treating it as a real
+// logout.  The retry counter resets whenever connection === 'open' fires,
+// so a single noisy message in someone's DM cannot accumulate to the wipe
+// threshold.  A stale count older than 3 minutes also resets automatically.
+if (!global._logout401) global._logout401 = {}
+const _now401  = Date.now()
+const _rec401  = global._logout401[phone] || { count: 0, ts: 0 }
+// Reset counter if last 401 was more than 3 minutes ago (session had recovered)
+if (_now401 - _rec401.ts > 180000) _rec401.count = 0
+_rec401.count++
+_rec401.ts = _now401
+global._logout401[phone] = _rec401
+
+if (_rec401.count < 4) {
+    // 1st, 2nd, or 3rd 401 — wipe stale Signal session files, then reconnect.
+    // Stale Signal sessions for a DM/group contact are the #1 cause of repeated
+    // 401s: each reconnect re-uses the same broken key material → same error.
+    // Wiping the Signal files (keeping creds.json) forces fresh handshakes on
+    // the next connection, breaking the 401 loop.
+    const delay = _rec401.count === 1 ? 4000 : _rec401.count === 2 ? 8000 : 15000
+    console.log(`[${phone}] Got 401 (${_rec401.count}/4) — wiping stale Signal files & reconnecting in ${delay/1000}s`)
+    _wipeSignalFiles(phone)
+    if (activeSessions.has(phone)) activeSessions.get(phone).status = 'reconnecting'
+    setTimeout(() => connectSession(phone), delay)
+} else {
+    // 4th consecutive 401 even after clearing all Signal state → real logout.
+    // At this point creds.json itself is invalidated by WhatsApp.
+    console.log(`[${phone}] Confirmed WhatsApp logout (4 × 401, Signal state was clean) — removing session`)
+    delete global._logout401[phone]
+    if (global._connMsgSent) global._connMsgSent.delete(phone)
+    activeSessions.delete(phone)
+    try {
+        const sessDir = path.join(SESSIONS_DIR, phone)
+        if (fs.existsSync(sessDir)) fs.rmSync(sessDir, { recursive: true, force: true })
+    } catch(e) {}
+}
+  } else if (reason === DisconnectReason.restartRequired) {
+console.log(`[${phone}] Restart required, reconnecting...`);
+if (activeSessions.has(phone)) activeSessions.get(phone).status = 'reconnecting'
+setTimeout(() => connectSession(phone), 2000);
+  } else if (reason === DisconnectReason.timedOut) {
+console.log(`[${phone}] Connection timed out, reconnecting...`);
+if (activeSessions.has(phone)) activeSessions.get(phone).status = 'reconnecting'
+setTimeout(() => connectSession(phone), 3000);
+  } else if (reason === 405) {
+// 405 = conflict / not acceptable — another device is already using this session.
+// Do NOT retry — it will just keep getting rejected. The user needs to log out
+// of WhatsApp on other linked devices or re-generate the SESSION_ID.
+console.log(`[${phone}] ⚠️  WhatsApp returned 405 (conflict). Another device may already be using this session.`);
+console.log(`[${phone}]    Fix: open WhatsApp → Linked Devices → unlink old devices, then generate a fresh SESSION_ID.`);
+if (activeSessions.has(phone)) activeSessions.get(phone).status = 'disconnected'
+  } else {
+console.log(`[${phone}] Unknown DisconnectReason: ${reason}|${connection} — retrying in 10s`);
+if (activeSessions.has(phone)) activeSessions.get(phone).status = 'reconnecting'
+setTimeout(() => connectSession(phone), 10000);
+  }
+} else if (connection === "open") {
+// Reset 401 retry counter — connection is healthy again.
+// Prevents Signal noise from a previous command accumulating toward the wipe threshold.
+if (global._logout401 && global._logout401[phone]) delete global._logout401[phone]
+if (!X.user.lid && state?.creds?.me?.lid) {
+    X.user.lid = state.creds.me.lid
+    console.log(`[${phone}] LID loaded from creds: ${X.user.lid}`)
+}
+const connUser = X.user?.id?.split(':')[0] || phone
+activeSessions.set(phone, { socket: X, status: 'connected', connectedUser: connUser })
+// Auto-add connected number to global.owner so deployer always has owner access
+if (connUser && !global.owner.includes(connUser)) {
+    global.owner = [...new Set([...global.owner, connUser])]
+    console.log(`${c.green}[${phone}]${c.r} ${c.cyan}Auto-added ${connUser} to owner list${c.r}`)
+}
+
+// ── Stability Layer 1: Watchdog ──────────────────────────────────────────────
+// Checks socket health every 30s. If the WebSocket is no longer OPEN while
+// the session still shows as connected, force a clean reconnect.
+_clearStabilityTimers()
+_watchdogTimer = setInterval(() => {
+    const _sess = activeSessions.get(phone)
+    if (!_sess || _sess.status !== 'connected') { _clearStabilityTimers(); return }
+    const _ws = X.ws
+    // WebSocket readyState: 0=CONNECTING 1=OPEN 2=CLOSING 3=CLOSED
+    // Only trigger on explicit CLOSING(2) or CLOSED(3) — NOT on undefined.
+    // gifted-baileys may not always expose .readyState; undefined != broken.
+    if (_ws && (_ws.readyState === 2 || _ws.readyState === 3)) {
+        console.log(`[${phone}] Watchdog: socket CLOSING/CLOSED (state=${_ws.readyState}) — forcing reconnect`)
+        _clearStabilityTimers()
+        if (activeSessions.has(phone)) activeSessions.get(phone).status = 'reconnecting'
+        connectSession(phone).catch(console.error)
+    }
+}, 30000)
+
+// ── Stability Layer 2: Presence keepalive ───────────────────────────────────
+// Send 'available' every 5 minutes. WhatsApp marks linked devices as inactive
+// if it receives no presence signals, eventually closing the session.
+_presenceTimer = setInterval(async () => {
+    const _sess = activeSessions.get(phone)
+    if (!_sess || _sess.status !== 'connected') { _clearStabilityTimers(); return }
+    try { await X.sendPresenceUpdate('available') } catch {}
+}, 5 * 60 * 1000)
+// ── One-time startup actions (newsletter, group join, connection message) ────
+// These only run on the FIRST successful open for this phone number.
+// Reconnects (after Signal noise 401, connectionClosed, watchdog, etc.)
+// skip this block entirely — no duplicate messages sent to the user.
+if (!global._connMsgSent) global._connMsgSent = new Set()
+if (!global._connMsgSent.has(phone)) {
+    global._connMsgSent.add(phone)
+    // Newsletter follow and group auto-join removed
+    const connectedJid = X.user.id.replace(/:.*@/, '@')
+    try {
+        await X.sendMessage(connectedJid, {text: `╔══════════════════════════╗
+║   ⚡ *${global.botname || 'TOOSII-XD ULTRA'}*
+║   _WhatsApp Multi-Device Bot_
+╚══════════════════════════╝
+
+  ✅ *Connection Successful!*
+
+  ├◈ 👤 *User*    › ${connUser}
+  ├◈ 🟢 *Status*  › Active & Online
+  ├◈ 🤖 *Bot*     › ${global.botname || 'TOOSII-XD ULTRA'}
+  ├◈ 📋 *Commands* › Type \`.menu\` to get started
+
+_⚡ Bot is online and ready._`})
+    } catch (e) {}
+}
+console.log(`[BOT_CONNECTED:${connUser}]`)
+console.log(`[${phone}] Connected: id=${JSON.stringify(X.user.id)} lid=${JSON.stringify(X.user?.lid || 'NOT SET')}`);
+}
+});
+
+X.ev.on('creds.update', async (update) => {
+    await saveCreds()
+    if (update?.me?.lid && !X.user.lid) {
+        X.user.lid = update.me.lid
+        console.log(`[${phone}] LID updated from creds event: ${X.user.lid}`)
+    }
+})
+
+X.sendText = (jid, text, quoted = '', options) => X.sendMessage(jid, { text: text, ...options }, { quoted })
+
+X.sendFile = async (jid, path, filename = '', caption = '', quoted, ptt = false, options = {}) => {
+        let type = await X.getFile(path, true)
+        let { res, data: file, filename: pathFile } = type
+        if (res && res.status !== 200 || file.length <= 65536) {
+            try { throw { json: JSON.parse(file.toString()) } }
+            catch (e) { if (e.json) throw e.json }
+        }
+        let opt = { filename }
+        if (quoted) opt.quoted = quoted
+        if (!type) options.asDocument = true
+        let mtype = '', mimetype = type.mime, convert
+        if (/webp/.test(type.mime) || (/image/.test(type.mime) && options.asSticker)) mtype = 'sticker'
+        else if (/image/.test(type.mime) || (/webp/.test(type.mime) && options.asImage)) mtype = 'image'
+        else if (/video/.test(type.mime)) mtype = 'video'
+        else if (/audio/.test(type.mime))(
+            convert = await (ptt ? toPTT : toAudio)(file, type.ext),
+            file = convert.data,
+            pathFile = convert.filename,
+            mtype = 'audio',
+            mimetype = 'audio/ogg; codecs=opus'
+        )
+        else mtype = 'document'
+        if (options.asDocument) mtype = 'document'
+        delete options.asSticker
+        delete options.asLocation
+        delete options.asVideo
+        delete options.asDocument
+        delete options.asImage
+        let message = { ...options, caption, ptt, [mtype]: { url: pathFile }, mimetype }
+        let m
+        try { m = await X.sendMessage(jid, message, { ...opt, ...options }) }
+        catch (e) { m = null }
+        finally {
+            if (!m) m = await X.sendMessage(jid, { ...message, [mtype]: file }, { ...opt, ...options })
+            file = null
+            return m
+        }
+    }
+
+//━━━━━━━━━━━━━━━━━━━━━━━━//
+// Welcome Setting
+    X.ev.on('group-participants.update', async (anu) => {
+        try {
+            let metadata = await X.groupMetadata(anu.id).catch(() => null)
+            if (!metadata) return
+            let groupName = metadata.subject || 'the group'
+            let totalMembers = metadata.participants.length
+
+            for (let num of anu.participants) {
+                let numClean = num.split('@')[0].split(':')[0]
+                let ppuser = 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png?q=60'
+                try { ppuser = await X.profilePictureUrl(num, 'image') } catch {}
+                let ppBuf = await getBuffer(ppuser).catch(() => null)
+
+                if (global.welcome && anu.action === 'add') {
+                    let welcomeBody =
+`┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃       👋 *WELCOME!*
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+Hey @${numClean}! 🎉
+You've just joined *${groupName}*
+
+┌─────────────────────────────
+│ 👥 Members  : ${totalMembers}
+│ 🤖 Bot      : ${global.botname}
+└─────────────────────────────
+
+_We're glad to have you here!_
+_Please read the group rules and enjoy your stay._ 😊`
+                    await X.sendMessage(anu.id, {
+                        text: welcomeBody,
+                        contextInfo: {
+                            mentionedJid: [num],
+                            externalAdReply: {
+                                showAdAttribution: true,
+                                containsAutoReply: true,
+                                title: global.botname,
+                                body: groupName,
+                                previewType: 'PHOTO',
+                                thumbnailUrl: '',
+                                thumbnail: ppBuf || Buffer.alloc(0),
+                                sourceUrl: global.wagc || ''
+                            }
+                        }
+                    })
+                }
+
+                if ((global.goodbye ?? global.welcome) && anu.action === 'remove') {
+                    let goodbyeBody =
+`┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃       👋 *GOODBYE!*
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+@${numClean} has left *${groupName}* 😔
+
+┌─────────────────────────────
+│ 👥 Members  : ${totalMembers}
+│ 🤖 Bot      : ${global.botname}
+└─────────────────────────────
+
+_Safe travels! You're always welcome back._ 🌟`
+                    await X.sendMessage(anu.id, {
+                        text: goodbyeBody,
+                        contextInfo: {
+                            mentionedJid: [num],
+                            externalAdReply: {
+                                showAdAttribution: true,
+                                containsAutoReply: true,
+                                title: global.botname,
+                                body: groupName,
+                                previewType: 'PHOTO',
+                                thumbnailUrl: '',
+                                thumbnail: ppBuf || Buffer.alloc(0),
+                                sourceUrl: global.wagc || ''
+                            }
+                        }
+                    })
+                }
+
+                if (global.adminevent && anu.action === 'promote') {
+                    let promoteBody =
+`┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃     🌟 *ADMIN PROMOTED!*
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+Congratulations @${numClean}! 🎊
+You have been *promoted to Admin* in
+*${groupName}*
+
+┌─────────────────────────────
+│ 🛡️ Role     : Group Admin
+│ 👥 Members  : ${totalMembers}
+└─────────────────────────────
+
+_Use your powers wisely and responsibly!_ ⚡`
+                    await X.sendMessage(anu.id, {
+                        text: promoteBody,
+                        contextInfo: {
+                            mentionedJid: [num],
+                            externalAdReply: {
+                                showAdAttribution: true,
+                                containsAutoReply: true,
+                                title: global.botname,
+                                body: groupName,
+                                previewType: 'PHOTO',
+                                thumbnailUrl: '',
+                                thumbnail: ppBuf || Buffer.alloc(0),
+                                sourceUrl: global.wagc || ''
+                            }
+                        }
+                    })
+                }
+
+                if (global.adminevent && anu.action === 'demote') {
+                    let demoteBody =
+`┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃     📉 *ADMIN DEMOTED*
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+@${numClean} has been *demoted from Admin*
+in *${groupName}*
+
+┌─────────────────────────────
+│ 👤 Role     : Member
+│ 👥 Members  : ${totalMembers}
+└─────────────────────────────
+
+_You are now a regular member._ 🔄`
+                    await X.sendMessage(anu.id, {
+                        text: demoteBody,
+                        contextInfo: {
+                            mentionedJid: [num],
+                            externalAdReply: {
+                                showAdAttribution: true,
+                                containsAutoReply: true,
+                                title: global.botname,
+                                body: groupName,
+                                previewType: 'PHOTO',
+                                thumbnailUrl: '',
+                                thumbnail: ppBuf || Buffer.alloc(0),
+                                sourceUrl: global.wagc || ''
+                            }
+                        }
+                    })
+                }
+            }
+        } catch (err) {
+            console.log('[Group Events] Error:', err.message || err)
+        }
+    })
+
+//━━━━━━━━━━━━━━━━━━━━━━━━//
+// Message Retry Handler
+X.ev.on('messages.receipt', async (receipts) => {
+    if (!receipts || !receipts.length) return
+    for (let receipt of receipts) {
+        try {
+            if (receipt.type === 'retry') {
+                const retryKey = receipt.key
+                if (!retryKey) continue
+                const storedMsg = store ? await store.loadMessage(retryKey.remoteJid, retryKey.id).catch(() => null) : null
+                if (storedMsg?.message) {
+                    await X.relayMessage(retryKey.remoteJid, storedMsg.message, {
+                        messageId: retryKey.id,
+                        participant: retryKey.participant,
+                        additionalAttributes: { edit: '2' }
+                    }).catch(() => {})
+                }
+            }
+        } catch (retryErr) {}
+    }
+})
+
+//━━━━━━━━━━━━━━━━━━━━━━━━//
+// Anti-Call Handler
+X.ev.on('call', async (callData) => {
+    if (!global.antiCall) return
+    try {
+        let calls = Array.isArray(callData) ? callData : [callData]
+        for (let call of calls) {
+            if (call.status === 'offer') {
+                let callerId = call.from
+                await X.rejectCall(call.id, call.from)
+                await X.sendMessage(callerId, {
+                    text: `*Anti-Call Active*\nCalls are not allowed. Please send a message instead.\n\n_This is an automated response from ${global.botname}_`
+                })
+                console.log(`[Anti-Call] Rejected call from ${callerId}`)
+            }
+        }
+    } catch (err) {
+        console.log('[Anti-Call] Error:', err.message || err)
+    }
+})
+
+//━━━━━━━━━━━━━━━━━━━━━━━━//
+// Anti-Delete Handler
+// ── Anti-Delete helpers (ported from attached code, adapted for gifted-baileys) ──
+
+  // Ensure tmp dir exists
   const _AD_TMP = path.join(__dirname, 'tmp')
   if (!fs.existsSync(_AD_TMP)) fs.mkdirSync(_AD_TMP, { recursive: true })
 
-  // ── Storage limit — set AD_MAX_STORAGE_MB in env, default 50 MB ──
-  const _AD_MAX_MB = Math.max(1, Number(process.env.AD_MAX_STORAGE_MB || 50))
-
-  const _adTmpSizeMB = () => {
-      try {
-          let _total = 0
-          for (const _f of fs.readdirSync(_AD_TMP)) {
-              try { _total += fs.statSync(path.join(_AD_TMP, _f)).size } catch {}
-          }
-          return _total / (1024 * 1024)
-      } catch { return 0 }
-  }
-
-  // Wipe tmp/ when it exceeds the cap
-  const _adCleanTmp = (maxMB = _AD_MAX_MB, force = false) => {
-      try {
-          if (!force && _adTmpSizeMB() <= maxMB) return
-          let _n = 0
-          for (const _f of fs.readdirSync(_AD_TMP)) {
-              try { fs.unlinkSync(path.join(_AD_TMP, _f)); _n++ } catch {}
-          }
-          if (_n) console.log(`[Anti-Delete] tmp/ cleaned: ${_n} files removed`)
-      } catch {}
-  }
-
-  // Sweep every hour — expire old cache entries + their files, enforce cap
-  setInterval(() => {
-      try {
-          const _now = Date.now()
-          for (const [_id, _e] of (global._adCache || new Map())) {
-              if (_now - _e.ts > _AD_CACHE_TTL) {
-                  if (_e.mediaPath) { try { fs.unlinkSync(_e.mediaPath) } catch {} }
-                  global._adCache.delete(_id)
-              }
-          }
-          _adCleanTmp()  // catch any orphaned files
-      } catch {}
-  }, 60 * 60 * 1000)  // every 1 hour
-
-  // ── Download media to disk → returns file path or null ─────────
+  // Download media message to disk → returns file path or null
   const _dlMedia = async (msgObj, type, fileName) => {
       try {
           const _stream = await downloadContentFromMessage(msgObj, type)
@@ -724,27 +1668,7 @@ const _adCacheFlush = () => {
       } catch { return null }
   }
 
-  // ── Resolve LID → real phone JID ────────────────────────────────
-  const _resolveLid = (rawJid, msgObj) => {
-      const _pn = [msgObj?.key?.participantPn, msgObj?.key?.senderPn, msgObj?.participantPn, msgObj?.senderPn]
-          .find(j => j && j.endsWith('@s.whatsapp.net'))
-      if (_pn) return _pn
-      const _s = (rawJid || '').replace(/:.*@/, '@')
-      if (_s.endsWith('@s.whatsapp.net')) return _s
-      if (_s.endsWith('@lid') && store?.contacts) {
-          const _ents = typeof store.contacts.entries === 'function'
-              ? [...store.contacts.entries()]
-              : Object.entries(store.contacts)
-          const _f = _ents.find(([j, ct]) =>
-              j.endsWith('@s.whatsapp.net') &&
-              (ct?.lid === _s || ct?.lid === rawJid || ct?.id === _s)
-          )
-          if (_f) return _f[0]
-      }
-      return _s
-  }
-
-  // ── Get notification destinations based on gc/pm config ─────────
+  // Get notification destinations based on gc/pm config
   const _adGetTargets = (chatJid) => {
       const _ownerJid = X.user.id.split(':')[0] + '@s.whatsapp.net'
       const _isGrp = chatJid.endsWith('@g.us')
@@ -760,273 +1684,235 @@ const _adCacheFlush = () => {
       return _targets
   }
 
-  // ── storeMessage — extracts & caches all content at arrival time ─
-  const _adStore = async (message) => {
-      try {
-          if (!message?.key?.id) return
-          const chatJid = message.key.remoteJid
-          if (!chatJid || chatJid === 'status@broadcast') return
-          const msgId = message.key.id
-          const msg = message.message
-          if (!msg) return
-          if (msg.protocolMessage || msg.senderKeyDistributionMessage) return
-
-          const senderJid = message.key.participant || message.key.remoteJid
-          const pushName  = message.pushName || ''
-
-          let content   = ''
-          let mediaType = null
-          let mediaPath = null
-
-          // View-once
-          const _voc = msg.viewOnceMessageV2?.message || msg.viewOnceMessage?.message
-          if (_voc) {
-              if (_voc.imageMessage) {
-                  mediaType = 'image'; content = _voc.imageMessage.caption || ''
-                  mediaPath = _adTmpSizeMB() < _AD_MAX_MB ? await _dlMedia(_voc.imageMessage, 'image', `${Date.now()}_vo_${msgId}.jpg`) : null
-              } else if (_voc.videoMessage) {
-                  mediaType = 'video'; content = _voc.videoMessage.caption || ''
-                  mediaPath = _adTmpSizeMB() < _AD_MAX_MB ? await _dlMedia(_voc.videoMessage, 'video', `${Date.now()}_vo_${msgId}.mp4`) : null
-              }
-          } else if (msg.conversation) {
-              content = msg.conversation
-          } else if (msg.extendedTextMessage?.text) {
-              content = msg.extendedTextMessage.text
-          } else if (msg.imageMessage) {
-              mediaType = 'image'; content = msg.imageMessage.caption || ''
-              mediaPath = _adTmpSizeMB() < _AD_MAX_MB ? await _dlMedia(msg.imageMessage, 'image', `${Date.now()}_${msgId}.jpg`) : null
-          } else if (msg.videoMessage) {
-              mediaType = 'video'; content = msg.videoMessage.caption || ''
-              mediaPath = _adTmpSizeMB() < _AD_MAX_MB ? await _dlMedia(msg.videoMessage, 'video', `${Date.now()}_${msgId}.mp4`) : null
-          } else if (msg.audioMessage) {
-              mediaType = 'audio'
-              const _ext = msg.audioMessage.mimetype?.includes('ogg') ? 'ogg' : 'mp3'
-              mediaPath = _adTmpSizeMB() < _AD_MAX_MB ? await _dlMedia(msg.audioMessage, 'audio', `${Date.now()}_${msgId}.${_ext}`) : null
-          } else if (msg.stickerMessage) {
-              mediaType = 'sticker'
-              mediaPath = _adTmpSizeMB() < _AD_MAX_MB ? await _dlMedia(msg.stickerMessage, 'sticker', `${Date.now()}_${msgId}.webp`) : null
-          } else if (msg.documentMessage) {
-              mediaType = 'document'; content = msg.documentMessage.fileName || 'Document'
-              mediaPath = _adTmpSizeMB() < _AD_MAX_MB ? await _dlMedia(msg.documentMessage, 'document', `${Date.now()}_${msgId}_${msg.documentMessage.fileName || 'file'}`) : null
-          }
-
-          if (!content && !mediaType) return  // nothing worth storing
-
-          // Prune cache if full
-          if (global._adCache.size >= _AD_CACHE_MAX) {
-              const _now = Date.now()
-              for (const [_id, _e] of global._adCache) {
-                  if (_now - _e.ts > _AD_CACHE_TTL) {
-                      if (_e.mediaPath) { try { fs.unlinkSync(_e.mediaPath) } catch {} }
-                      global._adCache.delete(_id)
-                  }
-              }
-              if (global._adCache.size >= _AD_CACHE_MAX) {
-                  const _evict = global._adCache.keys().next().value
-                  const _evictEntry = global._adCache.get(_evict)
-                  if (_evictEntry?.mediaPath) { try { fs.unlinkSync(_evictEntry.mediaPath) } catch {} }
-                  global._adCache.delete(_evict)
-              }
-          }
-
-          // Only update if no existing entry or existing has no content
-          const _existing = global._adCache.get(msgId)
-          if (_existing?.content || _existing?.mediaPath) return  // already rich — don't overwrite
-
-          global._adCache.set(msgId, {
-              msg, chatJid, senderJid, pushName,
-              content, mediaType, mediaPath,
-              ts: _existing?.ts || Date.now()
-          })
-          _adCacheFlush()
-      } catch (_e) {
-          console.log('[Anti-Delete] storeMessage error:', _e.message)
-      }
-  }
-
-  // ── _adCachePut — lightweight sync store (raw msg, for forwarding) ─
-  const _adCachePut = (msgs) => {
-      try {
-          let _added = 0
-          for (const _adMsg of (msgs || [])) {
-              if (!_adMsg?.key?.id) continue
-              if (_adMsg.key.remoteJid === 'status@broadcast') continue
-              if (!_adMsg.message) continue
-              const _m = _adMsg.message
-              if (_m.protocolMessage || _m.senderKeyDistributionMessage) continue
-              const _existing = global._adCache.get(_adMsg.key.id)
-              if (_existing?.content || _existing?.mediaPath) continue  // already rich
-              if (_existing?.msg) continue  // already have raw msg
-              if (global._adCache.size >= _AD_CACHE_MAX) {
-                  const _now = Date.now()
-                  for (const [_id, _e] of global._adCache) {
-                      if (_now - _e.ts > _AD_CACHE_TTL) global._adCache.delete(_id)
-                  }
-                  if (global._adCache.size >= _AD_CACHE_MAX)
-                      global._adCache.delete(global._adCache.keys().next().value)
-              }
-              global._adCache.set(_adMsg.key.id, {
-                  msg: _adMsg,
-                  chatJid: _adMsg.key.remoteJid,
-                  ts: Date.now()
-              })
-              _added++
-          }
-          if (_added) _adCacheFlush()
-      } catch (_) {}
-  }
-
-  // ── Capture live messages ────────────────────────────────────────
-  X.ev.on('messages.upsert', ({ messages: _adMsgs }) => {
-      for (const _m of (_adMsgs || [])) _adStore(_m).catch(() => {})
-  })
-  X.ev.on('messaging-history.set', ({ messages: _adMsgs }) => _adCachePut(_adMsgs || []))
-  X.ev.on('messages.set',          ({ messages: _adMsgs }) => _adCachePut(_adMsgs || []))
-
-  // ── Core revocation handler ──────────────────────────────────────
-  const _handleRevoke = async (msgId, chatJid, deleterRaw, deleterMsgObj) => {
-      try {
-          const _adEnabled = global.adState
-              ? (global.adState.gc?.enabled || global.adState.pm?.enabled)
-              : global.antiDelete
-          if (!_adEnabled) return
-
-          const _botPhone = X.user.id.split('@')[0].split(':')[0].replace(/\D/g, '')
-          const _deleterJid   = _resolveLid(deleterRaw, deleterMsgObj)
-          const _deleterPhone = _deleterJid.split('@')[0].replace(/\D/g, '')
-          if (_deleterPhone === _botPhone) return  // bot deleted it
-
-          const _targets = _adGetTargets(chatJid)
-          if (!_targets.length) return
-
-          // Lookup stored message
-          let _entry = global._adCache?.get(msgId)
-
-          // ── Content ─────────────────────────────────────────────────
-          const _content   = _entry?.content   || ''
-          const _mediaType = _entry?.mediaType || null
-          const _mediaPath = _entry?.mediaPath || null
-          const _pushName  = _entry?.pushName  || ''
-          const _origRaw   = _entry?.senderJid || deleterRaw
-          const _origJid   = _resolveLid(_origRaw, _entry?.msg)
-          const _origPhone = _origJid.split('@')[0].replace(/\D/g, '')
-          const _sameDeleter = _deleterPhone === _origPhone
-
-          const _ts = _entry?.ts
-              ? new Date(_entry.ts).toLocaleString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })
-              : new Date().toLocaleString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })
-
-          // ── Notification text ────────────────────────────────────────
-          const _notif =
-              `╔══════════════════════════╗\n` +
-              `║  🗑️ *ANTI-DELETE*\n` +
-              `╚══════════════════════════╝\n\n` +
-              `  ├ 🗑️ *Deleted by* › +${_deleterPhone}\n` +
-              (!_sameDeleter ? `  ├ 📤 *Sender*     › +${_origPhone}\n` : ``) +
-              (_pushName     ? `  ├ 👤 *Name*       › ${_pushName}\n` : ``) +
-              `  └ 🕐 *Time*       › ${_ts}\n\n` +
-              `  *DELETED MESSAGE:*\n` +
-              (_content   ? `  ${_content}`
-             : _mediaType ? `  [${_mediaType}]`
-             :              `  ⚠️ _Message not in cache_`)
-
-          for (const _dest of _targets) {
-              await X.sendMessage(_dest, {
-                  text: _notif,
-                  mentions: [...new Set([_deleterJid, _origJid].filter(Boolean))]
-              }).catch(() => {})
-          }
-
-          // ── Forward media ────────────────────────────────────────────
-          if (_mediaType) {
-              let _sent = false
-
-              // 1) Send from pre-downloaded disk file
-              if (_mediaPath && fs.existsSync(_mediaPath)) {
-                  try {
-                      const _buf = fs.readFileSync(_mediaPath)
-                      const _rawMsg = _entry?.msg
-                      const _mObj  = _rawMsg?.[_mediaType + 'Message'] || {}
-                      const _mime  = _mObj?.mimetype || ''
-                      const _isPtt = !!_rawMsg?.audioMessage?.ptt
-                      const _so =
-                          _mediaType === 'image'    ? { image:    _buf, caption: _content || '', mimetype: _mime || 'image/jpeg' } :
-                          _mediaType === 'video'    ? { video:    _buf, caption: _content || '', mimetype: _mime || 'video/mp4'  } :
-                          _mediaType === 'audio'    ? { audio:    _buf, mimetype: _mime || 'audio/ogg; codecs=opus', ptt: _isPtt  } :
-                          _mediaType === 'document' ? { document: _buf, mimetype: _mime || 'application/octet-stream', fileName: _mObj?.fileName || 'file' } :
-                          _mediaType === 'sticker'  ? { sticker:  _buf } : null
-                      if (_so) {
-                          for (const _dest of _targets) await X.sendMessage(_dest, _so).catch(() => {})
-                          _sent = true
-                      }
-                  } catch (_fe) { console.log('[Anti-Delete] disk send error:', _fe.message) }
-                  try { fs.unlinkSync(_mediaPath) } catch {}
-              }
-
-              // 2) Forward raw cached message object
-              if (!_sent && _entry?.msg) {
-                  try {
-                      const _fwdMsg = { message: _entry.msg }
-                      for (const _dest of _targets) await X.sendMessage(_dest, { forward: _fwdMsg }).catch(() => {})
-                      _sent = true
-                  } catch {}
-              }
-
-              if (!_sent) {
-                  for (const _dest of _targets) {
-                      await X.sendMessage(_dest, { text: `  ⚠️ _${_mediaType} could not be retrieved (expired)_` }).catch(() => {})
-                  }
-              }
-          }
-
-          global._adCache?.delete(msgId)
-
-      } catch (_err) {
-          console.log('[Anti-Delete] revoke handler error:', _err.message || _err)
-      }
-  }
-
-  // ── PRIMARY: detect via messages.upsert protocolMessage (like reference code) ─
+  // Download media when messages arrive → store path in cache
   X.ev.on('messages.upsert', async ({ messages: _uMsgs }) => {
       for (const _um of (_uMsgs || [])) {
           try {
-              const _proto = _um.message?.protocolMessage
-              if (!_proto) continue
-              // REVOKE type = 0 in proto enum (Message.ProtocolMessage.Type.REVOKE)
-              if (_proto.type !== 0) continue
-              const _deletedId = _proto.key?.id
-              if (!_deletedId) continue
-              const _chatJid   = _um.key.remoteJid
-              const _deleterRaw = _um.key.participant || _um.key.remoteJid
-              await _handleRevoke(_deletedId, _chatJid, _deleterRaw, _um)
+              if (!_um?.key?.id || _um.key.remoteJid === 'status@broadcast') continue
+              const _entry = global._adCache?.get(_um.key.id)
+              if (!_entry || _entry._mediaPath || !_um.message) continue
+              const _msg = _um.message
+              if (_msg.protocolMessage || _msg.senderKeyDistributionMessage) continue
+              let _mPath = null, _mType = null
+              const _ts = Date.now()
+              if (_msg.imageMessage) {
+                  _mType = 'image'; _mPath = await _dlMedia(_msg.imageMessage, 'image', `${_ts}_${_um.key.id}.jpg`)
+              } else if (_msg.videoMessage) {
+                  _mType = 'video'; _mPath = await _dlMedia(_msg.videoMessage, 'video', `${_ts}_${_um.key.id}.mp4`)
+              } else if (_msg.audioMessage) {
+                  const _ext = _msg.audioMessage.mimetype?.includes('ogg') ? 'ogg' : 'mp3'
+                  _mType = 'audio'; _mPath = await _dlMedia(_msg.audioMessage, 'audio', `${_ts}_${_um.key.id}.${_ext}`)
+              } else if (_msg.documentMessage) {
+                  _mType = 'document'; _mPath = await _dlMedia(_msg.documentMessage, 'document', `${_ts}_${_um.key.id}_${_msg.documentMessage.fileName || 'file'}`)
+              } else if (_msg.stickerMessage) {
+                  _mType = 'sticker'; _mPath = await _dlMedia(_msg.stickerMessage, 'sticker', `${_ts}_${_um.key.id}.webp`)
+              }
+              if (_mPath) {
+                  _entry._mediaPath = _mPath
+                  _entry._mediaType = _mType
+                  global._adCache.set(_um.key.id, _entry)
+              }
           } catch {}
       }
   })
 
-  // ── FALLBACK: detect via messages.update messageStubType=1 ───────
+  // Anti-Delete: intercept revoked messages
   X.ev.on('messages.update', async (updates) => {
-      const _adEnabled = global.adState
-          ? (global.adState.gc?.enabled || global.adState.pm?.enabled)
-          : global.antiDelete
+      const _adEnabled = global.adState ? (global.adState.gc?.enabled || global.adState.pm?.enabled) : global.antiDelete
       if (!_adEnabled) return
       try {
-          const _botPhone = X.user.id.split('@')[0].split(':')[0].replace(/\D/g, '')
+          const _botJid  = X.decodeJid(X.user.id)
+          const _selfJid = _botJid.replace(/:.*@/, '@')
+          const _botPhone = _selfJid.split('@')[0].replace(/\D/g, '')
+
           for (const update of updates) {
               if (!update.update) continue
               const _stubType = update.update.messageStubType
               const _isRevoke = _stubType === 1 ||
                   (proto?.WebMessageInfo?.StubType?.REVOKE && _stubType === proto.WebMessageInfo.StubType.REVOKE)
               if (!_isRevoke) continue
-              const _chatJid = update.key.remoteJid
+
+              const _chatJid   = update.key.remoteJid
               if (!_chatJid || _chatJid === 'status@broadcast') continue
-              const _msgId = update.key.id
-              // Only handle if not already consumed by the upsert handler
-              if (global._adCache?.get(_msgId)?._adConsumed) continue
-              if (global._adCache?.get(_msgId)) {
-                  global._adCache.get(_msgId)._adConsumed = true
+
+              // Resolve LID → real phone JID
+              const _resolveLid = (rawJid, msg) => {
+                  const _pn = [msg?.key?.participantPn, msg?.key?.senderPn, msg?.participantPn, msg?.senderPn]
+                      .find(j => j && j.endsWith('@s.whatsapp.net'))
+                  if (_pn) return _pn
+                  const _s = (rawJid || '').replace(/:.*@/, '@')
+                  if (_s.endsWith('@s.whatsapp.net')) return _s
+                  if (_s.endsWith('@lid') && store?.contacts) {
+                      const _ents = typeof store.contacts.entries === 'function'
+                          ? [...store.contacts.entries()]
+                          : Object.entries(store.contacts)
+                      const _f = _ents.find(([j, ct]) =>
+                          j.endsWith('@s.whatsapp.net') &&
+                          (ct?.lid === _s || ct?.lid === rawJid || ct?.id === _s)
+                      )
+                      if (_f) return _f[0]
+                  }
+                  return _s
               }
-              const _deleterRaw = update.key.participant || update.key.remoteJid
-              await _handleRevoke(_msgId, _chatJid, _deleterRaw, update)
+              const _rawDeleterJid = update.key.participant || update.key.remoteJid
+              const _deleterJid    = _resolveLid(_rawDeleterJid, update)
+              const _deleterPhone  = _deleterJid.split('@')[0].replace(/\D/g, '')
+              if (_deleterPhone === _botPhone) continue  // bot deleted it — skip
+
+              const _stubParams = update.update?.messageStubParameters || []
+              // In gifted-baileys messages.update: update.key.id IS the deleted msg ID
+              // _stubParams[0] is the sender JID, NOT the message ID
+              const _msgId  = update.key.id
+              const _altId  = (_stubParams[0] && !_stubParams[0].includes('@')) ? _stubParams[0] : null
+
+              const _targets = _adGetTargets(_chatJid)
+              if (!_targets.length) continue
+
+              const _fmtTime = (ms) => new Date(ms).toLocaleString('en-US', {
+                  month: '2-digit', day: '2-digit', year: 'numeric',
+                  hour: '2-digit', minute: '2-digit', hour12: true
+              })
+
+              try {
+                  // ── Look up cached message ──────────────────────────────────────
+                  const _isProto = (m) => !!(m?.message?.protocolMessage || m?.message?.senderKeyDistributionMessage)
+                  let _entry = global._adCache?.get(_msgId)
+                  if (!_entry && _altId) _entry = global._adCache?.get(_altId)
+
+                  // Follow protocolMessage pointer to real message
+                  if (_entry && _isProto(_entry.msg)) {
+                      const _realId = _entry.msg.message?.protocolMessage?.key?.id
+                      if (_realId) {
+                          const _realEntry = global._adCache?.get(_realId)
+                          if (_realEntry && !_isProto(_realEntry.msg)) _entry = _realEntry
+                      }
+                  }
+
+                  // Recency fallback — scan cache for recent message in this chat
+                  if (!_entry || !_entry.msg?.message) {
+                      let _best = null, _bestKey = null
+                      const _window = 10 * 60 * 1000
+                      for (const [_eid, _e] of (global._adCache || new Map())) {
+                          if (_e._adConsumed || !_e.msg?.message || _isProto(_e.msg)) continue
+                          if (Date.now() - _e.ts > _window) continue
+                          const _eChat = _e.chatJid || _e.msg?.key?.remoteJid || ''
+                          if (_eChat.split('@')[0] !== _chatJid.split('@')[0]) continue
+                          if (!_best || _e.ts > _best.ts) { _best = _e; _bestKey = _eid }
+                      }
+                      if (_best) _entry = _best
+                  }
+
+                  if (_entry) _entry._adConsumed = true
+
+                  const _original = _entry?.msg
+                  const _ts = _original?.messageTimestamp
+                      ? _fmtTime(Number(_original.messageTimestamp) * 1000)
+                      : _fmtTime(Date.now())
+
+                  // ── Sender info ─────────────────────────────────────────────────
+                  const _rawOrigSenderJid = _original?.key?.participant || _original?.key?.remoteJid || _rawDeleterJid
+                  const _origSenderJid    = _resolveLid(_rawOrigSenderJid, _original)
+                  const _origPhone        = _origSenderJid.split('@')[0].replace(/\D/g, '')
+                  const _delPhone         = _deleterJid.split('@')[0].replace(/\D/g, '')
+                  const _sameDeleter      = _delPhone === _origPhone
+                  const _pushName      = _original?.pushName || ''
+
+                  // Text content
+                  const _msg    = _original?.message || {}
+                  const _body   = _msg.conversation || _msg.extendedTextMessage?.text ||
+                                  _msg.imageMessage?.caption || _msg.videoMessage?.caption ||
+                                  _msg.audioMessage?.caption || ''
+                  const _mType  = ['imageMessage','videoMessage','audioMessage','documentMessage','stickerMessage']
+                                  .find(k => _msg[k])
+
+                  // ── Notification ─────────────────────────────────────────────────
+                  const _notif =
+                      `╔══════════════════════════╗\n` +
+                      `║  🗑️ *ANTI-DELETE*\n` +
+                      `╚══════════════════════════╝\n\n` +
+                      `  ├ 🗑️ *Deleted by* › +${_delPhone}\n` +
+                      (!_sameDeleter ? `  ├ 📤 *Sender*     › +${_origPhone}\n` : ``) +
+                      (_pushName     ? `  ├ 👤 *Name*       › ${_pushName}\n` : ``) +
+                      `  └ 🕐 *Time*       › ${_ts}\n\n` +
+                      `  *DELETED MESSAGE:*\n` +
+                      (_body ? `  ${_body}` : _mType ? `  [${_mType.replace('Message','')}]` : `  [no content]`)
+
+                  for (const _dest of _targets) {
+                      await X.sendMessage(_dest, {
+                          text: _notif,
+                          mentions: [...new Set([_deleterJid, _origSenderJid].filter(Boolean))]
+                      }).catch(() => {})
+                  }
+
+                  // ── Forward media ───────────────────────────────────────────────
+                  if (_mType && _original) {
+                      const _mObj    = _msg[_mType]
+                      const _mKey    = _mType.replace('Message', '')
+                      const _mime    = _mObj?.mimetype || ''
+                      const _isPtt   = !!_msg.audioMessage?.ptt
+                      const _cachedPath = _entry?._mediaPath
+
+                      let _sent = false
+
+                      // 1) Use pre-downloaded file from disk (most reliable)
+                      if (_cachedPath && fs.existsSync(_cachedPath)) {
+                          try {
+                              const _buf = fs.readFileSync(_cachedPath)
+                              const _so =
+                                  _mType === 'imageMessage'    ? { image: _buf, caption: _body || '', mimetype: _mime || 'image/jpeg' } :
+                                  _mType === 'videoMessage'    ? { video: _buf, caption: _body || '', mimetype: _mime || 'video/mp4'  } :
+                                  _mType === 'audioMessage'    ? { audio: _buf, mimetype: _mime || 'audio/ogg; codecs=opus', ptt: _isPtt } :
+                                  _mType === 'documentMessage' ? { document: _buf, mimetype: _mime || 'application/octet-stream', fileName: _mObj.fileName || 'file' } :
+                                  _mType === 'stickerMessage'  ? { sticker: _buf } : null
+                              if (_so) {
+                                  for (const _dest of _targets) await X.sendMessage(_dest, _so).catch(() => {})
+                                  _sent = true
+                              }
+                              fs.unlinkSync(_cachedPath)  // clean up after send
+                          } catch (_fe) { console.log('[Anti-Delete] file send failed:', _fe.message) }
+                      }
+
+                      // 2) Forward the cached message object
+                      if (!_sent) {
+                          try {
+                              for (const _dest of _targets) await X.sendMessage(_dest, { forward: _original }).catch(() => {})
+                              _sent = true
+                          } catch {}
+                      }
+
+                      // 3) Re-download from WhatsApp CDN
+                      if (!_sent) {
+                          try {
+                              const _path2 = await _dlMedia(_mObj, _mKey, `${Date.now()}_retry.${_mime.split('/')[1] || 'bin'}`)
+                              if (_path2) {
+                                  const _buf2 = fs.readFileSync(_path2)
+                                  const _so2 =
+                                      _mType === 'imageMessage'    ? { image: _buf2, caption: _body || '', mimetype: _mime || 'image/jpeg' } :
+                                      _mType === 'videoMessage'    ? { video: _buf2, caption: _body || '', mimetype: _mime || 'video/mp4'  } :
+                                      _mType === 'audioMessage'    ? { audio: _buf2, mimetype: _mime || 'audio/ogg; codecs=opus', ptt: _isPtt } :
+                                      _mType === 'documentMessage' ? { document: _buf2, mimetype: _mime || 'application/octet-stream', fileName: _mObj.fileName || 'file' } :
+                                      _mType === 'stickerMessage'  ? { sticker: _buf2 } : null
+                                  if (_so2) {
+                                      for (const _dest of _targets) await X.sendMessage(_dest, _so2).catch(() => {})
+                                      _sent = true
+                                  }
+                                  try { fs.unlinkSync(_path2) } catch {}
+                              }
+                          } catch (_re) { console.log('[Anti-Delete] CDN re-download failed:', _re.message) }
+                      }
+
+                      if (!_sent) {
+                          for (const _dest of _targets) {
+                              await X.sendMessage(_dest, { text: `  ⚠️ _${_mKey} could not be retrieved (expired)_` }).catch(() => {})
+                          }
+                      }
+                  }
+
+                  global._adCache?.delete(_msgId)
+
+              } catch (_e) {
+                  console.log('[Anti-Delete] Error:', _e.message || _e)
+              }
           }
       } catch (_err) {
           console.log('[Anti-Delete] Top-level error:', _err.message || _err)
