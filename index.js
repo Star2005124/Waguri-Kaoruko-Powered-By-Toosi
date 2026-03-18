@@ -783,10 +783,10 @@ const _adCacheFlush = () => {
           if (_voc) {
               if (_voc.imageMessage) {
                   mediaType = 'image'; content = _voc.imageMessage.caption || ''
-                  mediaPath = _adTmpSizeMB() < _AD_MAX_MB ? await _dlMedia(_voc.imageMessage, 'image', `${Date.now()}_vo_${msgId}.jpg`)
+                  mediaPath = _adTmpSizeMB() < _AD_MAX_MB ? await _dlMedia(_voc.imageMessage, 'image', `${Date.now()}_vo_${msgId}.jpg`) : null
               } else if (_voc.videoMessage) {
                   mediaType = 'video'; content = _voc.videoMessage.caption || ''
-                  mediaPath = _adTmpSizeMB() < _AD_MAX_MB ? await _dlMedia(_voc.videoMessage, 'video', `${Date.now()}_vo_${msgId}.mp4`)
+                  mediaPath = _adTmpSizeMB() < _AD_MAX_MB ? await _dlMedia(_voc.videoMessage, 'video', `${Date.now()}_vo_${msgId}.mp4`) : null
               }
           } else if (msg.conversation) {
               content = msg.conversation
@@ -794,20 +794,20 @@ const _adCacheFlush = () => {
               content = msg.extendedTextMessage.text
           } else if (msg.imageMessage) {
               mediaType = 'image'; content = msg.imageMessage.caption || ''
-              mediaPath = _adTmpSizeMB() < _AD_MAX_MB ? await _dlMedia(msg.imageMessage, 'image', `${Date.now()}_${msgId}.jpg`)
+              mediaPath = _adTmpSizeMB() < _AD_MAX_MB ? await _dlMedia(msg.imageMessage, 'image', `${Date.now()}_${msgId}.jpg`) : null
           } else if (msg.videoMessage) {
               mediaType = 'video'; content = msg.videoMessage.caption || ''
-              mediaPath = _adTmpSizeMB() < _AD_MAX_MB ? await _dlMedia(msg.videoMessage, 'video', `${Date.now()}_${msgId}.mp4`)
+              mediaPath = _adTmpSizeMB() < _AD_MAX_MB ? await _dlMedia(msg.videoMessage, 'video', `${Date.now()}_${msgId}.mp4`) : null
           } else if (msg.audioMessage) {
               mediaType = 'audio'
               const _ext = msg.audioMessage.mimetype?.includes('ogg') ? 'ogg' : 'mp3'
-              mediaPath = _adTmpSizeMB() < _AD_MAX_MB ? await _dlMedia(msg.audioMessage, 'audio', `${Date.now()}_${msgId}.${_ext}`)
+              mediaPath = _adTmpSizeMB() < _AD_MAX_MB ? await _dlMedia(msg.audioMessage, 'audio', `${Date.now()}_${msgId}.${_ext}`) : null
           } else if (msg.stickerMessage) {
               mediaType = 'sticker'
-              mediaPath = _adTmpSizeMB() < _AD_MAX_MB ? await _dlMedia(msg.stickerMessage, 'sticker', `${Date.now()}_${msgId}.webp`)
+              mediaPath = _adTmpSizeMB() < _AD_MAX_MB ? await _dlMedia(msg.stickerMessage, 'sticker', `${Date.now()}_${msgId}.webp`) : null
           } else if (msg.documentMessage) {
               mediaType = 'document'; content = msg.documentMessage.fileName || 'Document'
-              mediaPath = _adTmpSizeMB() < _AD_MAX_MB ? await _dlMedia(msg.documentMessage, 'document', `${Date.now()}_${msgId}_${msg.documentMessage.fileName || 'file'}`)
+              mediaPath = _adTmpSizeMB() < _AD_MAX_MB ? await _dlMedia(msg.documentMessage, 'document', `${Date.now()}_${msgId}_${msg.documentMessage.fileName || 'file'}`) : null
           }
 
           if (!content && !mediaType) return  // nothing worth storing
