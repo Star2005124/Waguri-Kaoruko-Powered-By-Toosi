@@ -1859,6 +1859,26 @@ X.ev.on('messages.update', async (updates) => {
                                   deletedMsg.message.videoMessage?.caption ||
                                   deletedMsg.message.audioMessage?.caption || ''
 
+                    // ── Name from pushName (most reliable — set when message was received) ──
+                    const _origSenderJid = deletedMsg.key?.participant || deletedMsg.key?.remoteJid || senderJid
+                    const _origSenderNum = (_origSenderJid || '').split(/[:@]/)[0]
+                    const _displayName   = deletedMsg.pushName || ''
+                    const _sameDeleter   = senderJid?.split(/[:@]/)[0] === _origSenderNum
+
+                    let notifText =
+                        `╔══════════════════════════╗\n` +
+                        `║  🗑️ *ANTI-DELETE*\n` +
+                        `╚══════════════════════════╝\n\n` +
+                        `  ├ 🗑️ *Deleted by* › @${senderNum}\n` +
+                        (!_sameDeleter ? `  ├ 📤 *Sender*     › @${_origSenderNum}\n` : ``) +
+                        (_displayName ? `  ├ 👤 *Name*       › ${_displayName}\n` : ``) +
+                        `  └ 🕐 *Time*       › ${_ts}\n\n` +
+                        `  *DELETED MESSAGE:*\n` +
+                        (delBody ? `  ${delBody}` : `  [media / no text]`)
+
+                    for (const _dest of _destinations) {
+                        await X.sendMessage(_dest, { text: notifText, mentions: [resolvedSender || senderJid, _origSenderJid].filter(Boolean) })
+                    }
                     // ── Resolve display names ──────────────────────────────────
                     const _resolveName = (jid, fallback) => {
                         if (!jid) return fallback || 'Unknown'
@@ -1931,7 +1951,7 @@ X.ev.on('messages.update', async (updates) => {
                     // Not found in any cache — message arrived before bot started or is too old
                     for (const _dest of _destinations) {
 
-                        await X.sendMessage(_dest, { text: `*MESSAGE DELETED*\nDeleted by: @${senderNum}\nChat: ${chatName}\n\n*DELETED MESSAGE:*\n⚠️ _Message was sent before bot came online — content unavailable_`, mentions: [resolvedSender || senderJid] })
+                        await X.sendMessage(_dest, { text: `╔══════════════════════════╗\n` + `║  🗑️ *ANTI-DELETE*\n` + `╚══════════════════════════╝\n\n` + `  ├ 🗑️ *Deleted by* › @${senderNum}\n` + `  ├ 💬 *Chat*       › ${chatName}\n` + `  └ 🕐 *Time*       › ${_ts}\n\n` + `  *DELETED MESSAGE:*\n  ⚠️ _Message sent before bot came online_`, mentions: [resolvedSender || senderJid] })
 
                     }
                 }
