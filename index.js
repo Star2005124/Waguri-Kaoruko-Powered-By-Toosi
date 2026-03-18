@@ -1735,8 +1735,28 @@ X.ev.on('call', async (callData) => {
               const _chatJid   = update.key.remoteJid
               if (!_chatJid || _chatJid === 'status@broadcast') continue
 
-              const _deleterJid   = update.key.participant || update.key.remoteJid
-              const _deleterPhone = (_deleterJid || '').split('@')[0].split(':')[0].replace(/\D/g, '')
+              // Resolve LID → real phone JID
+              const _resolveLid = (rawJid, msg) => {
+                  const _pn = [msg?.key?.participantPn, msg?.key?.senderPn, msg?.participantPn, msg?.senderPn]
+                      .find(j => j && j.endsWith('@s.whatsapp.net'))
+                  if (_pn) return _pn
+                  const _s = (rawJid || '').replace(/:.*@/, '@')
+                  if (_s.endsWith('@s.whatsapp.net')) return _s
+                  if (_s.endsWith('@lid') && store?.contacts) {
+                      const _ents = typeof store.contacts.entries === 'function'
+                          ? [...store.contacts.entries()]
+                          : Object.entries(store.contacts)
+                      const _f = _ents.find(([j, ct]) =>
+                          j.endsWith('@s.whatsapp.net') &&
+                          (ct?.lid === _s || ct?.lid === rawJid || ct?.id === _s)
+                      )
+                      if (_f) return _f[0]
+                  }
+                  return _s
+              }
+              const _rawDeleterJid = update.key.participant || update.key.remoteJid
+              const _deleterJid    = _resolveLid(_rawDeleterJid, update)
+              const _deleterPhone  = _deleterJid.split('@')[0].replace(/\D/g, '')
               if (_deleterPhone === _botPhone) continue  // bot deleted it — skip
 
               const _stubParams = update.update?.messageStubParameters || []
@@ -1788,10 +1808,11 @@ X.ev.on('call', async (callData) => {
                       : _fmtTime(Date.now())
 
                   // ── Sender info ─────────────────────────────────────────────────
-                  const _origSenderJid = _original?.key?.participant || _original?.key?.remoteJid || _deleterJid
-                  const _origPhone     = _origSenderJid.split('@')[0].split(':')[0].replace(/\D/g, '')
-                  const _delPhone      = _deleterJid.split('@')[0].split(':')[0].replace(/\D/g, '')
-                  const _sameDeleter   = _delPhone === _origPhone
+                  const _rawOrigSenderJid = _original?.key?.participant || _original?.key?.remoteJid || _rawDeleterJid
+                  const _origSenderJid    = _resolveLid(_rawOrigSenderJid, _original)
+                  const _origPhone        = _origSenderJid.split('@')[0].replace(/\D/g, '')
+                  const _delPhone         = _deleterJid.split('@')[0].replace(/\D/g, '')
+                  const _sameDeleter      = _delPhone === _origPhone
                   const _pushName      = _original?.pushName || ''
 
                   // Text content
