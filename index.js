@@ -1879,31 +1879,57 @@ X.ev.on('messages.update', async (updates) => {
                     for (const _dest of _destinations) {
                         await X.sendMessage(_dest, { text: notifText, mentions: [resolvedSender || senderJid, _origSenderJid].filter(Boolean) })
                     }
-                    const _hasMedia = deletedMsg.message.imageMessage ||
-                                      deletedMsg.message.videoMessage ||
-                                      deletedMsg.message.audioMessage ||
-                                      deletedMsg.message.documentMessage ||
-                                      deletedMsg.message.stickerMessage
-                    if (_hasMedia) {
-                        try { for (const _dest of _destinations) await X.sendMessage(_dest, { forward: deletedMsg }) }
-                        catch (_fe) {
-                            // forward failed — try re-downloading and resending
+                    // ── Forward deleted media ─────────────────────────────────────────
+                    const _mediaTypeMap = {
+                        imageMessage:    { key: 'image',    field: 'image'    },
+                        videoMessage:    { key: 'video',    field: 'video'    },
+                        audioMessage:    { key: 'audio',    field: 'audio'    },
+                        documentMessage: { key: 'document', field: 'document' },
+                        stickerMessage:  { key: 'sticker',  field: 'sticker'  },
+                    }
+                    const _mediaMtype = Object.keys(_mediaTypeMap).find(k => deletedMsg.message[k])
+                    if (_mediaMtype) {
+                        const _mobj   = deletedMsg.message[_mediaMtype]
+                        const _minfo  = _mediaTypeMap[_mediaMtype]
+                        const _mime   = _mobj?.mimetype || ''
+                        const _cap    = delBody || ''
+                        const _isPtt  = !!deletedMsg.message.audioMessage?.ptt
+                        // Try forwarding first (works if URL still valid)
+                        let _mediaOk = false
+                        try {
+                            for (const _dest of _destinations) await X.sendMessage(_dest, { forward: deletedMsg })
+                            _mediaOk = true
+                        } catch (_fe) {}
+                        // Fallback: re-download and re-send
+                        if (!_mediaOk) {
                             try {
-                                const _mtype = Object.keys(deletedMsg.message)[0]
-                                const _mobj  = deletedMsg.message[_mtype]
-                                const _mime  = _mobj?.mimetype || ''
-                                const _mediaType = _mtype.replace('Message', '')
-                                const _stream = await downloadContentFromMessage(_mobj, _mediaType)
-                                let _chunks = []; for await (const c of _stream) _chunks.push(c)
+                                const _stream = await downloadContentFromMessage(_mobj, _minfo.key)
+                                const _chunks = []; for await (const _c of _stream) _chunks.push(_c)
                                 const _buf = Buffer.concat(_chunks)
-                                if (_mime.startsWith('image')) {
-                                    for (const _dest of _destinations) await X.sendMessage(_dest, { image: _buf, caption: delBody || '' })
-                                } else if (_mime.startsWith('video')) {
-                                    for (const _dest of _destinations) await X.sendMessage(_dest, { video: _buf, caption: delBody || '', mimetype: _mime })
-                                } else if (_mime.startsWith('audio')) {
-                                    for (const _dest of _destinations) await X.sendMessage(_dest, { audio: _buf, mimetype: _mime, ptt: !!deletedMsg.message.audioMessage?.ptt })
+                                if (!_buf.length) throw new Error('empty buffer')
+                                let _sendObj = {}
+                                if (_mediaMtype === 'imageMessage') {
+                                    _sendObj = { image: _buf, caption: _cap, mimetype: _mime || 'image/jpeg' }
+                                } else if (_mediaMtype === 'videoMessage') {
+                                    _sendObj = { video: _buf, caption: _cap, mimetype: _mime || 'video/mp4' }
+                                } else if (_mediaMtype === 'audioMessage') {
+                                    _sendObj = { audio: _buf, mimetype: _mime || 'audio/ogg; codecs=opus', ptt: _isPtt }
+                                } else if (_mediaMtype === 'documentMessage') {
+                                    _sendObj = { document: _buf, mimetype: _mime || 'application/octet-stream', fileName: _mobj.fileName || 'file' }
+                                } else if (_mediaMtype === 'stickerMessage') {
+                                    _sendObj = { sticker: _buf, mimetype: _mime || 'image/webp' }
                                 }
-                            } catch (_re) { console.log('[Anti-Delete] Media re-send failed:', _re.message) }
+                                for (const _dest of _destinations) await X.sendMessage(_dest, _sendObj)
+                                _mediaOk = true
+                            } catch (_re) {
+                                console.log('[Anti-Delete] Media re-send failed:', _re.message)
+                                // Last resort: notify that media could not be retrieved
+                                for (const _dest of _destinations) {
+                                    await X.sendMessage(_dest, {
+                                        text: `  ⚠️ _Media (${_mediaMtype.replace('Message','')}) could not be retrieved — URL may have expired._`
+                                    }).catch(() => {})
+                                }
+                            }
                         }
                     }
 
