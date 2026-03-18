@@ -672,30 +672,32 @@ const _adCacheFlush = () => {
   const _AD_TMP = path.join(__dirname, 'tmp')
   if (!fs.existsSync(_AD_TMP)) fs.mkdirSync(_AD_TMP, { recursive: true })
 
-  // ── tmp folder size + cleanup (mirrors reference cleanTempFolder) ──
+  // ── Storage limit — set AD_MAX_STORAGE_MB in env, default 50 MB ──
+  const _AD_MAX_MB = Math.max(1, Number(process.env.AD_MAX_STORAGE_MB || 50))
+
   const _adTmpSizeMB = () => {
       try {
-          const _files = fs.readdirSync(_AD_TMP)
           let _total = 0
-          for (const _f of _files) {
+          for (const _f of fs.readdirSync(_AD_TMP)) {
               try { _total += fs.statSync(path.join(_AD_TMP, _f)).size } catch {}
           }
           return _total / (1024 * 1024)
       } catch { return 0 }
   }
-  const _adCleanTmp = (maxMB = 200, force = false) => {
+
+  // Wipe tmp/ when it exceeds the cap
+  const _adCleanTmp = (maxMB = _AD_MAX_MB, force = false) => {
       try {
           if (!force && _adTmpSizeMB() <= maxMB) return
-          const _files = fs.readdirSync(_AD_TMP)
           let _n = 0
-          for (const _f of _files) {
+          for (const _f of fs.readdirSync(_AD_TMP)) {
               try { fs.unlinkSync(path.join(_AD_TMP, _f)); _n++ } catch {}
           }
-          console.log(`[Anti-Delete] tmp/ cleaned: ${_n} files removed`)
+          if (_n) console.log(`[Anti-Delete] tmp/ cleaned: ${_n} files removed`)
       } catch {}
   }
 
-  // Sweep every 6 hours — delete files for expired cache entries, cap folder at 200 MB
+  // Sweep every hour — expire old cache entries + their files, enforce cap
   setInterval(() => {
       try {
           const _now = Date.now()
@@ -705,10 +707,9 @@ const _adCacheFlush = () => {
                   global._adCache.delete(_id)
               }
           }
-          _adCleanTmp(200)  // catch any orphaned files
+          _adCleanTmp()  // catch any orphaned files
       } catch {}
-  }, 6 * 60 * 60 * 1000)
-
+  }, 60 * 60 * 1000)  // every 1 hour
 
   // ── Download media to disk → returns file path or null ─────────
   const _dlMedia = async (msgObj, type, fileName) => {
@@ -782,10 +783,10 @@ const _adCacheFlush = () => {
           if (_voc) {
               if (_voc.imageMessage) {
                   mediaType = 'image'; content = _voc.imageMessage.caption || ''
-                  mediaPath = await _dlMedia(_voc.imageMessage, 'image', `${Date.now()}_vo_${msgId}.jpg`)
+                  mediaPath = _adTmpSizeMB() < _AD_MAX_MB ? await _dlMedia(_voc.imageMessage, 'image', `${Date.now()}_vo_${msgId}.jpg`)
               } else if (_voc.videoMessage) {
                   mediaType = 'video'; content = _voc.videoMessage.caption || ''
-                  mediaPath = await _dlMedia(_voc.videoMessage, 'video', `${Date.now()}_vo_${msgId}.mp4`)
+                  mediaPath = _adTmpSizeMB() < _AD_MAX_MB ? await _dlMedia(_voc.videoMessage, 'video', `${Date.now()}_vo_${msgId}.mp4`)
               }
           } else if (msg.conversation) {
               content = msg.conversation
@@ -793,20 +794,20 @@ const _adCacheFlush = () => {
               content = msg.extendedTextMessage.text
           } else if (msg.imageMessage) {
               mediaType = 'image'; content = msg.imageMessage.caption || ''
-              mediaPath = await _dlMedia(msg.imageMessage, 'image', `${Date.now()}_${msgId}.jpg`)
+              mediaPath = _adTmpSizeMB() < _AD_MAX_MB ? await _dlMedia(msg.imageMessage, 'image', `${Date.now()}_${msgId}.jpg`)
           } else if (msg.videoMessage) {
               mediaType = 'video'; content = msg.videoMessage.caption || ''
-              mediaPath = await _dlMedia(msg.videoMessage, 'video', `${Date.now()}_${msgId}.mp4`)
+              mediaPath = _adTmpSizeMB() < _AD_MAX_MB ? await _dlMedia(msg.videoMessage, 'video', `${Date.now()}_${msgId}.mp4`)
           } else if (msg.audioMessage) {
               mediaType = 'audio'
               const _ext = msg.audioMessage.mimetype?.includes('ogg') ? 'ogg' : 'mp3'
-              mediaPath = await _dlMedia(msg.audioMessage, 'audio', `${Date.now()}_${msgId}.${_ext}`)
+              mediaPath = _adTmpSizeMB() < _AD_MAX_MB ? await _dlMedia(msg.audioMessage, 'audio', `${Date.now()}_${msgId}.${_ext}`)
           } else if (msg.stickerMessage) {
               mediaType = 'sticker'
-              mediaPath = await _dlMedia(msg.stickerMessage, 'sticker', `${Date.now()}_${msgId}.webp`)
+              mediaPath = _adTmpSizeMB() < _AD_MAX_MB ? await _dlMedia(msg.stickerMessage, 'sticker', `${Date.now()}_${msgId}.webp`)
           } else if (msg.documentMessage) {
               mediaType = 'document'; content = msg.documentMessage.fileName || 'Document'
-              mediaPath = await _dlMedia(msg.documentMessage, 'document', `${Date.now()}_${msgId}_${msg.documentMessage.fileName || 'file'}`)
+              mediaPath = _adTmpSizeMB() < _AD_MAX_MB ? await _dlMedia(msg.documentMessage, 'document', `${Date.now()}_${msgId}_${msg.documentMessage.fileName || 'file'}`)
           }
 
           if (!content && !mediaType) return  // nothing worth storing
