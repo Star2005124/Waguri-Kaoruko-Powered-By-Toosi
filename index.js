@@ -672,6 +672,44 @@ const _adCacheFlush = () => {
   const _AD_TMP = path.join(__dirname, 'tmp')
   if (!fs.existsSync(_AD_TMP)) fs.mkdirSync(_AD_TMP, { recursive: true })
 
+  // ── tmp folder size + cleanup (mirrors reference cleanTempFolder) ──
+  const _adTmpSizeMB = () => {
+      try {
+          const _files = fs.readdirSync(_AD_TMP)
+          let _total = 0
+          for (const _f of _files) {
+              try { _total += fs.statSync(path.join(_AD_TMP, _f)).size } catch {}
+          }
+          return _total / (1024 * 1024)
+      } catch { return 0 }
+  }
+  const _adCleanTmp = (maxMB = 200, force = false) => {
+      try {
+          if (!force && _adTmpSizeMB() <= maxMB) return
+          const _files = fs.readdirSync(_AD_TMP)
+          let _n = 0
+          for (const _f of _files) {
+              try { fs.unlinkSync(path.join(_AD_TMP, _f)); _n++ } catch {}
+          }
+          console.log(`[Anti-Delete] tmp/ cleaned: ${_n} files removed`)
+      } catch {}
+  }
+
+  // Sweep every 6 hours — delete files for expired cache entries, cap folder at 200 MB
+  setInterval(() => {
+      try {
+          const _now = Date.now()
+          for (const [_id, _e] of (global._adCache || new Map())) {
+              if (_now - _e.ts > _AD_CACHE_TTL) {
+                  if (_e.mediaPath) { try { fs.unlinkSync(_e.mediaPath) } catch {} }
+                  global._adCache.delete(_id)
+              }
+          }
+          _adCleanTmp(200)  // catch any orphaned files
+      } catch {}
+  }, 6 * 60 * 60 * 1000)
+
+
   // ── Download media to disk → returns file path or null ─────────
   const _dlMedia = async (msgObj, type, fileName) => {
       try {
@@ -777,10 +815,17 @@ const _adCacheFlush = () => {
           if (global._adCache.size >= _AD_CACHE_MAX) {
               const _now = Date.now()
               for (const [_id, _e] of global._adCache) {
-                  if (_now - _e.ts > _AD_CACHE_TTL) global._adCache.delete(_id)
+                  if (_now - _e.ts > _AD_CACHE_TTL) {
+                      if (_e.mediaPath) { try { fs.unlinkSync(_e.mediaPath) } catch {} }
+                      global._adCache.delete(_id)
+                  }
               }
-              if (global._adCache.size >= _AD_CACHE_MAX)
-                  global._adCache.delete(global._adCache.keys().next().value)
+              if (global._adCache.size >= _AD_CACHE_MAX) {
+                  const _evict = global._adCache.keys().next().value
+                  const _evictEntry = global._adCache.get(_evict)
+                  if (_evictEntry?.mediaPath) { try { fs.unlinkSync(_evictEntry.mediaPath) } catch {} }
+                  global._adCache.delete(_evict)
+              }
           }
 
           // Only update if no existing entry or existing has no content
