@@ -2803,69 +2803,150 @@ if (!alArg) {
 break
 
 case 'antidelete':
-case 'antidel':
-case 'setantidelete': {
-    await X.sendMessage(m.chat, { react: { text: '🗑️', key: m.key } })
-    if (!isOwner) return reply(mess.OnlyOwner)
+  case 'antidel':
+  case 'setantidelete': {
+      await X.sendMessage(m.chat, { react: { text: '🗑️', key: m.key } })
+      if (!isOwner) return reply(mess.OnlyOwner)
 
-    // Init global state
-    if (!global.adState) global.adState = {
-        enabled: false,
-        mode: 'private',       // 'private' = DM to owner | 'public' = in original chat
-        stats: { total: 0, retrieved: 0, media: 0 },
-        recentIds: [],         // dedupe
-        lastClean: Date.now()
-    }
-    const _ad = global.adState
-    const _adArg = (args[0] || '').toLowerCase().trim()
-    const _adSub = (args[1] || '').toLowerCase().trim()
+      // Init state with gc/pm structure
+      if (!global.adState || !global.adState.gc) global.adState = {
+          gc: { enabled: false, mode: 'private' },
+          pm: { enabled: false, mode: 'private' },
+          stats: { total: 0, retrieved: 0, media: 0 }
+      }
+      const _ad = global.adState
+      // Keep legacy globals in sync
+      const _syncLegacy = () => {
+          global.antiDelete = _ad.gc.enabled || _ad.pm.enabled
+          global.antiDeleteMode = _ad.gc.mode === 'chat' || _ad.pm.mode === 'chat' ? 'public' : 'private'
+      }
 
-    const _adStatusMsg = () => {
-        const _mode = _ad.enabled ? (_ad.mode === 'public' ? '📢 PUBLIC' : '🔒 PRIVATE') : '❌ OFF'
-        return `╔══════════════════════════╗\n║  🗑️  *ANTI-DELETE*\n╚══════════════════════════╝\n\n  ├ 📊 *Status*  › *${_mode}*\n  ├ 📈 *Tracked*  › ${_ad.stats.total} messages\n  ├ ✅ *Retrieved* › ${_ad.stats.retrieved}\n  └ 🖼️  *Media*    › ${_ad.stats.media} files\n\n  *Commands:*\n  ├ ${prefix}antidelete on      — private mode (DM)\n  ├ ${prefix}antidelete public  — show in chat\n  ├ ${prefix}antidelete off     — disable\n  ├ ${prefix}antidelete stats   — view stats\n  └ ${prefix}antidelete clear   — clear cache`
-    }
+      const _arg = (args[0] || '').toLowerCase().trim()
+      const _sub = (args[1] || '').toLowerCase().trim()
 
-    if (!_adArg || _adArg === 'status') return reply(_adStatusMsg())
+      const _modeLabel = (mode) => mode === 'both' ? '📢 BOTH (DM + Chat)' : mode === 'chat' ? '💬 CHAT' : '🔒 PRIVATE (DM)'
 
-    if (_adArg === 'on' || _adArg === 'enable' || _adArg === 'private') {
-        _ad.enabled = true
-        _ad.mode = 'private'
-        global.antiDelete = true
-        global.antiDeleteMode = 'private'
-        try { if (typeof _savePhoneState === 'function') _savePhoneState(X.user?.id?.split(':')[0]?.split('@')[0] || '') } catch {}
-        return reply(`╔══════════════════════════╗\n║  🗑️  *ANTI-DELETE*\n╚══════════════════════════╝\n\n  ✅ *Enabled* — Private Mode\n  └ Deleted messages sent to your DM only.`)
-    }
+      const _statusMsg = () => {
+          const _gcSt = _ad.gc.enabled ? _modeLabel(_ad.gc.mode) : '❌ OFF'
+          const _pmSt = _ad.pm.enabled ? _modeLabel(_ad.pm.mode) : '❌ OFF'
+          return (
+              `╔══════════════════════════╗\n` +
+              `║  🗑️  *ANTI-DELETE*\n` +
+              `╚══════════════════════════╝\n\n` +
+              `  ├ 👥 *Groups* › ${_gcSt}\n` +
+              `  ├ 💬 *PMs*    › ${_pmSt}\n` +
+              `  ├ 📈 *Tracked*   › ${_ad.stats.total} msgs\n` +
+              `  ├ ✅ *Retrieved* › ${_ad.stats.retrieved}\n` +
+              `  └ 🖼️  *Media*    › ${_ad.stats.media} files\n\n` +
+              `  *Commands:*\n` +
+              `  ├ ${prefix}antidelete on/off\n` +
+              `  ├ ${prefix}antidelete private/chat/both\n` +
+              `  ├ ${prefix}antidelete gc on/off/private/chat/both\n` +
+              `  ├ ${prefix}antidelete pm on/off/private/chat/both\n` +
+              `  └ ${prefix}antidelete stats | clear`
+          )
+      }
 
-    if (_adArg === 'public') {
-        _ad.enabled = true
-        _ad.mode = 'public'
-        global.antiDelete = true
-        global.antiDeleteMode = 'public'
-        return reply(`╔══════════════════════════╗\n║  🗑️  *ANTI-DELETE*\n╚══════════════════════════╝\n\n  📢 *Enabled* — Public Mode\n  └ Deleted messages shown in the original chat.`)
-    }
+      if (!_arg || _arg === 'status') return reply(_statusMsg())
 
-    if (_adArg === 'off' || _adArg === 'disable') {
-        _ad.enabled = false
-        global.antiDelete = false
-        try { if (typeof _savePhoneState === 'function') _savePhoneState(X.user?.id?.split(':')[0]?.split('@')[0] || '') } catch {}
-        return reply(`╔══════════════════════════╗\n║  🗑️  *ANTI-DELETE*\n╚══════════════════════════╝\n\n  ❌ *Disabled* — messages will not be tracked.`)
-    }
+      // ── gc subcommand ──────────────────────────────────────────────────
+      if (_arg === 'gc' || _arg === 'group' || _arg === 'groups') {
+          if (_sub === 'on' || _sub === 'enable') {
+              _ad.gc.enabled = true; _syncLegacy()
+              return reply(`✅ *Anti-Delete GROUPS: ON*\nMode: ${_modeLabel(_ad.gc.mode)}`)
+          } else if (_sub === 'off' || _sub === 'disable') {
+              _ad.gc.enabled = false; _syncLegacy()
+              return reply(`❌ *Anti-Delete GROUPS: OFF*`)
+          } else if (['private','prvt','priv'].includes(_sub)) {
+              _ad.gc.enabled = true; _ad.gc.mode = 'private'; _syncLegacy()
+              return reply(`🔒 *Anti-Delete GROUPS: PRIVATE*\nDeleted messages → Your DM only.`)
+          } else if (['chat','cht'].includes(_sub)) {
+              _ad.gc.enabled = true; _ad.gc.mode = 'chat'; _syncLegacy()
+              return reply(`💬 *Anti-Delete GROUPS: CHAT*\nDeleted messages → Same group chat.`)
+          } else if (['both','all'].includes(_sub)) {
+              _ad.gc.enabled = true; _ad.gc.mode = 'both'; _syncLegacy()
+              return reply(`📢 *Anti-Delete GROUPS: BOTH*\nDeleted messages → Your DM + Group.`)
+          } else {
+              return reply(`Usage:\n  ${prefix}antidelete gc on/off\n  ${prefix}antidelete gc private/chat/both`)
+          }
+      }
 
-    if (_adArg === 'stats') {
-        return reply(`╔══════════════════════════╗\n║  📊 *ANTI-DELETE STATS*\n╚══════════════════════════╝\n\n  ├ 📊 *Mode*      › ${_ad.enabled ? _ad.mode.toUpperCase() : 'OFF'}\n  ├ 📈 *Tracked*   › ${_ad.stats.total}\n  ├ ✅ *Retrieved*  › ${_ad.stats.retrieved}\n  ├ 🖼️  *Media*     › ${_ad.stats.media}\n  └ 🗂️  *Cache size* › ${Object.keys(global.adCache || {}).length} messages`)
-    }
+      // ── pm subcommand ──────────────────────────────────────────────────
+      if (_arg === 'pm' || _arg === 'dm' || _arg === 'pms' || _arg === 'dms') {
+          if (_sub === 'on' || _sub === 'enable') {
+              _ad.pm.enabled = true; _syncLegacy()
+              return reply(`✅ *Anti-Delete PMs: ON*\nMode: ${_modeLabel(_ad.pm.mode)}`)
+          } else if (_sub === 'off' || _sub === 'disable') {
+              _ad.pm.enabled = false; _syncLegacy()
+              return reply(`❌ *Anti-Delete PMs: OFF*`)
+          } else if (['private','prvt','priv'].includes(_sub)) {
+              _ad.pm.enabled = true; _ad.pm.mode = 'private'; _syncLegacy()
+              return reply(`🔒 *Anti-Delete PMs: PRIVATE*\nDeleted PMs → Your DM only.`)
+          } else if (['chat','cht'].includes(_sub)) {
+              _ad.pm.enabled = true; _ad.pm.mode = 'chat'; _syncLegacy()
+              return reply(`💬 *Anti-Delete PMs: CHAT*\nDeleted PMs → Same chat.`)
+          } else if (['both','all'].includes(_sub)) {
+              _ad.pm.enabled = true; _ad.pm.mode = 'both'; _syncLegacy()
+              return reply(`📢 *Anti-Delete PMs: BOTH*\nDeleted PMs → Your DM + Same chat.`)
+          } else {
+              return reply(`Usage:\n  ${prefix}antidelete pm on/off\n  ${prefix}antidelete pm private/chat/both`)
+          }
+      }
 
-    if (_adArg === 'clear' || _adArg === 'clean') {
-        const _sz = Object.keys(global.adCache || {}).length
-        global.adCache = {}
-        global.adMediaCache = {}
-        _ad.stats = { total: 0, retrieved: 0, media: 0 }
-        return reply(`🧹 *Cache cleared* — ${_sz} messages removed.\n\nAnti-Delete remains *${_ad.enabled ? _ad.mode.toUpperCase() : 'OFF'}*.`)
-    }
+      // ── global on/off ──────────────────────────────────────────────────
+      if (_arg === 'on' || _arg === 'enable') {
+          _ad.gc.enabled = true; _ad.pm.enabled = true; _syncLegacy()
+          return reply(`✅ *Anti-Delete ENABLED*\nGroups: ${_modeLabel(_ad.gc.mode)}\nPMs: ${_modeLabel(_ad.pm.mode)}`)
+      }
+      if (_arg === 'off' || _arg === 'disable') {
+          _ad.gc.enabled = false; _ad.pm.enabled = false; _syncLegacy()
+          return reply(`❌ *Anti-Delete DISABLED*\nNo messages will be tracked.`)
+      }
 
-    reply(_adStatusMsg())
-}
-break
+      // ── global mode shortcuts ──────────────────────────────────────────
+      if (['private','prvt','priv'].includes(_arg)) {
+          _ad.gc.enabled = true; _ad.gc.mode = 'private'
+          _ad.pm.enabled = true; _ad.pm.mode = 'private'; _syncLegacy()
+          return reply(`🔒 *Anti-Delete: PRIVATE*\nAll deleted messages → Your DM only.`)
+      }
+      if (['chat','cht'].includes(_arg)) {
+          _ad.gc.enabled = true; _ad.gc.mode = 'chat'
+          _ad.pm.enabled = true; _ad.pm.mode = 'chat'; _syncLegacy()
+          return reply(`💬 *Anti-Delete: CHAT*\nAll deleted messages → Same chat.`)
+      }
+      if (['both','all'].includes(_arg)) {
+          _ad.gc.enabled = true; _ad.gc.mode = 'both'
+          _ad.pm.enabled = true; _ad.pm.mode = 'both'; _syncLegacy()
+          return reply(`📢 *Anti-Delete: BOTH*\nAll deleted messages → DM + Original chat.`)
+      }
+
+      // ── stats ──────────────────────────────────────────────────────────
+      if (_arg === 'stats') {
+          return reply(
+              `╔══════════════════════════╗\n` +
+              `║  📊 *ANTI-DELETE STATS*\n` +
+              `╚══════════════════════════╝\n\n` +
+              `  ├ 👥 *Groups* › ${_ad.gc.enabled ? _modeLabel(_ad.gc.mode) : '❌ OFF'}\n` +
+              `  ├ 💬 *PMs*    › ${_ad.pm.enabled ? _modeLabel(_ad.pm.mode) : '❌ OFF'}\n` +
+              `  ├ 📈 *Tracked*   › ${_ad.stats.total}\n` +
+              `  ├ ✅ *Retrieved* › ${_ad.stats.retrieved}\n` +
+              `  ├ 🖼️  *Media*    › ${_ad.stats.media}\n` +
+              `  └ 🗂️  *Cache*    › ${global._adCache?.size || 0} entries`
+          )
+      }
+
+      // ── clear ──────────────────────────────────────────────────────────
+      if (_arg === 'clear' || _arg === 'clean') {
+          const _sz = global._adCache?.size || 0
+          global._adCache = new Map()
+          global.adMediaCache = {}
+          _ad.stats = { total: 0, retrieved: 0, media: 0 }
+          return reply(`🧹 *Cache cleared* — ${_sz} entries removed.\nAnti-Delete remains *${global.antiDelete ? 'ON' : 'OFF'}*.`)
+      }
+
+      reply(_statusMsg())
+  }
+  break
 
 
 case 'antibot':
