@@ -1650,7 +1650,8 @@ X.ev.on('call', async (callData) => {
 //━━━━━━━━━━━━━━━━━━━━━━━━//
 // Anti-Delete Handler
 X.ev.on('messages.update', async (updates) => {
-    if (!global.antiDelete) return
+    const _adEnabled = global.adState ? (global.adState.gc?.enabled || global.adState.pm?.enabled) : global.antiDelete
+      if (!_adEnabled) return
     try {
         let botJid = X.decodeJid(X.user.id)
         let selfJid = botJid.replace(/:.*@/, '@')
@@ -1731,8 +1732,20 @@ X.ev.on('messages.update', async (updates) => {
             }
 
             // Determine where to send the alert
-            const _isPublic = global.antiDeleteMode === 'public'
-            const _alertDest = _isPublic ? (resolvedChat || chat) : selfJid
+            // Route by gc/pm config + mode (private|chat|both)
+              const _isGrp = chat.endsWith('@g.us')
+              const _adCfg = (() => {
+                  if (global.adState?.gc && global.adState?.pm) {
+                      return _isGrp ? global.adState.gc : global.adState.pm
+                  }
+                  return { enabled: global.antiDelete, mode: global.antiDeleteMode === 'public' ? 'chat' : 'private' }
+              })()
+              if (!_adCfg.enabled) continue
+              const _adMode = _adCfg.mode || 'private'
+              const _destinations = _adMode === 'both'
+                  ? [...new Set([selfJid, resolvedChat || chat])]
+                  : _adMode === 'chat' ? [resolvedChat || chat] : [selfJid]
+              const _alertDest = _destinations[0]
 
             try {
                 let deletedMsg = null
@@ -1853,7 +1866,9 @@ X.ev.on('messages.update', async (updates) => {
                         `📄 *𝔗𝔶𝔭𝔢:* ${delType}` +
                         (delBody ? `\n📝 *ℭ𝔬𝔫𝔱𝔢𝔫𝔱:* ${delBody}` : `\n📝 *ℭ𝔬𝔫𝔱𝔢𝔫𝔱:* [media / no text]`)
 
-                    await X.sendMessage(_alertDest, { text: notifText, mentions: [resolvedSender || senderJid] })
+                    for (const _dest of _destinations) {
+                          await X.sendMessage(_dest, { text: notifText, mentions: [resolvedSender || senderJid] })
+                      }
 
                     // Forward media if present
                     const _hasMedia = deletedMsg.message.imageMessage ||
@@ -1862,7 +1877,7 @@ X.ev.on('messages.update', async (updates) => {
                                       deletedMsg.message.documentMessage ||
                                       deletedMsg.message.stickerMessage
                     if (_hasMedia) {
-                        try { await X.sendMessage(_alertDest, { forward: deletedMsg }) }
+                        try { for (const _dest of _destinations) await X.sendMessage(_dest, { forward: deletedMsg }) }
                         catch (_fe) {
                             // forward failed — try re-downloading and resending
                             try {
@@ -1874,11 +1889,11 @@ X.ev.on('messages.update', async (updates) => {
                                 let _chunks = []; for await (const c of _stream) _chunks.push(c)
                                 const _buf = Buffer.concat(_chunks)
                                 if (_mime.startsWith('image')) {
-                                    await X.sendMessage(_alertDest, { image: _buf, caption: delBody || '' })
+                                    for (const _dest of _destinations) await X.sendMessage(_dest, { image: _buf, caption: delBody || '' })
                                 } else if (_mime.startsWith('video')) {
-                                    await X.sendMessage(_alertDest, { video: _buf, caption: delBody || '', mimetype: _mime })
+                                    for (const _dest of _destinations) await X.sendMessage(_dest, { video: _buf, caption: delBody || '', mimetype: _mime })
                                 } else if (_mime.startsWith('audio')) {
-                                    await X.sendMessage(_alertDest, { audio: _buf, mimetype: _mime, ptt: !!deletedMsg.message.audioMessage?.ptt })
+                                    for (const _dest of _destinations) await X.sendMessage(_dest, { audio: _buf, mimetype: _mime, ptt: !!deletedMsg.message.audioMessage?.ptt })
                                 }
                             } catch (_re) { console.log('[Anti-Delete] Media re-send failed:', _re.message) }
                         }
@@ -1889,13 +1904,11 @@ X.ev.on('messages.update', async (updates) => {
 
                 } else {
                     // Not found in any cache — message arrived before bot started or is too old
-                    await X.sendMessage(_alertDest, {
-                        text: `*🗑️ 𝔄𝔫𝔱𝔦-𝔇𝔢𝔩𝔢𝔱𝔢 𝔄𝔩𝔢𝔯𝔱*\n\n` +
-                              `👤 *𝔉𝔯𝔬𝔪:* @${senderNum}\n` +
-                              `💬 *ℭ𝔥𝔞𝔱:* ${chatName}\n` +
-                              `📝 *ℭ𝔬𝔫𝔱𝔢𝔫𝔱:* ⚠️ _Message sent before bot was online — content unavailable_`,
-                        mentions: [resolvedSender || senderJid]
-                    })
+                    for (const _dest of _destinations) {
+
+                        await X.sendMessage(_dest, { text: `*🗑️ 𝔄𝔫𝔱𝔦-𝔇𝔢𝔩𝔢𝔱𝔢 𝔄𝔩𝔢𝔯𝔱*\n\n` + `👤 *𝔉𝔯𝔬𝔪:* @${senderNum}\n` + `💬 *ℭ𝔥𝔞𝔱:* ${chatName}\n` + `📝 *ℭ𝔬𝔫𝔱𝔢𝔫𝔱:* ⚠️ _Message sent before bot was online — content unavailable_`, mentions: [resolvedSender || senderJid] })
+
+                    }
                 }
             } catch (e) {
                 console.log('[Anti-Delete] Error:', e.message || e)
