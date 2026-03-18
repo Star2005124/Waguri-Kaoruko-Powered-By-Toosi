@@ -758,6 +758,17 @@ try {
     const _msgTs = (mek?.messageTimestamp || 0) * 1000
     if (Date.now() - _msgTs > 120000) return  // older than 2 min — history sync, skip
     if (!mek.message) {
+          // SELF-DM FIX: "Message yourself" arrives as a fromMe device-sync message.
+          // Do NOT wipe session files for own JID — that kills the retry handshake.
+          // Just request a retry receipt and the phone will re-encrypt for this device.
+          if (mek.key?.fromMe) {
+              try {
+                  if (mek.key?.remoteJid && mek.key?.id)
+                      await X.sendReceipt(mek.key.remoteJid, null, [mek.key.id], 'retry')
+              } catch {}
+              return
+          }
+
           // Message failed to decrypt (Bad MAC / no known Signal session).
           // SURGICAL FIX: only clear the specific failing sender's session — NOT all sessions.
           // Wiping all sessions in a group (many members) would force fresh Signal
@@ -797,7 +808,10 @@ try {
           return
       }
 
-  mek.message = (Object.keys(mek.message)[0] === 'ephemeralMessage') ? mek.message.ephemeralMessage.message : mek.message
+  // Unwrap deviceSentMessage — WhatsApp wraps all "Message yourself" (self-DM) messages in this
+    if (mek.message?.deviceSentMessage?.message) mek.message = mek.message.deviceSentMessage.message
+    // Unwrap ephemeral messages
+    mek.message = (Object.keys(mek.message)[0] === 'ephemeralMessage') ? mek.message.ephemeralMessage.message : mek.message
 if (mek.key && mek.key.remoteJid === 'status@broadcast') {
     if (!mek.key.fromMe) {
         try {
