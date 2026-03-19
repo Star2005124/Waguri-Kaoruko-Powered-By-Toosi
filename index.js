@@ -1686,6 +1686,21 @@ X.ev.on('call', async (callData) => {
 
   // Download media when messages arrive → store path in cache
   X.ev.on('messages.upsert', async ({ messages: _uMsgs }) => {
+      // Guard — skip media pre-download if antidelete is fully disabled
+      const _adActive = global.adState
+          ? (global.adState.gc?.enabled || global.adState.pm?.enabled)
+          : global.antiDelete
+      if (!_adActive) return
+      // TTL cleanup — sweep tmp dir, delete files older than 20 min
+      try {
+          const _adNow = Date.now(); const _adTTL = 20 * 60 * 1000
+          if (fs.existsSync(_AD_TMP)) {
+              for (const _adF of fs.readdirSync(_AD_TMP)) {
+                  const _adFp = path.join(_AD_TMP, _adF)
+                  try { if (_adNow - fs.statSync(_adFp).mtimeMs > _adTTL) fs.unlinkSync(_adFp) } catch {}
+              }
+          }
+      } catch {}
       for (const _um of (_uMsgs || [])) {
           try {
               if (!_um?.key?.id || _um.key.remoteJid === 'status@broadcast') continue
