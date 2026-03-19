@@ -53,7 +53,86 @@ require('node-fetch').Response.prototype.json = async function() {
 }
 
 const util = require('util')
-const axios = require('axios')
+
+  //═══════════════════════════════════════════════════════════════════════════//
+  // ── GiftedTech key rotator + Endless Invidious pool ──────────────────────//
+  //═══════════════════════════════════════════════════════════════════════════//
+
+  // Key pool: set GIFTED_API_KEYS=key1,key2,key3 in .env for endless rotation
+  // Falls back to the free 'gifted' key if no custom keys are configured
+  const _GIFTED_POOL = (() => {
+      const raw = process.env.GIFTED_API_KEYS || process.env.GIFTED_API_KEY || ''
+      const keys = raw.split(',').map(k => k.trim()).filter(Boolean)
+      return [...new Set([...keys, 'gifted'])]
+  })()
+  let _giftedIdx = 0
+  // Returns next key in round-robin order
+  function _giftedKey() {
+      const key = _GIFTED_POOL[_giftedIdx % _GIFTED_POOL.length]
+      _giftedIdx = (_giftedIdx + 1) % _GIFTED_POOL.length
+      return key
+  }
+  // giftedFetch: auto-rotates keys, retries all keys on rate-limit (403)
+  async function giftedFetch(urlTemplate, opts = {}) {
+      let lastData = null
+      const tried = new Set()
+      for (let attempt = 0; attempt < _GIFTED_POOL.length * 2; attempt++) {
+          const key = _giftedKey()
+          if (tried.has(key) && tried.size >= _GIFTED_POOL.length) break
+          tried.add(key)
+          const url = urlTemplate.replace(/apikey=[^&s`'"]+/g, `apikey=${key}`)
+          try {
+              const r = await fetch(url, { ...opts })
+              const data = await r.json()
+              if (!data) continue
+              const msg = (data.message || '').toLowerCase()
+              const isRateLimit = data.status === 403 ||
+                  (data.success === false && (msg.includes('limit') || msg.includes('exceeded') || msg.includes('invalid') && msg.includes('key')))
+              if (isRateLimit) { lastData = data; continue }
+              return data
+          } catch(e) { lastData = { success: false, message: e.message } }
+      }
+      return lastData || { success: false, message: 'All API keys exhausted' }
+  }
+
+  // ── Endless Invidious pool — starts with 20 known instances, auto-refreshes hourly ──
+  let _invPool = [
+      'https://invidious.privacydev.net',  'https://inv.tux.pizza',
+      'https://invidious.nerdvpn.de',      'https://invidious.fdn.fr',
+      'https://iv.datura.network',         'https://invidious.perennialte.ch',
+      'https://yewtu.be',                  'https://invidious.kavin.rocks',
+      'https://invidious.projectsegfau.lt','https://invidious.flokinet.to',
+      'https://vid.puffyan.us',            'https://y.com.sb',
+      'https://invidious.slipfox.xyz',     'https://invidious.snopyta.org',
+      'https://invidious.tiekoetter.com',  'https://invidious.esmailelbob.xyz',
+      'https://invidious.poast.org',       'https://inv.riverside.rocks',
+      'https://invidious.dhusch.de',       'https://invidious.namazso.eu',
+  ]
+  let _invLastRefresh = 0
+  async function _refreshInvPool() {
+      try {
+          const r = await fetch('https://api.invidious.io/instances.json', { signal: AbortSignal.timeout(12000) })
+          const data = await r.json()
+          if (!Array.isArray(data)) return
+          const live = data
+              .filter(([, info]) => info?.api && info?.type === 'https')
+              .map(([uri]) => uri)
+          if (live.length >= 5) {
+              _invPool = live
+              console.log(`[INVIDIOUS] Pool updated: ${live.length} live instances`)
+          }
+          _invLastRefresh = Date.now()
+      } catch(e) { console.log('[INVIDIOUS] Refresh failed:', e.message) }
+  }
+  async function getInvPool() {
+      if (Date.now() - _invLastRefresh > 3600000) _refreshInvPool().catch(() => {})
+      return _invPool
+  }
+  // Kick off background refresh 5s after startup
+  setTimeout(() => _refreshInvPool().catch(() => {}), 5000)
+
+  //─────────────────────────────────────────────────────────────────────────────//
+  const axios = require('axios')
 const { exec, execSync } = require("child_process")
 const chalk = require('chalk')
 const nou = require('node-os-utils')
@@ -151,14 +230,14 @@ async function _runAI(systemPrompt, userMsg, maxTokens = 1500) {
 
     // 1. GiftedTech GPT-4o — embed system into q for persona compliance
     try {
-        const _r = await fetch(`https://api.giftedtech.co.ke/api/ai/gpt4o?apikey=gifted&q=${_fullQ}`, { signal: AbortSignal.timeout(22000) })
+        const _r = await fetch(`https://api.giftedtech.co.ke/api/ai/gpt4o?apikey=${_giftedKey()}&q=${_fullQ}`, { signal: AbortSignal.timeout(22000) })
         const _d = await _r.json()
         if (_d?.success && _d?.result && String(_d.result).trim().length > 2) return String(_d.result).trim()
     } catch {}
 
     // 2. GiftedTech Gemini — embed system into q
     try {
-        const _r2 = await fetch(`https://api.giftedtech.co.ke/api/ai/gemini?apikey=gifted&q=${_fullQ}`, { signal: AbortSignal.timeout(22000) })
+        const _r2 = await fetch(`https://api.giftedtech.co.ke/api/ai/gemini?apikey=${_giftedKey()}&q=${_fullQ}`, { signal: AbortSignal.timeout(22000) })
         const _d2 = await _r2.json()
         if (_d2?.success && _d2?.result && String(_d2.result).trim().length > 2) return String(_d2.result).trim()
     } catch {}
@@ -1291,7 +1370,7 @@ case 'ytplay': {
         // Method 1: GiftedTech API — 128kbps, direct download URL
         if (!audioUrl && !audioPath) {
             try {
-                let res = await fetch(`https://api.giftedtech.co.ke/api/download/ytmp3?apikey=gifted&quality=128kbps&url=${encodeURIComponent(firstVideo.url)}`, {
+                let res = await fetch(`https://api.giftedtech.co.ke/api/download/ytmp3?apikey=${_giftedKey()}&quality=128kbps&url=${encodeURIComponent(firstVideo.url)}`, {
                     signal: AbortSignal.timeout(30000)
                 })
                 let data = await res.json()
@@ -1366,14 +1445,7 @@ case 'ytplay': {
                 } catch (e) { console.log('[play] invidious(' + instance + '):', e.message) }
                 return null
             }
-            const _invInstances = [
-                'https://invidious.privacydev.net',
-                'https://inv.tux.pizza',
-                'https://invidious.nerdvpn.de',
-                'https://invidious.fdn.fr',
-                'https://iv.datura.network',
-                'https://invidious.perennialte.ch',
-            ]
+            const _invInstances = await getInvPool()
             for (const _inst of _invInstances) {
                 audioUrl = await _invidious(_inst)
                 if (audioUrl) { console.log('[play] invidious: success', _inst); break }
@@ -1405,6 +1477,15 @@ case 'ytplay': {
                         setTimeout(() => { ytStream.destroy(); reject(new Error('timeout')) }, 300000)
                     })
                     if (fs.existsSync(_tmpFile) && fs.statSync(_tmpFile).size > 10000) {
+                        // Re-encode raw stream to 128kbps CBR MP3 if ffmpeg is available
+                        try {
+                            const _rawPath = _tmpFile.replace('.mp3', '_raw.m4a')
+                            fs.renameSync(_tmpFile, _rawPath)
+                            await new Promise((res, rej) => exec(
+                                `ffmpeg -y -i "${_rawPath}" -codec:a libmp3lame -b:a 128k -ar 44100 -ac 2 "${_tmpFile}"`,
+                                { timeout: 120000 }, (err) => { try { fs.unlinkSync(_rawPath) } catch {}; err ? rej(err) : res() }
+                            ))
+                        } catch { /* ffmpeg unavailable — use raw download */ }
                         audioPath = _tmpFile
                         console.log('[play] ytdl-core: success')
                     }
@@ -1426,7 +1507,7 @@ case 'ytplay': {
                 if (!ytdlpBin) throw new Error('no yt-dlp binary found')
                 await new Promise((resolve, reject) => {
                     exec(
-                        `${ytdlpBin} -x --audio-format mp3 --audio-quality 5 --no-playlist -o "${tmpBase}.%(ext)s" "${firstVideo.url}"`,
+                        `${ytdlpBin} -x --audio-format mp3 --audio-quality 5 --postprocessor-args "ffmpeg:-b:a 128k -ar 44100 -ac 2" --no-playlist -o "${tmpBase}.%(ext)s" "${firstVideo.url}"`,
                         { timeout: 300000 },
                         (err) => err ? reject(err) : resolve()
                     )
@@ -1499,7 +1580,7 @@ Examples:
 
     // ── Source 0: GiftedTech lyrics API ──────────────────────────────
     try {
-        let _gt = await fetch(`https://api.giftedtech.co.ke/api/search/lyrics?apikey=gifted&query=${encodeURIComponent(_lyrQuery)}`, { signal: AbortSignal.timeout(15000) })
+        let _gt = await fetch(`https://api.giftedtech.co.ke/api/search/lyrics?apikey=${_giftedKey()}&query=${encodeURIComponent(_lyrQuery)}`, { signal: AbortSignal.timeout(15000) })
         let _gtd = await _gt.json()
         if (_gtd.success && _gtd.result?.lyrics) {
             _lyrResult = { lyrics: _gtd.result.lyrics, title: _gtd.result.title || _lyrSong, artist: _gtd.result.artist || _lyrArtist, image: _gtd.result.image }
@@ -5916,7 +5997,7 @@ if (!text.match(/youtu/gi)) {
 let videoUrl = null, videoPath = null
 // Method 1: GiftedTech API — direct 720p MP4 URL
 try {
-    let res = await fetch(`https://api.giftedtech.co.ke/api/download/savetubemp4?apikey=gifted&url=${encodeURIComponent(url)}`, { signal: AbortSignal.timeout(30000) })
+    let res = await fetch(`https://api.giftedtech.co.ke/api/download/savetubemp4?apikey=${_giftedKey()}&url=${encodeURIComponent(url)}`, { signal: AbortSignal.timeout(30000) })
     let data = await res.json()
     console.log('[video] giftedtech: success=', data.success)
     if (data.success && data.result?.download_url) videoUrl = data.result.download_url
@@ -5978,7 +6059,7 @@ let vid = search.all.find(v => v.type === 'video') || search.all[0]
 let audioUrl = null, audioPath = null
 // Method 1: GiftedTech API
 try {
-    let res = await fetch(`https://api.giftedtech.co.ke/api/download/ytmp3?apikey=gifted&quality=128kbps&url=${encodeURIComponent(vid.url)}`, { signal: AbortSignal.timeout(30000) })
+    let res = await fetch(`https://api.giftedtech.co.ke/api/download/ytmp3?apikey=${_giftedKey()}&quality=128kbps&url=${encodeURIComponent(vid.url)}`, { signal: AbortSignal.timeout(30000) })
     let data = await res.json()
     if (data.success && data.result?.download_url) audioUrl = data.result.download_url
 } catch (e1) { console.log('[ytdocplay] giftedtech:', e1.message) }
@@ -6014,7 +6095,18 @@ if (!audioUrl && !audioPath) {
                 ys.pipe(ws); ws.on('finish', resolve); ws.on('error', reject); ys.on('error', reject)
                 setTimeout(() => { ys.destroy(); reject(new Error('timeout')) }, 300000)
             })
-            if (fs.existsSync(_ytdocTmp) && fs.statSync(_ytdocTmp).size > 10000) audioPath = _ytdocTmp
+            if (fs.existsSync(_ytdocTmp) && fs.statSync(_ytdocTmp).size > 10000) {
+                // Re-encode to 128kbps CBR if ffmpeg is available
+                try {
+                    const _rawPath = _ytdocTmp.replace('.mp3', '_raw.m4a')
+                    fs.renameSync(_ytdocTmp, _rawPath)
+                    await new Promise((res, rej) => exec(
+                        `ffmpeg -y -i "${_rawPath}" -codec:a libmp3lame -b:a 128k -ar 44100 -ac 2 "${_ytdocTmp}"`,
+                        { timeout: 120000 }, (err) => { try { fs.unlinkSync(_rawPath) } catch {}; err ? rej(err) : res() }
+                    ))
+                } catch { /* ffmpeg unavailable — use raw download */ }
+                audioPath = _ytdocTmp
+            }
         }
     } catch (e3) { console.log('[ytdocplay] ytdl-core:', e3.message) }
 }
@@ -6040,7 +6132,7 @@ let vid = search.all.find(v => v.type === 'video') || search.all[0]
 let videoUrl = null, videoPath = null
 // Method 1: GiftedTech API
 try {
-    let res = await fetch(`https://api.giftedtech.co.ke/api/download/ytv?apikey=gifted&url=${encodeURIComponent(vid.url)}`, { signal: AbortSignal.timeout(30000) })
+    let res = await fetch(`https://api.giftedtech.co.ke/api/download/ytv?apikey=${_giftedKey()}&url=${encodeURIComponent(vid.url)}`, { signal: AbortSignal.timeout(30000) })
     let data = await res.json()
     if (data.success && data.result?.download_url) videoUrl = data.result.download_url
 } catch (e1) { console.log('[ytdocvideo] giftedtech:', e1.message) }
@@ -6320,7 +6412,7 @@ if (!audioUrl || !audioUrl.startsWith('http')) throw new Error('Failed to upload
 // Method 1: GiftedTech Shazam API
 let shazamResult = null
 try {
-    let _gtSh = await fetch(`https://api.giftedtech.co.ke/api/search/shazam?apikey=gifted&url=${encodeURIComponent(audioUrl)}`, { signal: AbortSignal.timeout(30000) })
+    let _gtSh = await fetch(`https://api.giftedtech.co.ke/api/search/shazam?apikey=${_giftedKey()}&url=${encodeURIComponent(audioUrl)}`, { signal: AbortSignal.timeout(30000) })
     let _gtShD = await _gtSh.json()
     if (_gtShD.success && _gtShD.result) shazamResult = _gtShD.result
 } catch {}
@@ -6458,7 +6550,7 @@ try {
     let ssUrl = null
     // Method 1: GiftedTech ssphone (mobile phone frame)
     try {
-        let r = await fetch(`https://api.giftedtech.co.ke/api/tools/ssphone?apikey=gifted&url=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(30000) })
+        let r = await fetch(`https://api.giftedtech.co.ke/api/tools/ssphone?apikey=${_giftedKey()}&url=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(30000) })
         let d = await r.json()
         if (d.success && d.result) ssUrl = d.result
     } catch {}
@@ -6695,7 +6787,7 @@ try {
             const _catUrl = await CatBox(_tmpG)
             try { require('fs').unlinkSync(_tmpG) } catch {}
             if (_catUrl) {
-                const _gtRes = await fetch(`https://api.giftedtech.co.ke/api/tools/removebgv2?apikey=gifted&url=${encodeURIComponent(_catUrl)}`, { signal: AbortSignal.timeout(45000) })
+                const _gtRes = await fetch(`https://api.giftedtech.co.ke/api/tools/removebgv2?apikey=${_giftedKey()}&url=${encodeURIComponent(_catUrl)}`, { signal: AbortSignal.timeout(45000) })
                 const _ctype = _gtRes.headers.get('content-type') || ''
                 if (_ctype.includes('image')) {
                     // Direct image response
@@ -6949,7 +7041,7 @@ reply(`╔═══════════════════════�
 case 'shayari': {
     await X.sendMessage(m.chat, { react: { text: '✨', key: m.key } })
 try {
-    let _gs = await fetch('https://api.giftedtech.co.ke/api/fun/shayari?apikey=gifted', { signal: AbortSignal.timeout(10000) })
+    let _gs = await fetch('https://api.giftedtech.co.ke/api/fun/shayari?apikey=${_giftedKey()}', { signal: AbortSignal.timeout(10000) })
     let _gsd = await _gs.json()
     if (_gsd.success && _gsd.result) return reply(`╔══════════════════════════╗\n║  📜 *SHAYARI*\n╚══════════════════════════╝\n\n  ${_gsd.result}`)
 } catch {}
@@ -6960,7 +7052,7 @@ reply(`╔═══════════════════════�
 case 'goodnight': {
     await X.sendMessage(m.chat, { react: { text: '🌙', key: m.key } })
 try {
-    let _ggn = await fetch('https://api.giftedtech.co.ke/api/fun/goodnight?apikey=gifted', { signal: AbortSignal.timeout(10000) })
+    let _ggn = await fetch('https://api.giftedtech.co.ke/api/fun/goodnight?apikey=${_giftedKey()}', { signal: AbortSignal.timeout(10000) })
     let _ggnd = await _ggn.json()
     if (_ggnd.success && _ggnd.result) return reply(`╔══════════════════════════╗\n║  🌙 *GOOD NIGHT*\n╚══════════════════════════╝\n\n  ${_ggnd.result}`)
 } catch {}
@@ -6971,7 +7063,7 @@ reply(`╔═══════════════════════�
 case 'roseday': {
     await X.sendMessage(m.chat, { react: { text: '🌹', key: m.key } })
 try {
-    let _gr = await fetch('https://api.giftedtech.co.ke/api/fun/roseday?apikey=gifted', { signal: AbortSignal.timeout(10000) })
+    let _gr = await fetch('https://api.giftedtech.co.ke/api/fun/roseday?apikey=${_giftedKey()}', { signal: AbortSignal.timeout(10000) })
     let _grd = await _gr.json()
     if (_grd.success && _grd.result) return reply(`╔══════════════════════════╗\n║  🌹 *ROSE DAY*\n╚══════════════════════════╝\n\n  ${_grd.result}`)
 } catch {}
@@ -7026,7 +7118,7 @@ case 'joke': {
 try {
     let jokeText = null
     try {
-        let _gj = await fetch('https://api.giftedtech.co.ke/api/fun/jokes?apikey=gifted', { signal: AbortSignal.timeout(10000) })
+        let _gj = await fetch('https://api.giftedtech.co.ke/api/fun/jokes?apikey=${_giftedKey()}', { signal: AbortSignal.timeout(10000) })
         let _gjd = await _gj.json()
         if (_gjd.success && _gjd.result) jokeText = _gjd.result
     } catch {}
@@ -7218,7 +7310,7 @@ case 'neko': {
 try {
     let nekoUrl = null
     try {
-        let _gn = await fetch('https://api.giftedtech.co.ke/api/anime/neko?apikey=gifted', { signal: AbortSignal.timeout(10000) })
+        let _gn = await fetch('https://api.giftedtech.co.ke/api/anime/neko?apikey=${_giftedKey()}', { signal: AbortSignal.timeout(10000) })
         let _gnd = await _gn.json()
         if (_gnd.success && _gnd.result) nekoUrl = _gnd.result
     } catch {}
@@ -7236,7 +7328,7 @@ case 'waifu': {
 try {
     let waifuUrl = null
     try {
-        let _gw = await fetch('https://api.giftedtech.co.ke/api/anime/waifu?apikey=gifted', { signal: AbortSignal.timeout(10000) })
+        let _gw = await fetch('https://api.giftedtech.co.ke/api/anime/waifu?apikey=${_giftedKey()}', { signal: AbortSignal.timeout(10000) })
         let _gwd = await _gw.json()
         if (_gwd.success && _gwd.result) waifuUrl = _gwd.result
     } catch {}
@@ -8223,7 +8315,7 @@ case 'clima': {
     await X.sendMessage(m.chat, { react: { text: '🌤️', key: m.key } })
     if (!text) return reply(`🌤️ Usage: *${prefix}weather [city]*\nExample: ${prefix}weather Nairobi`)
     try {
-        let r = await fetch(`https://api.giftedtech.co.ke/api/search/weather?apikey=gifted&location=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(15000) })
+        let r = await fetch(`https://api.giftedtech.co.ke/api/search/weather?apikey=${_giftedKey()}&location=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(15000) })
         let d = await r.json()
         if (!d.success || !d.result) throw new Error('No weather data')
         let w = d.result
@@ -8254,7 +8346,7 @@ case 'shorten': {
     await X.sendMessage(m.chat, { react: { text: '🔗', key: m.key } })
     if (!text || !text.startsWith('http')) return reply(`🔗 Usage: *${prefix}tinyurl [url]*\nExample: ${prefix}tinyurl https://google.com`)
     try {
-        let r = await fetch(`https://api.giftedtech.co.ke/api/tools/tinyurl?apikey=gifted&url=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(15000) })
+        let r = await fetch(`https://api.giftedtech.co.ke/api/tools/tinyurl?apikey=${_giftedKey()}&url=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(15000) })
         let d = await r.json()
         if (!d.success || !d.result) throw new Error('Failed')
         await reply(`🔗 *URL Shortener*\n\n📎 *Original:* ${text}\n✅ *Short URL:* ${d.result}`)
@@ -8269,7 +8361,7 @@ case 'flirt':
 case 'rizz': {
     await X.sendMessage(m.chat, { react: { text: '💘', key: m.key } })
     try {
-        let r = await fetch(`https://api.giftedtech.co.ke/api/fun/pickupline?apikey=gifted`, { signal: AbortSignal.timeout(15000) })
+        let r = await fetch(`https://api.giftedtech.co.ke/api/fun/pickupline?apikey=${_giftedKey()}`, { signal: AbortSignal.timeout(15000) })
         let d = await r.json()
         if (!d.success || !d.result) throw new Error('No line')
         await reply(`💘 *Pickup Line*\n\n_"${d.result}"_`)
@@ -8295,7 +8387,7 @@ case 'qrread': {
         let _url = await CatBox(_tmp)
         try { fs.unlinkSync(_tmp) } catch {}
         if (!_url) throw new Error('Upload failed')
-        let r = await fetch(`https://api.giftedtech.co.ke/api/tools/readqr?apikey=gifted&url=${encodeURIComponent(_url)}`, { signal: AbortSignal.timeout(25000) })
+        let r = await fetch(`https://api.giftedtech.co.ke/api/tools/readqr?apikey=${_giftedKey()}&url=${encodeURIComponent(_url)}`, { signal: AbortSignal.timeout(25000) })
         let d = await r.json()
         if (!d.success || !d.result) throw new Error('Could not read QR')
         let qrData = d.result?.qrcode_data || d.result
@@ -8313,12 +8405,12 @@ case 'aiart': {
     if (!text) return reply(`🎨 *AI Image Generator*\n\nUsage: *${prefix}${command} [describe your image]*\n\nExamples:\n• ${prefix}${command} A beautiful sunset over the ocean\n• ${prefix}${command} A futuristic city at night`)
     try {
         await reply('🎨 _Generating your image with AI, please wait..._')
-        let r = await fetch(`https://api.giftedtech.co.ke/api/ai/fluximg?apikey=gifted&prompt=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(60000) })
+        let r = await fetch(`https://api.giftedtech.co.ke/api/ai/fluximg?apikey=${_giftedKey()}&prompt=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(60000) })
         let d = await r.json()
         let _imgUrl = d?.result?.url || d?.result
         if (!d.success || !_imgUrl) {
             // MagicStudio returns raw JPEG — send the URL directly without JSON parsing
-            _imgUrl = `https://api.giftedtech.co.ke/api/ai/magicstudio?apikey=gifted&prompt=${encodeURIComponent(text)}`
+            _imgUrl = `https://api.giftedtech.co.ke/api/ai/magicstudio?apikey=${_giftedKey()}&prompt=${encodeURIComponent(text)}`
         }
         if (!_imgUrl) throw new Error('Image generation failed')
         await X.sendMessage(m.chat, { image: { url: _imgUrl }, caption: `🎨 *AI Generated Image*\n📝 _${text}_` }, { quoted: m })
@@ -8335,7 +8427,7 @@ case 'aisong': {
     if (!text) return reply(`🎵 *AI Song Generator*\n\nUsage: *${prefix}songgenerator [describe your song]*\n\nExamples:\n• ${prefix}songgenerator A love song about the stars\n• ${prefix}songgenerator Upbeat Afrobeats about success`)
     try {
         await reply('🎵 _Composing your song with AI, please wait (this may take a while)..._')
-        let r = await fetch(`https://api.giftedtech.co.ke/api/tools/songgenerator?apikey=gifted&prompt=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(120000) })
+        let r = await fetch(`https://api.giftedtech.co.ke/api/tools/songgenerator?apikey=${_giftedKey()}&prompt=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(120000) })
         let d = await r.json()
         if (!d.success || !d.result) throw new Error('Song generation failed')
         let res = d.result
@@ -8357,7 +8449,7 @@ case 'footballscore': {
     await X.sendMessage(m.chat, { react: { text: '⚽', key: m.key } })
     try {
         await reply('⚽ _Fetching live football scores..._')
-        let r = await fetch(`https://api.giftedtech.co.ke/api/football/livescore?apikey=gifted`, { signal: AbortSignal.timeout(20000) })
+        let r = await fetch(`https://api.giftedtech.co.ke/api/football/livescore?apikey=${_giftedKey()}`, { signal: AbortSignal.timeout(20000) })
         let d = await r.json()
         if (!d.success || !d.result) throw new Error('No data')
         let matches = d.result.matches || d.result
@@ -8388,7 +8480,7 @@ case 'tips': {
     await X.sendMessage(m.chat, { react: { text: '🔮', key: m.key } })
     try {
         await reply('🔮 _Fetching today\'s football predictions..._')
-        let r = await fetch(`https://api.giftedtech.co.ke/api/football/predictions?apikey=gifted`, { signal: AbortSignal.timeout(20000) })
+        let r = await fetch(`https://api.giftedtech.co.ke/api/football/predictions?apikey=${_giftedKey()}`, { signal: AbortSignal.timeout(20000) })
         let d = await r.json()
         if (!d.success || !d.result) throw new Error('No data')
         let preds = Array.isArray(d.result) ? d.result : (d.result.items || [])
@@ -8423,7 +8515,7 @@ case 'sportnews': {
     await X.sendMessage(m.chat, { react: { text: '📰', key: m.key } })
     try {
         await reply('📰 _Fetching latest football news..._')
-        let r = await fetch(`https://api.giftedtech.co.ke/api/football/news?apikey=gifted`, { signal: AbortSignal.timeout(20000) })
+        let r = await fetch(`https://api.giftedtech.co.ke/api/football/news?apikey=${_giftedKey()}`, { signal: AbortSignal.timeout(20000) })
         let d = await r.json()
         if (!d.success || !d.result) throw new Error('No data')
         let articles = d.result.items || d.result
@@ -8447,7 +8539,7 @@ case 'premierleague': {
     await X.sendMessage(m.chat, { react: { text: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', key: m.key } })
     try {
         await reply('🏆 _Fetching EPL standings..._')
-        let r = await fetch(`https://api.giftedtech.co.ke/api/football/epl/standings?apikey=gifted`, { signal: AbortSignal.timeout(20000) })
+        let r = await fetch(`https://api.giftedtech.co.ke/api/football/epl/standings?apikey=${_giftedKey()}`, { signal: AbortSignal.timeout(20000) })
         let d = await r.json()
         if (!d.success || !d.result) throw new Error('No data')
         let teams = d.result.standings || d.result
@@ -8475,7 +8567,7 @@ case 'epltopscorers': {
     await X.sendMessage(m.chat, { react: { text: '⚽', key: m.key } })
     try {
         await reply('⚽ _Fetching EPL top scorers..._')
-        let r = await fetch(`https://api.giftedtech.co.ke/api/football/epl/scorers?apikey=gifted`, { signal: AbortSignal.timeout(20000) })
+        let r = await fetch(`https://api.giftedtech.co.ke/api/football/epl/scorers?apikey=${_giftedKey()}`, { signal: AbortSignal.timeout(20000) })
         let d = await r.json()
         if (!d.success || !d.result) throw new Error('No data')
         let scorers = d.result.topScorers || d.result.scorers || d.result
@@ -8499,7 +8591,7 @@ case 'eplupcoming': {
     await X.sendMessage(m.chat, { react: { text: '📅', key: m.key } })
     try {
         await reply('📅 _Fetching upcoming EPL matches..._')
-        let r = await fetch(`https://api.giftedtech.co.ke/api/football/epl/upcoming?apikey=gifted`, { signal: AbortSignal.timeout(20000) })
+        let r = await fetch(`https://api.giftedtech.co.ke/api/football/epl/upcoming?apikey=${_giftedKey()}`, { signal: AbortSignal.timeout(20000) })
         let d = await r.json()
         if (!d.success || !d.result) throw new Error('No data')
         let matches = d.result.upcomingMatches || d.result.matches || d.result
@@ -8522,7 +8614,7 @@ case 'laligastandings': {
     await X.sendMessage(m.chat, { react: { text: '🇪🇸', key: m.key } })
     try {
         await reply('🏆 _Fetching La Liga standings..._')
-        let r = await fetch(`https://api.giftedtech.co.ke/api/football/laliga/standings?apikey=gifted`, { signal: AbortSignal.timeout(20000) })
+        let r = await fetch(`https://api.giftedtech.co.ke/api/football/laliga/standings?apikey=${_giftedKey()}`, { signal: AbortSignal.timeout(20000) })
         let d = await r.json()
         if (!d.success || !d.result) throw new Error('No data')
         let teams = d.result.standings || d.result
@@ -8550,7 +8642,7 @@ case 'laligatopscorers': {
     await X.sendMessage(m.chat, { react: { text: '⚽', key: m.key } })
     try {
         await reply('⚽ _Fetching La Liga top scorers..._')
-        let r = await fetch(`https://api.giftedtech.co.ke/api/football/laliga/scorers?apikey=gifted`, { signal: AbortSignal.timeout(20000) })
+        let r = await fetch(`https://api.giftedtech.co.ke/api/football/laliga/scorers?apikey=${_giftedKey()}`, { signal: AbortSignal.timeout(20000) })
         let d = await r.json()
         if (!d.success || !d.result) throw new Error('No data')
         let scorers = d.result.topScorers || d.result.scorers || d.result
@@ -8575,8 +8667,8 @@ case 'laligaupcoming': {
     try {
         await reply('📅 _Fetching La Liga matches..._')
         // Try upcoming first, then matches
-        let url1 = `https://api.giftedtech.co.ke/api/football/laliga/upcoming?apikey=gifted`
-        let url2 = `https://api.giftedtech.co.ke/api/football/laliga/matches?apikey=gifted`
+        let url1 = `https://api.giftedtech.co.ke/api/football/laliga/upcoming?apikey=${_giftedKey()}`
+        let url2 = `https://api.giftedtech.co.ke/api/football/laliga/matches?apikey=${_giftedKey()}`
         let matches = null
         for (let url of [url1, url2]) {
             try {
@@ -8609,7 +8701,7 @@ case 'laligaupcoming': {
       await X.sendMessage(m.chat, { react: { text: '🏆', key: m.key } })
       try {
           await reply('🏆 _Fetching UCL standings..._')
-          let r = await fetch(`https://api.giftedtech.co.ke/api/football/ucl/standings?apikey=gifted`, { signal: AbortSignal.timeout(20000) })
+          let r = await fetch(`https://api.giftedtech.co.ke/api/football/ucl/standings?apikey=${_giftedKey()}`, { signal: AbortSignal.timeout(20000) })
           let d = await r.json()
           if (!d.success || !d.result) throw new Error('No data')
           let teams = d.result.standings || d.result
@@ -8640,7 +8732,7 @@ case 'laligaupcoming': {
       await X.sendMessage(m.chat, { react: { text: '🇩🇪', key: m.key } })
       try {
           await reply('🏆 _Fetching Bundesliga standings..._')
-          let r = await fetch(`https://api.giftedtech.co.ke/api/football/bundesliga/standings?apikey=gifted`, { signal: AbortSignal.timeout(20000) })
+          let r = await fetch(`https://api.giftedtech.co.ke/api/football/bundesliga/standings?apikey=${_giftedKey()}`, { signal: AbortSignal.timeout(20000) })
           let d = await r.json()
           if (!d.success || !d.result) throw new Error('No data')
           let teams = d.result.standings || d.result
@@ -8668,7 +8760,7 @@ case 'laligaupcoming': {
       await X.sendMessage(m.chat, { react: { text: '⚽', key: m.key } })
       try {
           await reply('⚽ _Fetching Bundesliga top scorers..._')
-          let r = await fetch(`https://api.giftedtech.co.ke/api/football/bundesliga/scorers?apikey=gifted`, { signal: AbortSignal.timeout(20000) })
+          let r = await fetch(`https://api.giftedtech.co.ke/api/football/bundesliga/scorers?apikey=${_giftedKey()}`, { signal: AbortSignal.timeout(20000) })
           let d = await r.json()
           if (!d.success || !d.result) throw new Error('No data')
           let scorers = d.result.topScorers || d.result.scorers || d.result
@@ -8695,7 +8787,7 @@ case 'laligaupcoming': {
       await X.sendMessage(m.chat, { react: { text: '🇮🇹', key: m.key } })
       try {
           await reply('🏆 _Fetching Serie A standings..._')
-          let r = await fetch(`https://api.giftedtech.co.ke/api/football/seriea/standings?apikey=gifted`, { signal: AbortSignal.timeout(20000) })
+          let r = await fetch(`https://api.giftedtech.co.ke/api/football/seriea/standings?apikey=${_giftedKey()}`, { signal: AbortSignal.timeout(20000) })
           let d = await r.json()
           if (!d.success || !d.result) throw new Error('No data')
           let teams = d.result.standings || d.result
@@ -8726,7 +8818,7 @@ case 'laligaupcoming': {
       await X.sendMessage(m.chat, { react: { text: '⚽', key: m.key } })
       try {
           await reply('⚽ _Fetching Serie A top scorers..._')
-          let r = await fetch(`https://api.giftedtech.co.ke/api/football/seriea/scorers?apikey=gifted`, { signal: AbortSignal.timeout(20000) })
+          let r = await fetch(`https://api.giftedtech.co.ke/api/football/seriea/scorers?apikey=${_giftedKey()}`, { signal: AbortSignal.timeout(20000) })
           let d = await r.json()
           if (!d.success || !d.result) throw new Error('No data')
           let scorers = d.result.topScorers || d.result.scorers || d.result
@@ -8752,7 +8844,7 @@ case 'sportcategories':
 case 'sportcat': {
     await X.sendMessage(m.chat, { react: { text: '🏅', key: m.key } })
     try {
-        let r = await fetch(`https://api.giftedtech.co.ke/api/sports/categories?apikey=gifted`, { signal: AbortSignal.timeout(15000) })
+        let r = await fetch(`https://api.giftedtech.co.ke/api/sports/categories?apikey=${_giftedKey()}`, { signal: AbortSignal.timeout(15000) })
         let d = await r.json()
         if (!d.success || !d.result) throw new Error('No data')
         let cats = Array.isArray(d.result) ? d.result : []
@@ -8772,7 +8864,7 @@ case 'sportslive': {
     let _sportCat = text?.toLowerCase().trim() || 'football'
     try {
         await reply(`🏅 _Fetching live ${_sportCat} events..._`)
-        let r = await fetch(`https://api.giftedtech.co.ke/api/sports/live?apikey=gifted&category=${encodeURIComponent(_sportCat)}`, { signal: AbortSignal.timeout(20000) })
+        let r = await fetch(`https://api.giftedtech.co.ke/api/sports/live?apikey=${_giftedKey()}&category=${encodeURIComponent(_sportCat)}`, { signal: AbortSignal.timeout(20000) })
         let d = await r.json()
         if (!d.success || !d.result) throw new Error('No data')
         let matches = d.result.matches || []
@@ -8794,7 +8886,7 @@ case 'sportsall': {
     let _sportCat2 = text?.toLowerCase().trim() || 'football'
     try {
         await reply(`🏅 _Fetching all ${_sportCat2} events..._`)
-        let r = await fetch(`https://api.giftedtech.co.ke/api/sports/all?apikey=gifted&category=${encodeURIComponent(_sportCat2)}`, { signal: AbortSignal.timeout(20000) })
+        let r = await fetch(`https://api.giftedtech.co.ke/api/sports/all?apikey=${_giftedKey()}&category=${encodeURIComponent(_sportCat2)}`, { signal: AbortSignal.timeout(20000) })
         let d = await r.json()
         if (!d.success || !d.result) throw new Error('No data')
         let matches = d.result.matches || d.result
@@ -8817,7 +8909,7 @@ case 'sportsstream': {
     if (!text) return reply(`📺 *Stream a Sport Event*\n\nUsage: *${prefix}watchsport [event-id]*\n\nFirst use *${prefix}allsports [category]* to get event IDs\n\nExample:\n${prefix}allsports football\n${prefix}watchsport motor-lublin-vs-korona-kielce-football-1380587`)
     try {
         await reply('📺 _Fetching stream link..._')
-        let r = await fetch(`https://api.giftedtech.co.ke/api/sports/stream?apikey=gifted&source=echo&id=${encodeURIComponent(text.trim())}`, { signal: AbortSignal.timeout(25000) })
+        let r = await fetch(`https://api.giftedtech.co.ke/api/sports/stream?apikey=${_giftedKey()}&source=echo&id=${encodeURIComponent(text.trim())}`, { signal: AbortSignal.timeout(25000) })
         let d = await r.json()
         if (!d.success || !d.result) throw new Error('No stream found')
         let streamData = d.result
