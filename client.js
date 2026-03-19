@@ -452,7 +452,7 @@ if (isCmd && command) {
 }
 
 if (global.pmBlocker && !m.isGroup && !isOwner && !isBot && !m.key.fromMe) {
-    if (isCmd) return reply('🔒 *DM commands are disabled.*\n_This bot does not respond to private messages._')
+    try { await X.updateBlockStatus(m.sender, 'block') } catch {}
     return
 }
 
@@ -4901,6 +4901,54 @@ let pbArg = (args[0] || '').toLowerCase()
 if (pbArg === 'on') { global.pmBlocker = true; reply('*PM Blocker ON*\nNon-owner PMs will be auto-blocked.') }
 else if (pbArg === 'off') { global.pmBlocker = false; reply('*PM Blocker OFF*') }
 else reply(`*PM Blocker: ${global.pmBlocker ? 'ON' : 'OFF'}*\nUsage: ${prefix}pmblocker on/off`)
+} break
+
+case 'block': {
+    await X.sendMessage(m.chat, { react: { text: '🚫', key: m.key } })
+    if (!isOwner) return reply(mess.OnlyOwner)
+    let _blkTarget = (m.mentionedJid && m.mentionedJid[0])
+        ? m.mentionedJid[0]
+        : m.quoted ? m.quoted.sender
+        : text ? text.replace(/[^0-9]/g, '') + '@s.whatsapp.net' : null
+    if (!_blkTarget) return reply(`╔══════════════════════════╗\n║  🚫 *BLOCK USER*\n╚══════════════════════════╝\n\n  ❌ *No target!*\n  └ Tag a user, reply to their message,\n     or provide their number.\n\n  📌 *Usage:* ${prefix}block @user | number`)
+    let _blkNum = _blkTarget.split('@')[0]
+    if (owner.some(o => _blkTarget.includes(o))) return reply('🛡️ Cannot block the bot owner.')
+    try {
+        await X.updateBlockStatus(_blkTarget, 'block')
+        reply(`╔══════════════════════════╗\n║  🚫 *BLOCK USER*\n╚══════════════════════════╝\n\n  ✅ *Blocked*\n  └ +${_blkNum} has been blocked.`)
+    } catch (e) {
+        reply('❌ Failed to block: ' + (e.message || 'Unknown error'))
+    }
+} break
+
+case 'unblock': {
+    await X.sendMessage(m.chat, { react: { text: '✅', key: m.key } })
+    if (!isOwner) return reply(mess.OnlyOwner)
+    let _ublkTarget = (m.mentionedJid && m.mentionedJid[0])
+        ? m.mentionedJid[0]
+        : m.quoted ? m.quoted.sender
+        : text ? text.replace(/[^0-9]/g, '') + '@s.whatsapp.net' : null
+    if (!_ublkTarget) return reply(`╔══════════════════════════╗\n║  ✅ *UNBLOCK USER*\n╚══════════════════════════╝\n\n  ❌ *No target!*\n  └ Tag a user, reply to their message,\n     or provide their number.\n\n  📌 *Usage:* ${prefix}unblock @user | number`)
+    let _ublkNum = _ublkTarget.split('@')[0]
+    try {
+        await X.updateBlockStatus(_ublkTarget, 'unblock')
+        reply(`╔══════════════════════════╗\n║  ✅ *UNBLOCK USER*\n╚══════════════════════════╝\n\n  ✅ *Unblocked*\n  └ +${_ublkNum} has been unblocked.`)
+    } catch (e) {
+        reply('❌ Failed to unblock: ' + (e.message || 'Unknown error'))
+    }
+} break
+
+case 'blocklist': {
+    await X.sendMessage(m.chat, { react: { text: '📋', key: m.key } })
+    if (!isOwner) return reply(mess.OnlyOwner)
+    try {
+        const _blist = await X.fetchBlocklist()
+        if (!_blist || !_blist.length) return reply(`╔══════════════════════════╗\n║  📋 *BLOCK LIST*\n╚══════════════════════════╝\n\n  ✅ No blocked contacts.`)
+        const _blines = _blist.map((j, idx) => `  ${idx + 1}. +${j.split('@')[0]}`).join('\n')
+        reply(`╔══════════════════════════╗\n║  📋 *BLOCK LIST*\n╚══════════════════════════╝\n\n  Total: ${_blist.length} blocked\n\n${_blines}`)
+    } catch (e) {
+        reply('❌ Failed to fetch block list: ' + (e.message || 'Unknown error'))
+    }
 } break
 
 case 'pp':
