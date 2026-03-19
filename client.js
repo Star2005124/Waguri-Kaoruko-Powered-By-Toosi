@@ -1692,6 +1692,46 @@ case 'ytplay': {
                             audioUrl = _prog.download_url
                             console.log('[play] loader.to: success')
                             break
+
+  case 'vocalremove':
+  case 'removevocal':
+  case 'instrumental': {
+      await X.sendMessage(m.chat, { react: { text: '🎙️', key: m.key } })
+      try {
+          // Accepts replied audio/video or a direct URL in text
+          let _vrUrl = text?.match(/^https?:\/\//i) ? text.trim() : null
+          if (!_vrUrl && m.quoted) {
+              // Download quoted audio/video then upload to catbox for a public URL
+              let _mtype = m.quoted.mimetype || ''
+              if (!/audio|video/.test(_mtype)) return reply('❌ Reply to an audio/video message with *.vocalremove*, or provide an audio URL.')
+              await reply('⏳ _Uploading audio for processing..._')
+              let _buf = await m.quoted.download()
+              if (!_buf || _buf.length < 1000) return reply('❌ Could not download the audio. Try again.')
+              // Upload to catbox.moe
+              const _FormData = (await import('form-data')).default
+              const _fd = new _FormData()
+              _fd.append('reqtype', 'fileupload')
+              _fd.append('fileToUpload', _buf, { filename: 'audio.mp3', contentType: _mtype || 'audio/mpeg' })
+              let _cbRes = await fetch('https://catbox.moe/user/api.php', { method: 'POST', body: _fd, headers: _fd.getHeaders(), signal: AbortSignal.timeout(30000) })
+              _vrUrl = (await _cbRes.text()).trim()
+              if (!_vrUrl.startsWith('http')) return reply('❌ Failed to upload audio. Try again.')
+              console.log('[vocalremove] catbox url:', _vrUrl)
+          }
+          if (!_vrUrl) return reply('❌ Reply to an audio message or provide an audio URL.\nExample: *.vocalremove https://example.com/song.mp3*')
+          await reply('🎙️ _Removing vocals, please wait..._')
+          let _vrRes = await fetch(`https://eliteprotech-apis.zone.id/vocalremove?url=${encodeURIComponent(_vrUrl)}`, { signal: AbortSignal.timeout(60000) })
+          let _vrd = await _vrRes.json()
+          console.log('[vocalremove] result:', JSON.stringify(_vrd).slice(0, 200))
+          if (_vrd.success !== false && (_vrd.instrumental || _vrd.result || _vrd.url || _vrd.download)) {
+              let _instrUrl = _vrd.instrumental || _vrd.result || _vrd.url || _vrd.download
+              await X.sendMessage(m.chat, { audio: { url: _instrUrl }, mimetype: 'audio/mpeg', fileName: 'instrumental.mp3' }, { quoted: m })
+              await reply('✅ *Vocals removed!* Instrumental track sent above.')
+          } else {
+              reply('❌ Could not process this audio. Make sure it is a valid, accessible audio URL.\n_Details: ' + (JSON.stringify(_vrd).slice(0, 120)) + '_')
+          }
+      } catch(e) { reply('❌ Vocal removal failed: ' + e.message) }
+  } break
+  
                         }
                         if (_prog.progress < 0) { console.log('[play] loader.to: failed'); break }
                     }
@@ -6073,14 +6113,47 @@ case 'copilot':{
   if (!text) return reply(`Example: ${prefix+command} Hello, how are you?`)
   try {
     await X.sendMessage(m.chat, { react: { text: '🪁', key: m.key } })
-    const result = await _runAI('You are Microsoft Copilot, a helpful AI assistant. Be productive, accurate and helpful.', text)
-    reply(result)
+    let _cpResult = null
+    // Source 1: _runAI (primary)
+    try { _cpResult = await _runAI('You are Microsoft Copilot, a helpful AI assistant. Be productive, accurate and helpful.', text) } catch {}
+    // Source 2: EliteProTech Copilot
+    if (!_cpResult) {
+        try {
+            let _ep = await fetch(`https://eliteprotech-apis.zone.id/copilot?q=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(25000) })
+            let _epd = await _ep.json()
+            if (_epd.success && _epd.text) _cpResult = _epd.text
+        } catch {}
+    }
+    if (_cpResult) reply(_cpResult)
+    else reply('❌ copilot is currently unavailable. Please try again.')
   } catch (e) {
     console.error('[COPILOT ERROR]', e.message)
     reply('❌ copilot is currently unavailable. Please try again.')
   }
 }
 break
+
+  case 'gemini':{
+    if (!text) return reply(`Example: ${prefix+command} What is the capital of Kenya?`)
+    try {
+      await X.sendMessage(m.chat, { react: { text: '✨', key: m.key } })
+      let _gmResult = null
+      // Source 1: EliteProTech Gemini
+      try {
+          let _ep = await fetch(`https://eliteprotech-apis.zone.id/gemini?prompt=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(25000) })
+          let _epd = await _ep.json()
+          if (_epd.success && _epd.text) _gmResult = _epd.text
+      } catch {}
+      // Source 2: _runAI fallback
+      if (!_gmResult) { try { _gmResult = await _runAI('You are Gemini, Google\'s advanced AI assistant. Provide accurate, helpful and well-structured responses.', text) } catch {} }
+      if (_gmResult) reply(_gmResult)
+      else reply('❌ Gemini is currently unavailable. Please try again.')
+    } catch (e) {
+      reply('❌ Gemini is currently unavailable. Please try again.')
+    }
+  }
+  break
+  
 
 case 'vision':
 case 'analyse': {
@@ -6490,38 +6563,79 @@ finally { if (_ytdocvTmp && fs.existsSync(_ytdocvTmp)) try { fs.unlinkSync(_ytdo
 
 case 'spotify': {
     await X.sendMessage(m.chat, { react: { text: '🎵', key: m.key } })
-if (!text) return reply(`Example: ${prefix}spotify [song name]`)
-try {
-let search = await yts(text)
-if (!search.all.length) return reply('No results found.')
-let results = search.all.filter(v => v.type === 'video').slice(0, 5)
-if (!results.length) return reply('No results found.')
-let songInfo = `🎵 *Spotify Search: ${text}*\n\n`
-results.forEach((v, i) => {
-    songInfo += `*${i+1}.* ${v.title}\n`
-    songInfo += `   Artist: ${v.author?.name || 'Unknown'}\n`
-    songInfo += `   Duration: ${v.timestamp}\n\n`
-})
-songInfo += `_Use ${prefix}play [song name] to download as MP3_`
-reply(songInfo)
-} catch(e) { reply('Error: ' + e.message) }
+    if (!text) return reply(`🎵 Example:\n  ${prefix}spotify Shape of You — search\n  ${prefix}spotify https://open.spotify.com/track/... — download`)
+    try {
+        const _isSpotUrl = /open\.spotify\.com\/track|spotify\.link/.test(text)
+        if (_isSpotUrl) {
+            // Spotify URL: download using EliteProTech
+            await reply('⏳ _Fetching Spotify track..._')
+            let _ep = await fetch(`https://eliteprotech-apis.zone.id/spotify?url=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(25000) })
+            let _epd = await _ep.json()
+            if (_epd.success && _epd.data?.download) {
+                let _meta = _epd.data.metadata || {}
+                let _cap = `🎵 *${_meta.title || 'Spotify Track'}*\n`
+                if (_meta.artist)   _cap += `🎤 *Artist:* ${_meta.artist}\n`
+                if (_meta.duration) _cap += `⏱️ *Duration:* ${_meta.duration}\n`
+                await X.sendMessage(m.chat, { audio: { url: _epd.data.download }, mimetype: 'audio/mpeg', fileName: `${_meta.title || 'track'}.mp3` }, { quoted: m })
+                await reply(_cap)
+            } else {
+                reply('❌ Could not download that Spotify track. Make sure it is a public track URL.')
+            }
+        } else {
+            // Song name: search YouTube and show results
+            let search = await yts(text)
+            if (!search.all.length) return reply('No results found.')
+            let results = search.all.filter(v => v.type === 'video').slice(0, 5)
+            if (!results.length) return reply('No results found.')
+            let songInfo = `🎵 *Spotify Search: ${text}*\n\n`
+            results.forEach((v, i) => {
+                songInfo += `*${i+1}.* ${v.title}\n`
+                songInfo += `   Artist: ${v.author?.name || 'Unknown'}\n`
+                songInfo += `   Duration: ${v.timestamp}\n\n`
+            })
+            songInfo += `_Use ${prefix}play [song name] to download as MP3_`
+            reply(songInfo)
+        }
+    } catch(e) { reply('❌ Error: ' + e.message) }
 } break
 
 case 'apk': {
     await X.sendMessage(m.chat, { react: { text: '📲', key: m.key } })
-if (!text) return reply(`Example: ${prefix}apk WhatsApp`)
-try {
-let res = await fetch(`https://api.maizapk.my.id/search?q=${encodeURIComponent(text)}`)
-if (!res.ok) {
-reply(`*APK Search:*\nSearch for "${text}" on https://apkpure.com/search?q=${encodeURIComponent(text)}`)
-} else {
-let data = await res.json()
-if (data.results && data.results.length) {
-let list = data.results.slice(0, 5).map((a, i) => `${i+1}. *${a.name}*\n${a.link || ''}`).join('\n\n')
-reply(`╔══════════════════════════╗\n║  📦 *APK SEARCH*\n╚══════════════════════════╝\n\n${list}`)
-} else reply(`No APK found for "${text}".`)
-}
-} catch { reply(`*APK Search:*\nSearch for "${text}" on https://apkpure.com/search?q=${encodeURIComponent(text)}`) }
+    if (!text) return reply(`📦 Example: ${prefix}apk WhatsApp`)
+    try {
+        await reply('📲 _Searching APK..._')
+        let _apkResults = null
+        // Source 1: EliteProTech
+        try {
+            let _ep = await fetch(`https://eliteprotech-apis.zone.id/apk?q=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(20000) })
+            let _epd = await _ep.json()
+            if (_epd.status && _epd.results?.length) _apkResults = _epd.results.slice(0, 5).map(a => ({
+                name: a.name, package: a.package,
+                version: a.file?.vername || '?',
+                size: a.file?.filesize ? (a.file.filesize / 1024 / 1024).toFixed(1) + ' MB' : '?',
+                download: a.file?.path || null,
+                icon: a.icon || null
+            }))
+        } catch (_e1) { console.log('[apk] eliteprotech:', _e1.message) }
+        // Source 2: maizapk fallback
+        if (!_apkResults?.length) {
+            try {
+                let _mz = await fetch(`https://api.maizapk.my.id/search?q=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(15000) })
+                let _mzd = await _mz.json()
+                if (_mzd.results?.length) _apkResults = _mzd.results.slice(0, 5).map(a => ({ name: a.name, download: a.link || null, version: '?', size: '?', package: '' }))
+            } catch (_e2) {}
+        }
+        if (!_apkResults?.length) return reply(`❌ No APK found for "${text}". Try: https://apkpure.com/search?q=${encodeURIComponent(text)}`)
+        let _msg = `╔══════════════════════════╗\n║  📦 *APK SEARCH: ${text}*\n╚══════════════════════════╝\n`
+        for (let [i, a] of _apkResults.entries()) {
+            _msg += `\n${i+1}. *${a.name}*`
+            if (a.package) _msg += ` (${a.package})`
+            _msg += `\n   📦 Version: ${a.version} | 💾 Size: ${a.size}`
+            if (a.download) _msg += `\n   🔗 ${a.download}`
+            _msg += '\n'
+        }
+        await reply(_msg)
+    } catch (e) { reply(`*APK Search:*\nSearch for "${text}" on https://apkpure.com/search?q=${encodeURIComponent(text)}`) }
 } break
 
 case 'gitclone': {
@@ -7296,10 +7410,47 @@ reply(`╔═══════════════════════�
 
 case 'insult': {
     await X.sendMessage(m.chat, { react: { text: '😤', key: m.key } })
-let insults = ['You are the human equivalent of a participation award.', 'If you were a spice, you would be flour.', 'You bring everyone so much joy when you leave.', 'You are like a cloud. When you disappear it is a beautiful day.', 'You are proof that even evolution makes mistakes.', 'Light travels faster than sound, which is why you seemed bright until you spoke.']
-let target2 = (m.mentionedJid && m.mentionedJid[0]) ? `@${m.mentionedJid[0].split('@')[0]}` : pushname
-reply(`╔══════════════════════════╗\n║  🔥 *ROAST*\n╚══════════════════════════╝\n\n  👤 *${target2}*\n  ${insults[Math.floor(Math.random() * insults.length)]}`)
+    let _insultText = null
+    try {
+        let _ep = await fetch('https://eliteprotech-apis.zone.id/insult', { signal: AbortSignal.timeout(8000) })
+        let _epd = await _ep.json()
+        if (_epd.success && _epd.insult) _insultText = _epd.insult
+    } catch {}
+    if (!_insultText) {
+        let _localInsults = ['You are the human equivalent of a participation award.', 'If you were a spice, you would be flour.', 'You bring everyone so much joy when you leave.', 'You are like a cloud. When you disappear it is a beautiful day.', 'You are proof that even evolution makes mistakes.', 'Light travels faster than sound, which is why you seemed bright until you spoke.']
+        _insultText = _localInsults[Math.floor(Math.random() * _localInsults.length)]
+    }
+    let _insultTarget = (m.mentionedJid && m.mentionedJid[0]) ? `@${m.mentionedJid[0].split('@')[0]}` : pushname
+    reply(`╔══════════════════════════╗\n║  🔥 *ROAST*\n╚══════════════════════════╝\n\n  👤 *${_insultTarget}*\n  ${_insultText}`)
 } break
+
+  case 'story':
+  case 'tellstory':
+  case 'generatestory': {
+      await X.sendMessage(m.chat, { react: { text: '📖', key: m.key } })
+      if (!text) return reply(`📖 *Story Generator*\n\nUsage: ${prefix}story [topic or theme]\nExamples:\n• ${prefix}story a hero saves the world\n• ${prefix}story two friends lost in the forest`)
+      try {
+          await reply('📖 _Writing your story, please wait..._')
+          let _epS = await fetch(`https://eliteprotech-apis.zone.id/story?text=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(30000) })
+          let _epSd = await _epS.json()
+          if (_epSd.success && _epSd.story) {
+              let _storyText = _epSd.story
+              let _header = `╔══════════════════════════╗\n║  📖 *AI STORY*\n╚══════════════════════════╝\n\n`
+              // Split long stories into chunks of 3500 chars
+              if (_storyText.length <= 3500) {
+                  await reply(_header + _storyText)
+              } else {
+                  await reply(_header + _storyText.slice(0, 3500) + '...')
+                  for (let _i = 3500; _i < _storyText.length; _i += 3500) {
+                      await reply(_storyText.slice(_i, _i + 3500))
+                  }
+              }
+          } else {
+              reply('❌ Could not generate story. Please try again.')
+          }
+      } catch(e) { reply('❌ Story generation failed: ' + e.message) }
+  } break
+  
 
 case 'flirt': {
     await X.sendMessage(m.chat, { react: { text: '😏', key: m.key } })
