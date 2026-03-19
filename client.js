@@ -8599,8 +8599,7 @@ case 'laligaupcoming': {
   // 🇮🇹  SERIE A STANDINGS
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   case 'seriea':
-  case 'serieastandings':
-  case 'serieastandings':
+  case 'serieastandings': {
       await X.sendMessage(m.chat, { react: { text: '🇮🇹', key: m.key } })
       try {
           await reply('🏆 _Fetching Serie A standings..._')
