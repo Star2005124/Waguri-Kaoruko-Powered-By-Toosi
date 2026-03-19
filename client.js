@@ -1597,6 +1597,43 @@ if (!text) return reply('Please provide the Facebook URL')
       }
   }
 break
+
+  case 'vocalremove':
+  case 'removevocal':
+  case 'instrumental': {
+      await X.sendMessage(m.chat, { react: { text: '🎙️', key: m.key } })
+      try {
+          let _vrUrl = text?.match(/^https?:\/\//i) ? text.trim() : null
+          if (!_vrUrl && m.quoted) {
+              let _mtype = m.quoted.mimetype || ''
+              if (!/audio|video/.test(_mtype)) return reply('❌ Reply to an audio/video message with *.vocalremove*, or provide an audio URL.')
+              await reply('⏳ _Uploading audio for processing..._')
+              let _buf = await m.quoted.download()
+              if (!_buf || _buf.length < 1000) return reply('❌ Could not download the audio. Try again.')
+              const _FormData = (await import('form-data')).default
+              const _fd = new _FormData()
+              _fd.append('reqtype', 'fileupload')
+              _fd.append('fileToUpload', _buf, { filename: 'audio.mp3', contentType: _mtype || 'audio/mpeg' })
+              let _cbRes = await fetch('https://catbox.moe/user/api.php', { method: 'POST', body: _fd, headers: _fd.getHeaders(), signal: AbortSignal.timeout(30000) })
+              _vrUrl = (await _cbRes.text()).trim()
+              if (!_vrUrl.startsWith('http')) return reply('❌ Failed to upload audio. Try again.')
+              console.log('[vocalremove] catbox url:', _vrUrl)
+          }
+          if (!_vrUrl) return reply('❌ Reply to an audio message or provide an audio URL.\nExample: *.vocalremove https://example.com/song.mp3*')
+          await reply('🎙️ _Removing vocals, please wait..._')
+          let _vrRes = await fetch(`https://eliteprotech-apis.zone.id/vocalremove?url=${encodeURIComponent(_vrUrl)}`, { signal: AbortSignal.timeout(60000) })
+          let _vrd = await _vrRes.json()
+          console.log('[vocalremove] result:', JSON.stringify(_vrd).slice(0, 200))
+          if (_vrd.success !== false && (_vrd.instrumental || _vrd.result || _vrd.url || _vrd.download)) {
+              let _instrUrl = _vrd.instrumental || _vrd.result || _vrd.url || _vrd.download
+              await X.sendMessage(m.chat, { audio: { url: _instrUrl }, mimetype: 'audio/mpeg', fileName: 'instrumental.mp3' }, { quoted: m })
+              await reply('✅ *Vocals removed!* Instrumental track sent above.')
+          } else {
+              reply('❌ Could not process this audio. Make sure it is a valid, accessible audio URL.\n_Details: ' + (JSON.stringify(_vrd).slice(0, 120)) + '_')
+          }
+      } catch(e) { reply('❌ Vocal removal failed: ' + e.message) }
+  } break
+  
 case 'play':
 case 'song':
 case 'music':
@@ -1692,45 +1729,6 @@ case 'ytplay': {
                             audioUrl = _prog.download_url
                             console.log('[play] loader.to: success')
                             break
-
-  case 'vocalremove':
-  case 'removevocal':
-  case 'instrumental': {
-      await X.sendMessage(m.chat, { react: { text: '🎙️', key: m.key } })
-      try {
-          // Accepts replied audio/video or a direct URL in text
-          let _vrUrl = text?.match(/^https?:\/\//i) ? text.trim() : null
-          if (!_vrUrl && m.quoted) {
-              // Download quoted audio/video then upload to catbox for a public URL
-              let _mtype = m.quoted.mimetype || ''
-              if (!/audio|video/.test(_mtype)) return reply('❌ Reply to an audio/video message with *.vocalremove*, or provide an audio URL.')
-              await reply('⏳ _Uploading audio for processing..._')
-              let _buf = await m.quoted.download()
-              if (!_buf || _buf.length < 1000) return reply('❌ Could not download the audio. Try again.')
-              // Upload to catbox.moe
-              const _FormData = (await import('form-data')).default
-              const _fd = new _FormData()
-              _fd.append('reqtype', 'fileupload')
-              _fd.append('fileToUpload', _buf, { filename: 'audio.mp3', contentType: _mtype || 'audio/mpeg' })
-              let _cbRes = await fetch('https://catbox.moe/user/api.php', { method: 'POST', body: _fd, headers: _fd.getHeaders(), signal: AbortSignal.timeout(30000) })
-              _vrUrl = (await _cbRes.text()).trim()
-              if (!_vrUrl.startsWith('http')) return reply('❌ Failed to upload audio. Try again.')
-              console.log('[vocalremove] catbox url:', _vrUrl)
-          }
-          if (!_vrUrl) return reply('❌ Reply to an audio message or provide an audio URL.\nExample: *.vocalremove https://example.com/song.mp3*')
-          await reply('🎙️ _Removing vocals, please wait..._')
-          let _vrRes = await fetch(`https://eliteprotech-apis.zone.id/vocalremove?url=${encodeURIComponent(_vrUrl)}`, { signal: AbortSignal.timeout(60000) })
-          let _vrd = await _vrRes.json()
-          console.log('[vocalremove] result:', JSON.stringify(_vrd).slice(0, 200))
-          if (_vrd.success !== false && (_vrd.instrumental || _vrd.result || _vrd.url || _vrd.download)) {
-              let _instrUrl = _vrd.instrumental || _vrd.result || _vrd.url || _vrd.download
-              await X.sendMessage(m.chat, { audio: { url: _instrUrl }, mimetype: 'audio/mpeg', fileName: 'instrumental.mp3' }, { quoted: m })
-              await reply('✅ *Vocals removed!* Instrumental track sent above.')
-          } else {
-              reply('❌ Could not process this audio. Make sure it is a valid, accessible audio URL.\n_Details: ' + (JSON.stringify(_vrd).slice(0, 120)) + '_')
-          }
-      } catch(e) { reply('❌ Vocal removal failed: ' + e.message) }
-  } break
   
                         }
                         if (_prog.progress < 0) { console.log('[play] loader.to: failed'); break }
