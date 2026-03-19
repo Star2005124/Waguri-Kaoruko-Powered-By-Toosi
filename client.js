@@ -1330,60 +1330,57 @@ case 'ytplay': {
             if (it) { audioUrl = it.url; console.log('[play] innertube: success bitrate=', it.bitrate) }
         }
 
-        // Method 2: Piped API — open-source YouTube proxy, bypasses region/auth blocks
+        // Method 2: loader.to — mp3 (moved up, confirmed working)
         if (!audioUrl && !audioPath) {
-            const _piped = async (instance) => {
-                try {
-                    let videoId = _getVideoId(firstVideo.url)
-                    if (!videoId) return null
-                    let res = await fetch(`${instance}/streams/${videoId}`, { signal: AbortSignal.timeout(15000) })
-                    let data = await res.json()
-                    let streams = (data.audioStreams || []).filter(s => s.url)
-                    streams.sort((a, b) => Math.abs((a.bitrate || 0) - 128000) - Math.abs((b.bitrate || 0) - 128000))
-                    if (streams[0]?.url) return streams[0].url
-                    console.log('[play] piped(' + instance + '):', data.message || 'no audioStreams')
-                } catch (e) { console.log('[play] piped(' + instance + '):', e.message) }
-                return null
-            }
-            audioUrl = await _piped('https://api.piped.projectsegfau.lt')
-            if (audioUrl) console.log('[play] piped: success')
+            try {
+                let _ltRes = await fetch(`https://loader.to/ajax/download.php?format=mp3&url=${encodeURIComponent(firstVideo.url)}`, { signal: AbortSignal.timeout(12000) })
+                let _ltData = await _ltRes.json()
+                console.log('[play] loader.to init:', _ltData.success, _ltData.id)
+                if (_ltData.success && _ltData.id) {
+                    for (let _i = 0; _i < 25; _i++) {
+                        await new Promise(r => setTimeout(r, 3000))
+                        let _prog = await (await fetch(`https://loader.to/ajax/progress.php?id=${_ltData.id}`)).json()
+                        if (_prog.success === 1 && _prog.progress >= 1000 && _prog.download_url) {
+                            audioUrl = _prog.download_url
+                            console.log('[play] loader.to: success')
+                            break
+                        }
+                        if (_prog.progress < 0) { console.log('[play] loader.to: failed'); break }
+                    }
+                }
+            } catch (_e2) { console.log('[play] loader.to-early:', _e2.message) }
         }
 
-        // Method 3: Invidious API — another open-source YouTube proxy
+        // Method 3: Invidious — multiple instances, actual call (fixed dead code)
         if (!audioUrl && !audioPath) {
             const _invidious = async (instance) => {
                 try {
                     let videoId = _getVideoId(firstVideo.url)
                     if (!videoId) return null
-                    let res = await fetch(`${instance}/api/v1/videos/${videoId}?fields=adaptiveFormats,formatStreams`, { signal: AbortSignal.timeout(15000) })
+                    let res = await fetch(`${instance}/api/v1/videos/${videoId}?fields=adaptiveFormats,formatStreams`, { signal: AbortSignal.timeout(12000) })
                     let data = await res.json()
                     let fmts = [...(data.adaptiveFormats || []), ...(data.formatStreams || [])]
-                    let audioFmts = fmts.filter(f => f.type?.startsWith('audio/') && f.url)
+                    let audioFmts = fmts.filter(f => (f.type || f.mimeType || '').startsWith('audio/') && f.url)
                     audioFmts.sort((a, b) => Math.abs((a.bitrate || 0) - 128000) - Math.abs((b.bitrate || 0) - 128000))
                     if (audioFmts[0]?.url) return audioFmts[0].url
-                    console.log('[play] invidious(' + instance + '):', data.error || 'no audio formats')
                 } catch (e) { console.log('[play] invidious(' + instance + '):', e.message) }
                 return null
             }
+            const _invInstances = [
+                'https://invidious.privacydev.net',
+                'https://inv.tux.pizza',
+                'https://invidious.nerdvpn.de',
+                'https://invidious.fdn.fr',
+                'https://iv.datura.network',
+                'https://invidious.perennialte.ch',
+            ]
+            for (const _inst of _invInstances) {
+                audioUrl = await _invidious(_inst)
+                if (audioUrl) { console.log('[play] invidious: success', _inst); break }
+            }
+        }
             if (audioUrl) console.log('[play] invidious: success')
         }
-
-        // Method 4: loader.to — 128kbps mp3 (kept in case service recovers)
-        if (!audioUrl && !audioPath) {
-            try {
-                let initRes = await fetch(`https://loader.to/ajax/download.php?format=mp3-128&url=${encodeURIComponent(firstVideo.url)}`, { signal: AbortSignal.timeout(10000) })
-                let initData = await initRes.json()
-                console.log('[play] loader.to init:', JSON.stringify(initData).slice(0, 100))
-                if (initData.success && initData.id) {
-                    let dlId = initData.id
-                    for (let i = 0; i < 20; i++) {
-                        await new Promise(r => setTimeout(r, 3000))
-                        let progData = await (await fetch(`https://loader.to/ajax/progress.php?id=${dlId}`)).json()
-                        if (progData.success === 1 && progData.progress >= 1000 && progData.download_url) {
-                            audioUrl = progData.download_url
-                            console.log('[play] loader.to: success')
-                            break
-                        }
                         if (progData.progress < 0) { console.log('[play] loader.to: progress failed'); break }
                     }
                 }
@@ -5995,7 +5992,7 @@ try {
 // Method 2: loader.to
 if (!audioUrl && !audioPath) {
     try {
-        let initData = await (await fetch(`https://loader.to/ajax/download.php?format=mp3-128&url=${encodeURIComponent(vid.url)}`, { signal: AbortSignal.timeout(10000) })).json()
+        let initData = await (await fetch(`https://loader.to/ajax/download.php?format=mp3&url=${encodeURIComponent(vid.url)}`, { signal: AbortSignal.timeout(10000) })).json()
         if (initData.success && initData.id) {
             for (let i = 0; i < 30; i++) {
                 await new Promise(r => setTimeout(r, 3000))
