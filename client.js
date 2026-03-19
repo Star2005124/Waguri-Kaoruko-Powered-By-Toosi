@@ -2605,6 +2605,49 @@ case 'settz': {
     const _allZones = moment.tz.names()
     let _tzArg = args.join(' ').trim()
 
+    // Alias map — country/city names → correct IANA timezone
+    const _tzAliases = {
+        'africa/nigeria': 'Africa/Lagos', 'africa/abuja': 'Africa/Lagos', 'africa/lagos': 'Africa/Lagos',
+        'africa/ghana': 'Africa/Accra', 'africa/accra': 'Africa/Accra',
+        'africa/cameroon': 'Africa/Douala', 'africa/douala': 'Africa/Douala',
+        'africa/kenya': 'Africa/Nairobi', 'africa/nairobi': 'Africa/Nairobi',
+        'africa/uganda': 'Africa/Kampala', 'africa/kampala': 'Africa/Kampala',
+        'africa/tanzania': 'Africa/Dar_es_Salaam', 'africa/ethiopia': 'Africa/Addis_Ababa',
+        'africa/egypt': 'Africa/Cairo', 'africa/cairo': 'Africa/Cairo',
+        'africa/morocco': 'Africa/Casablanca', 'africa/casablanca': 'Africa/Casablanca',
+        'africa/sudan': 'Africa/Khartoum', 'africa/zimbabwe': 'Africa/Harare',
+        'africa/zambia': 'Africa/Lusaka', 'africa/angola': 'Africa/Luanda',
+        'africa/mozambique': 'Africa/Maputo', 'africa/rwanda': 'Africa/Kigali',
+        'africa/burundi': 'Africa/Bujumbura', 'africa/senegal': 'Africa/Dakar',
+        'africa/congo': 'Africa/Brazzaville', 'africa/drc': 'Africa/Kinshasa',
+        'africa/somalia': 'Africa/Mogadishu', 'africa/liberia': 'Africa/Monrovia',
+        'africa/ivory_coast': 'Africa/Abidjan', 'africa/cote_divoire': 'Africa/Abidjan',
+        'africa/mali': 'Africa/Bamako', 'africa/guinea': 'Africa/Conakry',
+        'africa/niger': 'Africa/Niamey', 'africa/chad': 'Africa/Ndjamena',
+        'africa/madagascar': 'Indian/Antananarivo', 'africa/mauritius': 'Indian/Mauritius',
+        'europe/uk': 'Europe/London', 'europe/england': 'Europe/London',
+        'europe/scotland': 'Europe/London', 'europe/wales': 'Europe/London',
+        'europe/ireland': 'Europe/Dublin', 'europe/holland': 'Europe/Amsterdam',
+        'europe/netherlands': 'Europe/Amsterdam',
+        'america/usa': 'America/New_York', 'america/uk': 'Europe/London',
+        'america/brazil': 'America/Sao_Paulo', 'america/canada': 'America/Toronto',
+        'america/mexico': 'America/Mexico_City', 'america/colombia': 'America/Bogota',
+        'america/venezuela': 'America/Caracas', 'america/argentina': 'America/Argentina/Buenos_Aires',
+        'america/chile': 'America/Santiago', 'america/peru': 'America/Lima',
+        'asia/india': 'Asia/Kolkata', 'asia/pakistan': 'Asia/Karachi',
+        'asia/bangladesh': 'Asia/Dhaka', 'asia/china': 'Asia/Shanghai',
+        'asia/japan': 'Asia/Tokyo', 'asia/korea': 'Asia/Seoul',
+        'asia/indonesia': 'Asia/Jakarta', 'asia/thailand': 'Asia/Bangkok',
+        'asia/vietnam': 'Asia/Ho_Chi_Minh', 'asia/malaysia': 'Asia/Kuala_Lumpur',
+        'asia/philippines': 'Asia/Manila', 'asia/singapore': 'Asia/Singapore',
+        'asia/uae': 'Asia/Dubai', 'asia/dubai': 'Asia/Dubai',
+        'asia/saudi': 'Asia/Riyadh', 'asia/saudi_arabia': 'Asia/Riyadh',
+        'asia/qatar': 'Asia/Qatar', 'asia/kuwait': 'Asia/Kuwait',
+        'asia/israel': 'Asia/Jerusalem', 'asia/turkey': 'Europe/Istanbul',
+        'australia/sydney': 'Australia/Sydney', 'australia/melbourne': 'Australia/Melbourne',
+        'australia/perth': 'Australia/Perth', 'australia/brisbane': 'Australia/Brisbane',
+    }
+
     // No arg — show current timezone + time
     if (!_tzArg) {
         const _cur = global.botTimezone || 'Africa/Nairobi'
@@ -2618,14 +2661,32 @@ case 'settz': {
             `  ├ 📅 *Date*    › ${_now.format('DD/MM/YYYY')}\n` +
             `  └ ⏰ *Offset*  › UTC${_now.format('Z')}\n\n` +
             `  📌 *Usage:*\n` +
-            `  ${prefix}timezone Africa/Nairobi\n` +
-            `  ${prefix}timezone Asia/Jakarta\n` +
+            `  ${prefix}timezone Africa/Lagos\n` +
+            `  ${prefix}timezone Asia/Dubai\n` +
             `  ${prefix}timezone America/New_York\n\n` +
             `  🔍 *Search:* ${prefix}timezone Africa`
         )
     }
 
-    // Exact match — set it
+    // Alias lookup — resolve common country/city names
+    const _aliasKey = _tzArg.toLowerCase().replace(/\s+/g, '_')
+    const _aliasMatch = _tzAliases[_aliasKey]
+    if (_aliasMatch) {
+        global.botTimezone = _aliasMatch
+        const _now = moment().tz(_aliasMatch)
+        return reply(
+            `╔══════════════════════════╗\n` +
+            `║  🕐 *TIMEZONE*\n` +
+            `╚══════════════════════════╝\n\n` +
+            `  ✅ *Updated!*\n\n` +
+            `  ├ 🌍 *Timezone* › ${_aliasMatch}\n` +
+            `  ├ 🕐 *Time*     › ${_now.format('HH:mm:ss')}\n` +
+            `  ├ 📅 *Date*     › ${_now.format('DD/MM/YYYY')}\n` +
+            `  └ ⏰ *Offset*   › UTC${_now.format('Z')}`
+        )
+    }
+
+    // Exact IANA match — set it
     if (moment.tz.zone(_tzArg)) {
         global.botTimezone = _tzArg
         const _now = moment().tz(_tzArg)
@@ -2641,7 +2702,7 @@ case 'settz': {
         )
     }
 
-    // No exact match — search for suggestions
+    // Partial search in IANA list
     const _query = _tzArg.toLowerCase()
     const _matches = _allZones.filter(z => z.toLowerCase().includes(_query)).slice(0, 20)
     if (_matches.length) {
@@ -2661,14 +2722,17 @@ case 'settz': {
         )
     }
 
-    // Nothing found at all
+    // Nothing found — suggest searching by continent
+    const _continent = _tzArg.split('/')[0] || ''
+    const _contSearch = _allZones.filter(z => z.toLowerCase().startsWith(_continent.toLowerCase())).slice(0, 10)
     reply(
         `╔══════════════════════════╗\n` +
         `║  🕐 *TIMEZONE*\n` +
         `╚══════════════════════════╝\n\n` +
         `  ❌ *"${_tzArg}"* is not a valid timezone.\n\n` +
-        `  Try searching: ${prefix}timezone Africa\n` +
-        `  Or use a full name: ${prefix}timezone Africa/Nairobi`
+        (_contSearch.length ? `  *${_continent} timezones:*\n` + _contSearch.map(z => `  • ${z}`).join('\n') + '\n\n' : '') +
+        `  🔍 Search: ${prefix}timezone ${_continent || 'Africa'}\n` +
+        `  📌 Example: ${prefix}timezone Africa/Lagos`
     )
 }
 break
