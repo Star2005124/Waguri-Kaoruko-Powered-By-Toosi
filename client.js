@@ -2601,11 +2601,75 @@ break
 case 'timezone':
 case 'settz': {
     await X.sendMessage(m.chat, { react: { text: '🕐', key: m.key } })
-if (!isOwner) return reply(mess.OnlyOwner)
-let tz = args.join(' ').trim()
-if (!tz) return reply(`*Current Timezone:* ${global.botTimezone}\n\nUsage: ${prefix}timezone [timezone]\n\nExamples:\n${prefix}timezone Africa/Nairobi\n${prefix}timezone Asia/Jakarta\n${prefix}timezone America/New_York`)
-global.botTimezone = tz
-reply(`✅ *Timezone updated* › *${tz}*\n  🕐 Current time: *${moment().tz(tz).format('HH:mm:ss DD/MM/YYYY')}*`)
+    if (!isOwner) return reply(mess.OnlyOwner)
+    const _allZones = moment.tz.names()
+    let _tzArg = args.join(' ').trim()
+
+    // No arg — show current timezone + time
+    if (!_tzArg) {
+        const _cur = global.botTimezone || 'Africa/Nairobi'
+        const _now = moment().tz(_cur)
+        return reply(
+            `╔══════════════════════════╗\n` +
+            `║  🕐 *TIMEZONE*\n` +
+            `╚══════════════════════════╝\n\n` +
+            `  ├ 🌍 *Current* › ${_cur}\n` +
+            `  ├ 🕐 *Time*    › ${_now.format('HH:mm:ss')}\n` +
+            `  ├ 📅 *Date*    › ${_now.format('DD/MM/YYYY')}\n` +
+            `  └ ⏰ *Offset*  › UTC${_now.format('Z')}\n\n` +
+            `  📌 *Usage:*\n` +
+            `  ${prefix}timezone Africa/Nairobi\n` +
+            `  ${prefix}timezone Asia/Jakarta\n` +
+            `  ${prefix}timezone America/New_York\n\n` +
+            `  🔍 *Search:* ${prefix}timezone Africa`
+        )
+    }
+
+    // Exact match — set it
+    if (moment.tz.zone(_tzArg)) {
+        global.botTimezone = _tzArg
+        const _now = moment().tz(_tzArg)
+        return reply(
+            `╔══════════════════════════╗\n` +
+            `║  🕐 *TIMEZONE*\n` +
+            `╚══════════════════════════╝\n\n` +
+            `  ✅ *Updated!*\n\n` +
+            `  ├ 🌍 *Timezone* › ${_tzArg}\n` +
+            `  ├ 🕐 *Time*     › ${_now.format('HH:mm:ss')}\n` +
+            `  ├ 📅 *Date*     › ${_now.format('DD/MM/YYYY')}\n` +
+            `  └ ⏰ *Offset*   › UTC${_now.format('Z')}`
+        )
+    }
+
+    // No exact match — search for suggestions
+    const _query = _tzArg.toLowerCase()
+    const _matches = _allZones.filter(z => z.toLowerCase().includes(_query)).slice(0, 20)
+    if (_matches.length) {
+        return reply(
+            `╔══════════════════════════╗\n` +
+            `║  🕐 *TIMEZONE*\n` +
+            `╚══════════════════════════╝\n\n` +
+            `  ❌ *"${_tzArg}"* not found.\n` +
+            `  Did you mean one of these?\n\n` +
+            _matches.map((z, i) => {
+                const _t = moment().tz(z).format('HH:mm')
+                return `  ${i+1}. ${z} (🕐 ${_t})`
+            }).join('\n') +
+            (_allZones.filter(z => z.toLowerCase().includes(_query)).length > 20
+                ? `\n  ... and more. Be more specific.` : ``) +
+            `\n\n  📌 Copy a timezone above and run:\n  ${prefix}timezone <timezone>`
+        )
+    }
+
+    // Nothing found at all
+    reply(
+        `╔══════════════════════════╗\n` +
+        `║  🕐 *TIMEZONE*\n` +
+        `╚══════════════════════════╝\n\n` +
+        `  ❌ *"${_tzArg}"* is not a valid timezone.\n\n` +
+        `  Try searching: ${prefix}timezone Africa\n` +
+        `  Or use a full name: ${prefix}timezone Africa/Nairobi`
+    )
 }
 break
 
