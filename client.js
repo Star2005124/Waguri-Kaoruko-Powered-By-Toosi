@@ -199,10 +199,6 @@ async function _runAI(systemPrompt, userMsg, maxTokens = 1500) {
 
     throw new Error('All AI services unavailable')
 }
-    } catch {}
-
-    throw new Error('All AI services unavailable')
-}
 
 module.exports = async (X, m, chatUpdate, store) => {
 try {
