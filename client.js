@@ -144,37 +144,40 @@ async function _runChatBoAI(userMsg, isAutoMode = false) {
 // ── General-purpose AI helper — used by all named AI commands ────────────────
 // (.feloai, .claudeai, .deepseek, .grok, .mistral, .copilot, etc.)
 async function _runAI(systemPrompt, userMsg, maxTokens = 1500) {
-    const _q = encodeURIComponent(`${systemPrompt}\n\nUser: ${userMsg}\n\nAssistant:`)
+    // Embed system prompt into query so persona is respected by APIs that ignore system=
+    const _fullQ = encodeURIComponent(systemPrompt + '\n\nUser: ' + userMsg + '\n\nAssistant:')
+    const _sysEnc = encodeURIComponent(systemPrompt)
+    const _qEnc   = encodeURIComponent(userMsg)
 
-    // 1. GiftedTech GPT-4o (confirmed working, no key needed)
+    // 1. GiftedTech GPT-4o — embed system into q for persona compliance
     try {
-        const _r = await fetch(`https://api.giftedtech.co.ke/api/ai/gpt4o?apikey=gifted&q=${encodeURIComponent(userMsg)}&system=${encodeURIComponent(systemPrompt)}`, { signal: AbortSignal.timeout(20000) })
+        const _r = await fetch(`https://api.giftedtech.co.ke/api/ai/gpt4o?apikey=gifted&q=${_fullQ}`, { signal: AbortSignal.timeout(22000) })
         const _d = await _r.json()
         if (_d?.success && _d?.result && String(_d.result).trim().length > 2) return String(_d.result).trim()
     } catch {}
 
-    // 2. GiftedTech Gemini (confirmed working, no key needed)
+    // 2. GiftedTech Gemini — embed system into q
     try {
-        const _r2 = await fetch(`https://api.giftedtech.co.ke/api/ai/gemini?apikey=gifted&q=${encodeURIComponent(userMsg)}`, { signal: AbortSignal.timeout(20000) })
+        const _r2 = await fetch(`https://api.giftedtech.co.ke/api/ai/gemini?apikey=gifted&q=${_fullQ}`, { signal: AbortSignal.timeout(22000) })
         const _d2 = await _r2.json()
         if (_d2?.success && _d2?.result && String(_d2.result).trim().length > 2) return String(_d2.result).trim()
     } catch {}
 
-    // 3. Pollinations OpenAI-compatible POST (free, no key)
+    // 3. Pollinations OpenAI-compatible POST (free, no key, respects system role)
     try {
         const { data: _d3 } = await require('axios').post('https://text.pollinations.ai/openai', {
             model: 'openai',
             messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userMsg }],
             max_tokens: maxTokens,
             stream: false
-        }, { headers: { 'Content-Type': 'application/json' }, timeout: 22000 })
+        }, { headers: { 'Content-Type': 'application/json' }, timeout: 25000 })
         const _t3 = _d3?.choices?.[0]?.message?.content?.trim()
         if (_t3?.length > 2) return _t3
     } catch {}
 
     // 4. Pollinations GET fallback
     try {
-        const { data: _d4 } = await require('axios').get(`https://text.pollinations.ai/${_q}`, { timeout: 15000, responseType: 'text' })
+        const { data: _d4 } = await require('axios').get(`https://text.pollinations.ai/${_fullQ}`, { timeout: 15000, responseType: 'text' })
         if (_d4 && typeof _d4 === 'string' && _d4.trim().length > 2) return _d4.trim()
     } catch {}
 
@@ -192,6 +195,10 @@ async function _runAI(systemPrompt, userMsg, maxTokens = 1500) {
             const _t5 = _d5?.content?.[0]?.text?.trim()
             if (_t5?.length > 2) return _t5
         }
+    } catch {}
+
+    throw new Error('All AI services unavailable')
+}
     } catch {}
 
     throw new Error('All AI services unavailable')
@@ -8277,20 +8284,18 @@ case 'qrread': {
 // 🎨  AI IMAGE GENERATOR (DeepImg)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 case 'deepimg':
-case 'imagine':
 case 'genimage':
 case 'aiart': {
     await X.sendMessage(m.chat, { react: { text: '🎨', key: m.key } })
-    if (!text) return reply(`🎨 *AI Image Generator*\n\nUsage: *${prefix}deepimg [describe your image]*\n\nExamples:\n• ${prefix}deepimg A beautiful sunset over the ocean\n• ${prefix}deepimg A futuristic city at night`)
+    if (!text) return reply(`🎨 *AI Image Generator*\n\nUsage: *${prefix}${command} [describe your image]*\n\nExamples:\n• ${prefix}${command} A beautiful sunset over the ocean\n• ${prefix}${command} A futuristic city at night`)
     try {
         await reply('🎨 _Generating your image with AI, please wait..._')
         let r = await fetch(`https://api.giftedtech.co.ke/api/ai/fluximg?apikey=gifted&prompt=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(60000) })
         let d = await r.json()
         let _imgUrl = d?.result?.url || d?.result
         if (!d.success || !_imgUrl) {
-            let _r2 = await fetch(`https://api.giftedtech.co.ke/api/ai/magicstudio?apikey=gifted&prompt=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(60000) })
-            let _d2 = await _r2.json()
-            _imgUrl = _d2?.result?.url || _d2?.result
+            // MagicStudio returns raw JPEG — send the URL directly without JSON parsing
+            _imgUrl = `https://api.giftedtech.co.ke/api/ai/magicstudio?apikey=gifted&prompt=${encodeURIComponent(text)}`
         }
         if (!_imgUrl) throw new Error('Image generation failed')
         await X.sendMessage(m.chat, { image: { url: _imgUrl }, caption: `🎨 *AI Generated Image*\n📝 _${text}_` }, { quoted: m })
