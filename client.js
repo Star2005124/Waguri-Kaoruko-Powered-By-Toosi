@@ -5420,7 +5420,7 @@ async function getServerInfo() {
   return responseText.trim()
 }
 
-if (command === 'ping') {
+if (command === 'ping' || command === 'p') {
   const _pingMs = Date.now() - _pingStart
   await X.sendMessage(m.chat, { text: `╔═════════╗\n║  ⚡ *PONG!*  📡 *${_pingMs}ms*\n╚═════════╝` }, { quoted: m })
 } else {
