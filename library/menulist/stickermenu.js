@@ -1,7 +1,7 @@
 const stickerMenu = `
-╔══════════════════════════╗
+╔═════════╗
 ║  🖼️  *STICKER TOOLS*
-╚══════════════════════════╝
+╚═════════╝
   ├◈  \`.sticker\`     › reply media
   ├◈  \`.stickercrop\` ├◈  \`.scrop\`
   ├◈  \`.take\`        › [pack|author]
@@ -15,9 +15,9 @@ const stickerMenu = `
   ├◈  \`.meme\`        › [top|bottom]
   └◈  \`.smeme\`       › [top|bottom]
 
-╔══════════════════════════╗
+╔═════════╗
 ║  🔄  *CONVERTER*
-╚══════════════════════════╝
+╚═════════╝
   ├◈  \`.toimage\`  › sticker → img
   ├◈  \`.totext\`   › image → text
   ├◈  \`.toaudio\`  › video → audio
