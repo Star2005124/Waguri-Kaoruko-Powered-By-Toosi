@@ -1572,11 +1572,12 @@ if (!text) return reply('Please provide the Facebook URL')
         try {
           let _ep = await fetch(`https://eliteprotech-apis.zone.id/facebook?url=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(20000) })
           let _epd = await _ep.json()
-          console.log('[fb] eliteprotech: success=', _epd.success)
-          if (_epd.success && _epd.result) {
-            _fbUrl      = _epd.result.hd || _epd.result.sd || _epd.result.video || _epd.result.download_url || _epd.result.url
-            _fbTitle    = _epd.result.title    || null
-            _fbDuration = _epd.result.duration || null
+          console.log('[fb] eliteprotech: success=', _epd.success, 'has video=', !!_epd.video)
+          const _fbEpUrl = _epd.video || _epd.result?.hd || _epd.result?.sd || _epd.result?.url
+          if (_epd.success && _fbEpUrl) {
+            _fbUrl      = _fbEpUrl
+            _fbTitle    = _epd.title    || _epd.result?.title    || null
+            _fbDuration = _epd.duration || _epd.result?.duration || null
           }
         } catch (_e1) { console.log('[fb] eliteprotech:', _e1.message) }
 
@@ -1585,11 +1586,14 @@ if (!text) return reply('Please provide the Facebook URL')
             try {
               let _ep1b = await fetch(`https://eliteprotech-apis.zone.id/facebook1?url=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(20000) })
               let _ep1bd = await _ep1b.json()
-              console.log('[fb] eliteprotech1:', _ep1bd.success)
-              if (_ep1bd.success && _ep1bd.result) {
-                _fbUrl      = _ep1bd.result.hd || _ep1bd.result.sd || _ep1bd.result.video || _ep1bd.result.download_url || _ep1bd.result.url
-                _fbTitle    = _ep1bd.result.title    || null
-                _fbDuration = _ep1bd.result.duration || null
+              console.log('[fb] eliteprotech1:', _ep1bd.success, 'results=', _ep1bd.results?.length)
+              if (_ep1bd.success && _ep1bd.results?.length) {
+                const _fb1hd = _ep1bd.results.find(r => /hd|720|1080/i.test(r.quality)) || _ep1bd.results[0]
+                if (_fb1hd?.url) {
+                  _fbUrl      = _fb1hd.url
+                  _fbTitle    = _ep1bd.title    || null
+                  _fbDuration = _ep1bd.duration || null
+                }
               }
             } catch (_e1b) { console.log('[fb] eliteprotech1:', _e1b.message) }
           }
