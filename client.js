@@ -1475,30 +1475,53 @@ case 'mediafire': {
 }
 break
 case 'ig':
-case 'instagram': {
-    await X.sendMessage(m.chat, { react: { text: '📸', key: m.key } })
-    if (!text) return reply("Please provide the Instagram link");
-    try {
-        const mediaUrl = await igdl(text);
-        if (!mediaUrl || !mediaUrl[0] || !mediaUrl[0].url) return reply('Failed to download. The link may be invalid.');
-        const url_media = mediaUrl[0].url;
+  case 'instagram': {
+      await X.sendMessage(m.chat, { react: { text: '📸', key: m.key } })
+      if (!text) return reply("Please provide the Instagram link");
+      let _igUrl = null
+
+      // Source 1: igdl library
+      try {
+          const mediaUrl = await igdl(text);
+          if (mediaUrl?.[0]?.url) _igUrl = mediaUrl[0].url
+      } catch(_e1) { console.log('[ig] igdl:', _e1.message) }
+
+      // Source 2: EliteProTech /instagram
+      if (!_igUrl) {
         try {
-            const response = await axios.head(url_media); 
-            const contentType = response.headers['content-type'];
-            if (contentType && contentType.startsWith('image/')) {
-                await safeSendMedia(m.chat, { image: { url: url_media}, caption: 'Done!' }, {}, { quoted: m });
-            } else {
-                await safeSendMedia(m.chat, { video: { url: url_media}, caption: 'Done!' }, {}, { quoted: m });
-            }
-        } catch(e) {
-           console.log('IG error:', e.message)
-           reply('An error occurred while downloading. Please try again.')
-        }
-    } catch(e) {
-        console.log('IG error:', e.message)
-        reply('An error occurred while downloading. Please try again.')
-    }
-}
+          let _epIg = await fetch(`https://eliteprotech-apis.zone.id/instagram?url=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(20000) })
+          let _epIgd = await _epIg.json()
+          console.log('[ig] eliteprotech:', _epIgd.status)
+          const _igEpUrl = _epIgd?.result?.url || _epIgd?.url || _epIgd?.data?.[0]?.url
+          if ((_epIgd?.status || _epIgd?.success) && _igEpUrl) _igUrl = _igEpUrl
+        } catch(_e2) { console.log('[ig] eliteprotech:', _e2.message) }
+      }
+
+      // Source 3: GiftedTech instadl
+      if (!_igUrl) {
+        try {
+          let _gifKey = process.env.GIFTED_API_KEY || 'gifted'
+          let _gtIg = await fetch(`https://api.giftedtech.co.ke/api/download/instadl?apikey=${_gifKey}&url=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(20000) })
+          let _gtIgd = await _gtIg.json()
+          console.log('[ig] gifted:', _gtIgd.success)
+          if (_gtIgd.success && _gtIgd.result?.download_url) _igUrl = _gtIgd.result.download_url
+        } catch(_e3) { console.log('[ig] gifted:', _e3.message) }
+      }
+
+      if (!_igUrl) return reply('❌ Failed to download. The link may be private or invalid. Try again.')
+      try {
+          const response = await axios.head(_igUrl);
+          const contentType = response.headers['content-type'];
+          if (contentType && contentType.startsWith('image/')) {
+              await safeSendMedia(m.chat, { image: { url: _igUrl}, caption: 'Done!' }, {}, { quoted: m });
+          } else {
+              await safeSendMedia(m.chat, { video: { url: _igUrl}, caption: 'Done!' }, {}, { quoted: m });
+          }
+      } catch(e) {
+         console.log('[ig] send error:', e.message)
+         reply('❌ An error occurred while sending the media. Please try again.')
+      }
+  }
 break
 
 case 'tt': 
@@ -1557,7 +1580,21 @@ if (!text) return reply('Please provide the Facebook URL')
           }
         } catch (_e1) { console.log('[fb] eliteprotech:', _e1.message) }
 
-        // Source 2: fdown library fallback
+        // Source 1b: EliteProTech /facebook1
+          if (!_fbUrl) {
+            try {
+              let _ep1b = await fetch(`https://eliteprotech-apis.zone.id/facebook1?url=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(20000) })
+              let _ep1bd = await _ep1b.json()
+              console.log('[fb] eliteprotech1:', _ep1bd.success)
+              if (_ep1bd.success && _ep1bd.result) {
+                _fbUrl      = _ep1bd.result.hd || _ep1bd.result.sd || _ep1bd.result.video || _ep1bd.result.download_url || _ep1bd.result.url
+                _fbTitle    = _ep1bd.result.title    || null
+                _fbDuration = _ep1bd.result.duration || null
+              }
+            } catch (_e1b) { console.log('[fb] eliteprotech1:', _e1b.message) }
+          }
+
+          // Source 2: fdown library fallback
         if (!_fbUrl) {
           try {
             let res = await fdown.download(text)
