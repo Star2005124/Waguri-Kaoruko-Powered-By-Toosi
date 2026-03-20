@@ -352,11 +352,11 @@ function waitForConsoleInput() {
 
 async function startBot() {
     console.log('')
-    console.log(`${c.cyan}${c.bold}╔══════════════════════════════════════════╗${c.r}`)
+    console.log(`${c.cyan}${c.bold}╔═════════╗${c.r}`)
     console.log(`${c.cyan}${c.bold}║${c.r}  ${c.green}${c.bold}⚡ TOOSII-XD ULTRA${c.r} ${c.yellow}v2.0.0${c.r}             ${c.cyan}${c.bold}║${c.r}`)
     console.log(`${c.cyan}${c.bold}║${c.r}  ${c.white}${c.bold}   WhatsApp Multi-Device Bot${c.r}          ${c.cyan}${c.bold}║${c.r}`)
     console.log(`${c.cyan}${c.bold}║${c.r}  ${c.magenta}     by Toosii Tech © 2024-2026${c.r}     ${c.cyan}${c.bold}║${c.r}`)
-    console.log(`${c.cyan}${c.bold}╚══════════════════════════════════════════╝${c.r}`)
+    console.log(`${c.cyan}${c.bold}╚═════════╝${c.r}`)
     console.log('')
 
     // ── FIX 3: Auto-connect from .env SESSION_ID ──────────────────────────────
@@ -550,9 +550,9 @@ if (!X.authState.creds.registered) {
             code = code?.match(/.{1,4}/g)?.join("-") || code;
             console.log(`[PAIRING_CODE:${code}]`)
             console.log('')
-            console.log(`${c.green}${c.bold}╔══════════════════════════════════════════╗${c.r}`)
+            console.log(`${c.green}${c.bold}╔═════════╗${c.r}`)
             console.log(`${c.green}${c.bold}║${c.r}  ${c.bgGreen}${c.white}${c.bold} PAIRING CODE: ${code} ${c.r}                   ${c.green}${c.bold}║${c.r}`)
-            console.log(`${c.green}${c.bold}╚══════════════════════════════════════════╝${c.r}`)
+            console.log(`${c.green}${c.bold}╚═════════╝${c.r}`)
             console.log('')
             console.log(`${c.yellow}${c.bold}→${c.r} ${c.white}Open WhatsApp > Settings > Linked Devices > Link a Device${c.r}`)
             console.log(`${c.yellow}${c.bold}→${c.r} ${c.white}Choose "Link with phone number" and enter the code above${c.r}`)
@@ -1389,10 +1389,10 @@ if (!global._connMsgSent.has(phone)) {
       }
     const connectedJid = X.user.id.replace(/:.*@/, '@')
     try {
-        await X.sendMessage(connectedJid, {text: `╔══════════════════════════╗
+        await X.sendMessage(connectedJid, {text: `╔═════════╗
 ║   ⚡ *${global.botname || 'TOOSII-XD ULTRA'}*
 ║   _WhatsApp Multi-Device Bot_
-╚══════════════════════════╝
+╚═════════╝
 
   ✅ *Connection Successful!*
 
@@ -1849,9 +1849,9 @@ X.ev.on('call', async (callData) => {
 
                   // ── Notification ─────────────────────────────────────────────────
                   const _notif =
-                      `╔══════════════════════════╗\n` +
+                      `╔═════════╗\n` +
                       `║  🗑️ *ANTI-DELETE*\n` +
-                      `╚══════════════════════════╝\n\n` +
+                      `╚═════════╝\n\n` +
                       `  ├ 🗑️ *Deleted by* › +${_delPhone}\n` +
                       (!_sameDeleter ? `  ├ 📤 *Sender*     › +${_origPhone}\n` : ``) +
                       (_pushName     ? `  ├ 👤 *Name*       › ${_pushName}\n` : ``) +
