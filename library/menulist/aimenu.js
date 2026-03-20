@@ -1,7 +1,7 @@
 const aiMenu = `
-╔══════════════════════════╗
+╔═════════╗
 ║  🤖  *AI CHAT*
-╚══════════════════════════╝
+╚═════════╝
   ├◈  \`.ai\`              ├◈  \`.chatgpt\`
   ├◈  \`.gpt-4o\`          ├◈  \`.gpt41-mini\`
   ├◈  \`.gptturbo\`        ├◈  \`.gptlogic\`
@@ -25,9 +25,9 @@ const aiMenu = `
   ├◈  \`.bible\`       › [verse/topic]
   └◈  \`.quran\`       › [surah:ayah/topic]
 
-╔══════════════════════════╗
+╔═════════╗
 ║  🛠️  *AI TOOLS*
-╚══════════════════════════╝
+╚═════════╝
   ├◈  \`.vision\`      › reply image
   ├◈  \`.analyse\`     › reply image
   ├◈  \`.speechwrite\` › [topic]
