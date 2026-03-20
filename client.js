@@ -5398,29 +5398,29 @@ async function getServerInfo() {
   const latensi = (Date.now() - start)
 
   const responseText = `╔═════════╗
-  ║    🤖 *${global.botname || 'TOOSII-XD ULTRA'}*
-  ╚═════════╝
-    ├◈ 🟢 *Bot uptime*    › ${runtime(process.uptime())}
-    ├◈ 🖥️  *Server uptime* › ${runtime(os.uptime())}
+║ 🤖 *${global.botname || 'TOOSII-XD ULTRA'}*
+╚═════════╝
+├◈ 🟢 *Bot uptime*    › ${runtime(process.uptime())}
+├◈ 🖥️  *Server uptime* › ${runtime(os.uptime())}
 
-    ├◈ 🔧 *OS*      › ${osType} (${arch})
-    ├◈ 🟩 *Node.js* › ${nodeVersion}
-    ├◈ 💎 *CPU*     › ${cpuModel}
-    ├◈ ⚙️  *Cores*   › ${coreCount}  📊 *Load* › ${cpuUsage}
+├◈ 🔧 *OS*      › ${osType} (${arch})
+├◈ 🟩 *Node.js* › ${nodeVersion}
+├◈ 💎 *CPU*     › ${cpuModel}
+├◈ ⚙️  *Cores*   › ${coreCount}  📊 *Load* › ${cpuUsage}
 
-    ├◈ 📦 *RAM Total* › ${formatp(totalMem)}
-    ├◈ 🔴 *RAM Used*  › ${formatp(usedMem)}
-    └◈ 🟢 *RAM Free*  › ${formatp(freeMem)}${storageText ? `
+├◈ 📦 *RAM Total* › ${formatp(totalMem)}
+├◈ 🔴 *RAM Used*  › ${formatp(usedMem)}
+└◈ 🟢 *RAM Free*  › ${formatp(freeMem)}${storageText ? `
 
-    ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-    💿 *Storage*
-    ${storageText.replace(/\*STORAGE\*\n/,'').replace(/• /g,'  ├ ')}` : ''}
+┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+💿 *Storage*
+${storageText.replace(/\*STORAGE\*\n/,'').replace(/• /g,'  ├ ')}` : ''}
 
-  _⚡ Powered by ${global.ownername || 'Toosii Tech'}_`
-  return responseText.trim()
+_⚡ Powered by ${global.ownername || 'Toosii Tech'}_`
+    return responseText.trim()
 }
 
-if (command === 'ping' || command === 'p') {
+if (command === 'ping') {
   const _pingMs = Date.now() - _pingStart
   await X.sendMessage(m.chat, { text: `╔═════════╗\n║  ⚡ *PONG!*  📡 *${_pingMs}ms*\n╚═════════╝` }, { quoted: m })
 } else {
