@@ -1,7 +1,7 @@
 const groupMenu = `
-╔══════════════════════════╗
+╔═════════╗
 ║  👥  *GROUP MANAGEMENT*
-╚══════════════════════════╝
+╚═════════╝
   ├◈  \`.add\`        › [number]
   ├◈  \`.kick\`       › @user
   ├◈  \`.remove\`     › @user
@@ -19,9 +19,9 @@ const groupMenu = `
   ├◈  \`.mute\`  ├◈  \`.unmute\`
   └◈  \`.open\`  └◈  \`.close\`
 
-╔══════════════════════════╗
+╔═════════╗
 ║  ⚙️  *GROUP SETTINGS*
-╚══════════════════════════╝
+╚═════════╝
   ├◈  \`.setgname\` › [name]
   ├◈  \`.setgdesc\` › [desc]
   ├◈  \`.setgpp\`   › reply img
@@ -33,9 +33,9 @@ const groupMenu = `
   ├◈  \`.left\`     › on/off
   └◈  \`.events\`   › on/off
 
-╔══════════════════════════╗
+╔═════════╗
 ║  🛡️  *PROTECTION*
-╚══════════════════════════╝
+╚═════════╝
   ├◈  \`.antilink\`     › on/off
   ├◈  \`.antibadword\`  › on/off
   ├◈  \`.antitag\`      › on/off
@@ -43,9 +43,9 @@ const groupMenu = `
   ├◈  \`.antidemote\`   › on/off
   └◈  \`.antibot\`      › on/off/scan/add/list
 
-╔══════════════════════════╗
+╔═════════╗
 ║  🔧  *GROUP TOOLS*
-╚══════════════════════════╝
+╚═════════╝
   ├◈  \`.tagall\`    › [msg]
   ├◈  \`.tag\`       › [msg]
   ├◈  \`.hidetag\`   › [msg]
