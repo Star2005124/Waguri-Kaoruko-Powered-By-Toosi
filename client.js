@@ -1492,7 +1492,7 @@ case 'ig':
           let _epIg = await fetch(`https://eliteprotech-apis.zone.id/instagram?url=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(20000) })
           let _epIgd = await _epIg.json()
           console.log('[ig] eliteprotech:', _epIgd.status)
-          const _igEpUrl = _epIgd?.result?.url || _epIgd?.url || _epIgd?.data?.[0]?.url
+          const _igEpUrl = _epIgd?.video || _epIgd?.result?.url || _epIgd?.url || _epIgd?.data?.[0]?.url
           if ((_epIgd?.status || _epIgd?.success) && _igEpUrl) _igUrl = _igEpUrl
         } catch(_e2) { console.log('[ig] eliteprotech:', _e2.message) }
       }
