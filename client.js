@@ -5341,19 +5341,14 @@ case 'debugrole': {
 break;
 
 case 'p':
-case 'ping': {
-      await X.sendMessage(m.chat, { react: { text: '🏓', key: m.key } })
-    const _pingMs = Date.now()
-    await X.sendMessage(m.chat, { text: `╔═════════╗\n║  ⚡ *PONG!*  📡 *${Date.now() - _pingMs}ms*\n╚═════════╝` }, { quoted: m })
-  }
-  break
+case 'ping':
+case 'info':
+case 'storage':
+case 'server':
+case 'srvinfo': {
+    await X.sendMessage(m.chat, { react: { text: command === 'ping' ? '🏓' : '🖥️', key: m.key } })
+  const _pingStart = Date.now()
 
-  case 'info':
-  case 'storage':
-  case 'server':
-  case 'srvinfo': {
-      await X.sendMessage(m.chat, { react: { text: '🖥️', key: m.key } })
-  
   function formatp(bytes) {
     if (bytes < 1024) return `${bytes} B`
     const kb = bytes / 1024
@@ -5403,34 +5398,37 @@ async function getServerInfo() {
   const latensi = (Date.now() - start)
 
   const responseText = `╔═════════╗
-║  ⚡ *PONG!*  📡 *${latensi}ms*
-╚═════════╝
-  🤖 *${global.botname || 'TOOSII-XD ULTRA'}*
+  ║    🤖 *${global.botname || 'TOOSII-XD ULTRA'}*
+  ╚═════════╝
+    ├◈ 🟢 *Bot uptime*    › ${runtime(process.uptime())}
+    ├◈ 🖥️  *Server uptime* › ${runtime(os.uptime())}
 
-  ├◈ 🟢 *Bot uptime*    › ${runtime(process.uptime())}
-  ├◈ 🖥️  *Server uptime* › ${runtime(os.uptime())}
+    ├◈ 🔧 *OS*      › ${osType} (${arch})
+    ├◈ 🟩 *Node.js* › ${nodeVersion}
+    ├◈ 💎 *CPU*     › ${cpuModel}
+    ├◈ ⚙️  *Cores*   › ${coreCount}  📊 *Load* › ${cpuUsage}
 
-  ├◈ 🔧 *OS*      › ${osType} (${arch})
-  ├◈ 🟩 *Node.js* › ${nodeVersion}
-  ├◈ 💎 *CPU*     › ${cpuModel}
-  ├◈ ⚙️  *Cores*   › ${coreCount}  📊 *Load* › ${cpuUsage}
+    ├◈ 📦 *RAM Total* › ${formatp(totalMem)}
+    ├◈ 🔴 *RAM Used*  › ${formatp(usedMem)}
+    └◈ 🟢 *RAM Free*  › ${formatp(freeMem)}${storageText ? `
 
-  ├◈ 📦 *RAM Total* › ${formatp(totalMem)}
-  ├◈ 🔴 *RAM Used*  › ${formatp(usedMem)}
-  └◈ 🟢 *RAM Free*  › ${formatp(freeMem)}${storageText ? `
+    ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+    💿 *Storage*
+    ${storageText.replace(/\*STORAGE\*\n/,'').replace(/• /g,'  ├ ')}` : ''}
 
-  ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-  💿 *Storage*
-  ${storageText.replace(/\*STORAGE\*\n/,'').replace(/• /g,'  ├ ')}` : ''}
-
-_⚡ Powered by ${global.ownername || 'Toosii Tech'}_`
+  _⚡ Powered by ${global.ownername || 'Toosii Tech'}_`
   return responseText.trim()
 }
 
+if (command === 'ping') {
+  const _pingMs = Date.now() - _pingStart
+  await X.sendMessage(m.chat, { text: `╔═════════╗\n║  ⚡ *PONG!*  📡 *${_pingMs}ms*\n╚═════════╝` }, { quoted: m })
+} else {
   const responseText = await getServerInfo()
   await X.sendMessage(m.chat, { text: responseText }, { quoted: m })
-  }
-  break           
+}
+}
+break           
 
 case 'totalfitur':{
 reply(`╔═════════╗\n║  📋 *TOTAL COMMANDS*\n╚═════════╝\n\n  └ *${totalfitur()}* commands available`)
