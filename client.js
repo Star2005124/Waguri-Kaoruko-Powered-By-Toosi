@@ -5550,6 +5550,13 @@ case 'block': {
         : m.quoted ? m.quoted.sender
         : text ? text.replace(/[^0-9]/g, '') + '@s.whatsapp.net' : null
     if (!_blkTarget) return reply(`╔═════════╗\n║  🚫 *BLOCK USER*\n╚═════════╝\n\n  ❌ *No target!*\n  └ Tag a user, reply to their message,\n     or provide their number.\n\n  📌 *Usage:* ${prefix}block @user | number`)
+    // Resolve LID JIDs → real phone JIDs (WhatsApp uses LID internally for some users)
+    if (_blkTarget.endsWith('@lid') && m.isGroup && participants) {
+        const lidNum = _blkTarget.split('@')[0]
+        const real = participants.find(p => p.id && !p.id.endsWith('@lid') && p.lid && p.lid.includes(lidNum))
+        if (real) _blkTarget = real.id
+    }
+    if (_blkTarget.endsWith('@lid')) return reply(`❌ Cannot resolve this user's real number.\nPlease use their number directly:\n${prefix}block 254xxxxxxxxx`)
     let _blkNum = _blkTarget.split('@')[0]
     if (owner.some(o => _blkTarget.includes(o))) return reply('🛡️ Cannot block the bot owner.')
     try {
@@ -5568,6 +5575,13 @@ case 'unblock': {
         : m.quoted ? m.quoted.sender
         : text ? text.replace(/[^0-9]/g, '') + '@s.whatsapp.net' : null
     if (!_ublkTarget) return reply(`╔═════════╗\n║  ✅ *UNBLOCK USER*\n╚═════════╝\n\n  ❌ *No target!*\n  └ Tag a user, reply to their message,\n     or provide their number.\n\n  📌 *Usage:* ${prefix}unblock @user | number`)
+    // Resolve LID JIDs → real phone JIDs (WhatsApp uses LID internally for some users)
+    if (_ublkTarget.endsWith('@lid') && m.isGroup && participants) {
+        const lidNum = _ublkTarget.split('@')[0]
+        const real = participants.find(p => p.id && !p.id.endsWith('@lid') && p.lid && p.lid.includes(lidNum))
+        if (real) _ublkTarget = real.id
+    }
+    if (_ublkTarget.endsWith('@lid')) return reply(`❌ Cannot resolve this user's real number.\nPlease use their number directly:\n${prefix}unblock 254xxxxxxxxx`)
     let _ublkNum = _ublkTarget.split('@')[0]
     try {
         await X.updateBlockStatus(_ublkTarget, 'unblock')
