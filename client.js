@@ -5567,8 +5567,9 @@ case 'block': {
         }
     }
     if (_blkTarget.endsWith('@lid')) return reply(`❌ Cannot resolve this user's real number.\nPlease use their number directly:\n${prefix}block 254xxxxxxxxx`)
-    let _blkNum = _blkTarget.split('@')[0]
-    if (owner.some(o => _blkTarget.includes(o))) return reply('🛡️ Cannot block the bot owner.')
+    let _blkNum = _blkTarget.split('@')[0].split(':')[0]
+    // Exact number comparison — avoids false positives from substring matching
+    if (ownerNums.some(o => _blkNum === o) || _blkNum === botNum) return reply('🛡️ Cannot block the bot owner.')
     try {
         await X.updateBlockStatus(_blkTarget, 'block')
         reply(`╔═════════╗\n║  🚫 *BLOCK USER*\n╚═════════╝\n\n  ✅ *Blocked*\n  └ +${_blkNum} has been blocked.`)
@@ -5602,7 +5603,7 @@ case 'unblock': {
         }
     }
     if (_ublkTarget.endsWith('@lid')) return reply(`❌ Cannot resolve this user's real number.\nPlease use their number directly:\n${prefix}unblock 254xxxxxxxxx`)
-    let _ublkNum = _ublkTarget.split('@')[0]
+    let _ublkNum = _ublkTarget.split('@')[0].split(':')[0]
     try {
         await X.updateBlockStatus(_ublkTarget, 'unblock')
         reply(`╔═════════╗\n║  ✅ *UNBLOCK USER*\n╚═════════╝\n\n  ✅ *Unblocked*\n  └ +${_ublkNum} has been unblocked.`)
