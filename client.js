@@ -5546,10 +5546,13 @@ case 'block': {
       await X.sendMessage(m.chat, { react: { text: '🚫', key: m.key } })
       if (!isOwner) return reply(mess.OnlyOwner)
       const _normJ = (j) => (j || '').split(':')[0].split('@')[0]
-      let _blkRaw = (m.mentionedJid && m.mentionedJid[0])
-          ? m.mentionedJid[0]
-          : m.quoted ? (m.quoted.sender || m.quoted.key?.participant)
-          : text ? text.replace(/[^0-9]/g, '') + '@s.whatsapp.net' : null
+      const _blkIsPhone = text && /^\d{6,15}$/.test(text.replace(/[^0-9]/g, ''))
+      let _blkRaw = _blkIsPhone
+          ? text.replace(/[^0-9]/g, '') + '@s.whatsapp.net'
+          : (m.mentionedJid && m.mentionedJid[0])
+              ? m.mentionedJid[0]
+              : m.quoted ? (m.quoted.sender || m.quoted.key?.participant)
+              : null
       if (!_blkRaw) return reply(`╔═════════╗\n║  🚫 *BLOCK USER*\n╚═════════╝\n\n  ❌ *No target!*\n  └ Tag a user, reply to their message,\n     or provide their number.\n\n  📌 *Usage:* ${prefix}block @user | number`)
       // If LID → try resolving to real JID via contacts/participants
       if (_blkRaw.endsWith('@lid')) {
@@ -5598,10 +5601,13 @@ case 'unblock': {
       await X.sendMessage(m.chat, { react: { text: '✅', key: m.key } })
       if (!isOwner) return reply(mess.OnlyOwner)
       const _normU = (j) => (j || '').split(':')[0].split('@')[0]
-      let _ublkRaw = (m.mentionedJid && m.mentionedJid[0])
-          ? m.mentionedJid[0]
-          : m.quoted ? (m.quoted.sender || m.quoted.key?.participant)
-          : text ? text.replace(/[^0-9]/g, '') + '@s.whatsapp.net' : null
+      const _ublkIsPhone = text && /^\d{6,15}$/.test(text.replace(/[^0-9]/g, ''))
+      let _ublkRaw = _ublkIsPhone
+          ? text.replace(/[^0-9]/g, '') + '@s.whatsapp.net'
+          : (m.mentionedJid && m.mentionedJid[0])
+              ? m.mentionedJid[0]
+              : m.quoted ? (m.quoted.sender || m.quoted.key?.participant)
+              : null
       if (!_ublkRaw) return reply(`╔═════════╗\n║  ✅ *UNBLOCK USER*\n╚═════════╝\n\n  ❌ *No target!*\n  └ Tag a user, reply to their message,\n     or provide their number.\n\n  📌 *Usage:* ${prefix}unblock @user | number`)
       if (_ublkRaw.endsWith('@lid')) {
           const _lidKey = _normU(_ublkRaw)
