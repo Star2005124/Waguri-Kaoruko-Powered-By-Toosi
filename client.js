@@ -7134,14 +7134,28 @@ case 'series': {
             }
             if (_allPlayable.length > 5) _cap += `\n_...and ${_allPlayable.length - 5} more quality options_\n`
             _cap += `\n_Open links in VLC / MX Player / browser to watch_`
+            // For TV: also add VidSrc browser link for full episode access
+            if (_isTV && _imdbId) {
+                _cap += `\n\n🌐 *Full episode browser player:*\nhttps://vidsrc.to/embed/tv/${_imdbId}/1/1\n_Change /1/1 at the end for other seasons & episodes_`
+            }
         } else if (_xcPick) {
-            // Has xcasper data but no free stream links (VIP only or not yet available)
+            // Has xcasper data but no free direct stream links
             _cap += `\n━━━━━━━━━━━━━━━━━━━━━━\n`
             _cap += `📡 *STREAM*\n`
-            _cap += `_Streams for this title require VIP access on ShowBox._\n`
-            if (_isTV) {
+            if (_isTV && _imdbId) {
+                // Use xcasper IMDB ID to generate VidSrc links for each season
+                const _sbSeasons = _sd?.data?.season || [1]
+                _cap += `🌐 *Watch online — season links:*\n`
+                for (const _s of _sbSeasons.slice(0, 5)) {
+                    _cap += `S${_s}: https://vidsrc.to/embed/tv/${_imdbId}/${_s}/1\n`
+                }
+                if (_sbSeasons.length > 5) _cap += `_...and ${_sbSeasons.length - 5} more seasons_\n`
+                _cap += `_Open in browser · change the last number for episode_`
+            } else if (_isTV) {
+                _cap += `_Streams require VIP access on ShowBox._\n`
                 _cap += `\nUse *${prefix}stream ${_xcPick.id} tv [season] [ep]* to check specific episodes`
             } else {
+                _cap += `_Streams for this title require VIP access on ShowBox._\n`
                 _cap += `\nUse *${prefix}stream ${_xcPick.id} movie* to check availability`
             }
         } else {
@@ -7197,9 +7211,19 @@ case 'episode': {
         _msg += '\n'
         if (_sd.data.imdb_rating) _msg += `⭐ IMDb: ${_sd.data.imdb_rating}/10\n`
 
+        const _xcImdbId = _sd.data.imdb_id || ''
+
         if (!_allFiles.length) {
-            _msg += `\n⚠️ _No stream links available for this title right now._\n`
-            _msg += _isTV ? `\nTry a different season/episode.` : `\nThis movie may be VIP-only or not yet available.`
+            _msg += `\n⚠️ _No direct stream links available for this title right now._\n`
+            if (_isTV && _xcImdbId) {
+                // Use xcasper IMDB ID to generate VidSrc player link
+                _msg += `\n🌐 *Watch online (browser player):*\nhttps://vidsrc.to/embed/tv/${_xcImdbId}/${_sSeas}/${_sEp}\n`
+                _msg += `_Open link in browser to stream S${_sSeas}E${_sEp}_`
+            } else if (_isTV) {
+                _msg += `\nTry a different season/episode.`
+            } else {
+                _msg += `\nThis movie may be VIP-only or not yet available.`
+            }
         } else {
             if (_freeFiles.length) {
                 _msg += `\n✅ *FREE STREAMS (${_freeFiles.length}):*\n`
@@ -7213,10 +7237,16 @@ case 'episode': {
                 _msg += `\n🔒 *VIP QUALITY OPTIONS:* ${_vipOnly.map(f => f.quality).join(', ')}\n`
             }
             _msg += `\n_Open in VLC / MX Player / any video player_`
+            // For TV: also provide browser player link via IMDB ID
+            if (_isTV && _xcImdbId) {
+                _msg += `\n\n🌐 *Browser player:* https://vidsrc.to/embed/tv/${_xcImdbId}/${_sSeas}/${_sEp}`
+            }
         }
 
-        if (_isTV && _sd.data.seasons?.length) {
-            _msg += `\n\n📺 *Seasons available:* ${_sd.data.seasons.map(s => `S${s.season_num}`).join(', ')}`
+        // Season list from xcasper showbox/tv (data.season = [1,2,3,4,5])
+        const _xcSeasons = Array.isArray(_sd.data.season) ? _sd.data.season : []
+        if (_isTV && _xcSeasons.length > 1) {
+            _msg += `\n\n📺 *Seasons:* ${_xcSeasons.map(s => `S${s}`).join(' · ')}`
             _msg += `\n_Use ${prefix}stream ${_sId} tv [season] [episode] for specific episodes_`
         }
         await reply(_msg)
