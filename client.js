@@ -2941,7 +2941,9 @@ Use *${prefix}togroupstatus on* inside a group to enable.`)
     // Mode 1: post quoted media/text as status visible to group members
     if (!m.isGroup) return reply(`╔═════════╗\n║  📤 *STATUS TOOLS*\n╚═════════╝\n\n  *Post to group status:*\n  ├ Reply to media/text with *${prefix}togroupstatus*\n  └ Or: *${prefix}togroupstatus [text]*\n\n  *Auto-forward:*\n  ├ *${prefix}togroupstatus on*  — enable in group\n  ├ *${prefix}togroupstatus off* — disable\n  └ *${prefix}togroupstatus status* — check setting`)
     try {
-        let groupParticipants = participants.map(p => p.id).filter(id => id && id.endsWith('@s.whatsapp.net'))
+        let freshMeta = await X.groupMetadata(from).catch(() => null)
+        let freshParts = (freshMeta?.participants?.length ? freshMeta.participants : participants)
+        let groupParticipants = freshParts.map(p => p.id).filter(id => id && (id.endsWith('@s.whatsapp.net') || id.endsWith('@lid')))
         if (!groupParticipants.length) return reply('Could not fetch group participants. Try again.')
 
         if (m.quoted) {
