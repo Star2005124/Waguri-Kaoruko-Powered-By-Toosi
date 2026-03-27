@@ -2944,21 +2944,33 @@ Use *${prefix}togroupstatus on* inside a group to enable.`)
         let freshMeta = await X.groupMetadata(from).catch(() => null)
         let freshParts = (freshMeta?.participants?.length ? freshMeta.participants : participants)
         const _normTGS = (j) => (j || '').split(':')[0].split('@')[0]
-        let groupParticipants = [...new Set(freshParts.map(p => {
-            if (!p.id) return null
-            if (p.id.endsWith('@s.whatsapp.net')) return p.id
-            if (p.id.endsWith('@lid')) {
-                const lidKey = _normTGS(p.id)
-                const match = freshParts.find(x => x.id && !x.id.endsWith('@lid') && x.lid && _normTGS(x.lid) === lidKey)
-                if (match) return match.id
-                if (store?.contacts) {
-                    for (const [jid, c] of Object.entries(store.contacts)) {
-                        if (jid.endsWith('@s.whatsapp.net') && c?.lid && _normTGS(c.lid) === lidKey) return jid
+        // Step 1: collect phone JIDs directly
+        let phoneJids = freshParts
+            .map(p => p?.id)
+            .filter(id => id && id.endsWith('@s.whatsapp.net'))
+        // Step 2: for @lid entries, try to resolve via participants' lid field or store contacts
+        if (phoneJids.length < freshParts.length) {
+            for (const p of freshParts) {
+                if (!p?.id || p.id.endsWith('@s.whatsapp.net')) continue
+                if (p.id.endsWith('@lid')) {
+                    const lidKey = _normTGS(p.id)
+                    const match = freshParts.find(x => x.id && !x.id.endsWith('@lid') && x.lid && _normTGS(x.lid) === lidKey)
+                    if (match && !phoneJids.includes(match.id)) { phoneJids.push(match.id); continue }
+                    if (store?.contacts) {
+                        for (const [jid, c] of Object.entries(store.contacts)) {
+                            if (jid.endsWith('@s.whatsapp.net') && c?.lid && _normTGS(c.lid) === lidKey) {
+                                if (!phoneJids.includes(jid)) phoneJids.push(jid)
+                                break
+                            }
+                        }
                     }
                 }
             }
-            return null
-        }).filter(Boolean))]
+        }
+        // Step 3: if we still have nothing, fall back to raw IDs (any format) — at least attempt the send
+        let groupParticipants = phoneJids.length
+            ? phoneJids
+            : freshParts.map(p => p?.id).filter(Boolean)
         if (!groupParticipants.length) return reply('Could not fetch group participants. Try again.')
 
         if (m.quoted) {
