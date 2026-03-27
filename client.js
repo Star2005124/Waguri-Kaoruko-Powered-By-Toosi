@@ -257,7 +257,7 @@ const util = require('util')
           const hdrs = {}; if (process.env.FOOTBALL_DATA_API_KEY) hdrs['X-Auth-Token'] = process.env.FOOTBALL_DATA_API_KEY
           const d = await safeJson(`https://api.football-data.org/v4/competitions/${code}/matches?status=SCHEDULED`, { headers: hdrs, signal: AbortSignal.timeout(12000) })
           if (!d?.matches?.length) return null
-          return d.matches.slice(0, 15).map(m => ({ homeTeam: m.homeTeam?.name||'', awayTeam: m.awayTeam?.name||'', date: m.utcDate?.slice(0,10)||'', time: m.utcDate?.slice(11,16)||'' }))
+          return d.matches.map(m => ({ homeTeam: m.homeTeam?.name||'', awayTeam: m.awayTeam?.name||'', date: m.utcDate?.slice(0,10)||'', time: m.utcDate?.slice(11,16)||'' }))
       } catch { return null }
   }
 
@@ -314,7 +314,7 @@ const util = require('util')
       try {
           const r = await fetch(`https://www.espn.com/espn/rss/soccer/news`, { signal: AbortSignal.timeout(10000), headers: { 'User-Agent': 'Mozilla/5.0' } })
           const xml = await r.text()
-          const items = [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].slice(0, 8).map(m => {
+          const items = [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].map(m => {
               const title = m[1].match(/<title><![CDATA[(.*?)]]>/)?.[1] || m[1].match(/<title>(.*?)<\/title>/)?.[1] || ''
               const link  = m[1].match(/<link>(.*?)<\/link>/)?.[1] || ''
               const desc  = m[1].match(/<description><![CDATA[(.*?)]]>/)?.[1]?.replace(/<[^>]+>/g,'')?.slice(0,120) || ''
@@ -326,7 +326,7 @@ const util = require('util')
       try {
           const r = await fetch(`https://feeds.bbci.co.uk/sport/football/rss.xml`, { signal: AbortSignal.timeout(10000), headers: { 'User-Agent': 'Mozilla/5.0' } })
           const xml = await r.text()
-          const items = [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].slice(0, 8).map(m => {
+          const items = [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].map(m => {
               const title = m[1].match(/<title>(.*?)<\/title>/)?.[1]?.replace(/<![CDATA[|]]>/g,'').replace(/&amp;/g,'&')||''
               const link  = m[1].match(/<link>(.*?)<\/link>/)?.[1] || ''
               return { title, link }
@@ -9545,6 +9545,18 @@ case 'laligaupcoming': {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // 🏅  SPORTS — LIVE, ALL, CATEGORIES, STREAM  (xcasper /api/live)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// Helper: send long text in chunks so ALL matches always appear (WA limit ~65KB)
+async function _sendAllChunked(chat, lines, chunkSize = 3500) {
+    let buf = ''
+    for (const line of lines) {
+        if (buf.length + line.length > chunkSize) {
+            await X.sendMessage(chat, { text: buf.trimEnd() })
+            buf = ''
+        }
+        buf += line
+    }
+    if (buf.trim()) await X.sendMessage(chat, { text: buf.trimEnd() })
+}
 case 'sportscategories':
 case 'sportcategories':
 case 'sportcat': {
@@ -9591,17 +9603,18 @@ case 'sportslive': {
             return reply(`🔴 No live events for ${_label} right now.\n\nTry: *${prefix}allsports* to see all scheduled/finished matches\n*${prefix}sportscategories* to see available sports`)
         }
         const _si = { football: '⚽', basketball: '🏀', tennis: '🎾', cricket: '🏏', baseball: '⚾', hockey: '🏒', rugby: '🏉', volleyball: '🏐', motorsports: '🏎️', boxing: '🥊', mma: '🥋' }
-        let _msg = `╔═════════╗\n║  🔴 *LIVE SPORTS* (${_live.length})\n╚═════════╝\n`
+        let _lines = [`╔═════════╗\n║  🔴 *LIVE SPORTS* (${_live.length})\n╚═════════╝\n`]
         for (let _ev of _live) {
             let _icon = _si[(_ev.type||'').toLowerCase()] || '🏅'
             let _sc1 = _ev.team1?.score || '0', _sc2 = _ev.team2?.score || '0'
-            _msg += `\n${_icon} *${_ev.team1?.name || '?'} ${_sc1} - ${_sc2} ${_ev.team2?.name || '?'}*\n`
-            if (_ev.league) _msg += `   🏆 ${_ev.league}\n`
-            if (_ev.timeDesc) _msg += `   ⏱️ ${_ev.timeDesc}\n`
-            _msg += `   🆔 \`${_ev.id}\`\n`
+            let _entry = `\n${_icon} *${_ev.team1?.name || '?'} ${_sc1} - ${_sc2} ${_ev.team2?.name || '?'}*\n`
+            if (_ev.league) _entry += `   🏆 ${_ev.league}\n`
+            if (_ev.timeDesc) _entry += `   ⏱️ ${_ev.timeDesc}\n`
+            _entry += `   🆔 \`${_ev.id}\`\n`
+            _lines.push(_entry)
         }
-        _msg += `\n_Use ${prefix}watchsport [match-id] to get the stream link_`
-        await reply(_msg)
+        _lines.push(`\n_Use ${prefix}watchsport [match-id] to get the stream link_`)
+        await _sendAllChunked(m.chat, _lines)
     } catch(e) { reply(`❌ Could not fetch live sports. Try again later.`) }
 } break
 
@@ -9619,19 +9632,20 @@ case 'sportsall': {
         if (!_all.length) return reply(`🏅 No *${_asCat || 'sports'}* events found.\n\nTry: *${prefix}sportscategories* to see available sports`)
         const _si = { football: '⚽', basketball: '🏀', tennis: '🎾', cricket: '🏏', baseball: '⚾', hockey: '🏒', rugby: '🏉', volleyball: '🏐', motorsports: '🏎️', boxing: '🥊', mma: '🥋' }
         const _statusLabel = { living: '🔴 LIVE', matchended: '✅ Ended', matchnotstart: '🕐 Not Started' }
-        let _msg = `╔═════════╗\n║  🏅 *${_asCat ? _asCat.toUpperCase() + ' EVENTS' : 'ALL SPORTS'}* (${_all.length})\n╚═════════╝\n`
+        let _lines = [`╔═════════╗\n║  🏅 *${_asCat ? _asCat.toUpperCase() + ' EVENTS' : 'ALL SPORTS'}* (${_all.length})\n╚═════════╝\n`]
         for (let _ev of _all) {
             let _icon = _si[(_ev.type||'').toLowerCase()] || '🏅'
             let _sc1 = _ev.team1?.score || '0', _sc2 = _ev.team2?.score || '0'
             let _stKey = (_ev.status || '').toLowerCase().replace(/\s/g,'')
             let _stLabel = _statusLabel[_stKey] || _ev.timeDesc || _ev.status || ''
-            _msg += `\n${_icon} *${_ev.team1?.name || '?'} ${_sc1} - ${_sc2} ${_ev.team2?.name || '?'}*\n`
-            if (_ev.league) _msg += `   🏆 ${_ev.league}\n`
-            if (_stLabel) _msg += `   📊 ${_stLabel}\n`
-            _msg += `   🆔 \`${_ev.id}\`\n`
+            let _entry = `\n${_icon} *${_ev.team1?.name || '?'} ${_sc1} - ${_sc2} ${_ev.team2?.name || '?'}*\n`
+            if (_ev.league) _entry += `   🏆 ${_ev.league}\n`
+            if (_stLabel) _entry += `   📊 ${_stLabel}\n`
+            _entry += `   🆔 \`${_ev.id}\`\n`
+            _lines.push(_entry)
         }
-        _msg += `\n_Use ${prefix}watchsport [match-id] to get the stream link_`
-        await reply(_msg)
+        _lines.push(`\n_Use ${prefix}watchsport [match-id] to get the stream link_`)
+        await _sendAllChunked(m.chat, _lines)
     } catch(e) { reply(`❌ Could not fetch sports events. Try again later.`) }
 } break
 
