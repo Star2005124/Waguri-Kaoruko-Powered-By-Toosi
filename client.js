@@ -3024,6 +3024,62 @@ Use *${prefix}togroupstatus on* inside a group to enable.`)
 break
 
 //━━━━━━━━━━━━━━━━━━━━━━━━//
+// Post to bot's own WhatsApp status
+case 'tostatus':
+case 'poststatus':
+case 'mystatus': {
+    try {
+        if (m.quoted) {
+            const ctxInfo = m.msg?.contextInfo
+            const qMsg = ctxInfo?.quotedMessage
+            const qType = qMsg ? Object.keys(qMsg)[0] : (m.quoted.mtype || '')
+
+            const _dlTS = async (type) => {
+                const mediaMsg = (qMsg || {})[`${type}Message`] || qMsg
+                const stream = await downloadContentFromMessage(mediaMsg, type)
+                const chunks = []
+                for await (const chunk of stream) chunks.push(chunk)
+                return Buffer.concat(chunks)
+            }
+
+            if (/image|sticker/i.test(qType)) {
+                const mediaType = /sticker/i.test(qType) ? 'sticker' : 'image'
+                const buf = await _dlTS(mediaType)
+                const cap = m.quoted.text || m.quoted.caption || ''
+                await X.sendMessage('status@broadcast', { image: buf, caption: cap })
+                reply(`✅ *Image posted to your status!*`)
+            } else if (/video/i.test(qType)) {
+                const buf = await _dlTS('video')
+                const cap = m.quoted.text || m.quoted.caption || ''
+                await X.sendMessage('status@broadcast', { video: buf, caption: cap, gifPlayback: false })
+                reply(`✅ *Video posted to your status!*`)
+            } else if (/audio/i.test(qType)) {
+                const buf = await _dlTS('audio')
+                await X.sendMessage('status@broadcast', { audio: buf, mimetype: 'audio/ogg; codecs=opus', ptt: true })
+                reply(`✅ *Audio posted to your status!*`)
+            } else {
+                const quotedText = m.quoted.text || m.quoted.body || m.quoted.caption
+                    || m.quoted.conversation || m.quoted.title || m.quoted.description || ''
+                if (quotedText.trim()) {
+                    await X.sendMessage('status@broadcast', { text: quotedText, backgroundColor: '#075E54', font: 4 })
+                    reply(`✅ *Text posted to your status!*`)
+                } else {
+                    reply(`❌ Unsupported type. Reply to an image, video, audio, or text message.`)
+                }
+            }
+        } else if (text) {
+            await X.sendMessage('status@broadcast', { text: text, backgroundColor: '#075E54', font: 4 })
+            reply(`✅ *Text posted to your status!*`)
+        } else {
+            reply(`╔═════════╗\n║  📤 *STATUS POSTER*\n╚═════════╝\n\n  ├ Reply to media with *${prefix}tostatus*\n  └ Or: *${prefix}tostatus [text]*`)
+        }
+    } catch(e) {
+        reply(`❌ Failed to post status: ${e.message}`)
+    }
+}
+break
+
+//━━━━━━━━━━━━━━━━━━━━━━━━//
 // Developer tools
 case 'self':
 case 'private': {
