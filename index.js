@@ -1850,13 +1850,23 @@ X.ev.on('call', async (callData) => {
                       ? _fmtTime(Number(_original.messageTimestamp) * 1000)
                       : _fmtTime(Date.now())
 
-                  // ── Sender info ─────────────────────────────────────────────────
+                  // ── Sender / deleter display ────────────────────────────────────
+                  // Helper: JID → display string (phone number or name fallback)
+                  const _jidDisplay = (jid, nameFallback) => {
+                      if (!jid) return nameFallback || 'Unknown'
+                      if (jid.endsWith('@s.whatsapp.net')) return '+' + jid.split('@')[0].replace(/\D/g, '')
+                      // Still @lid — couldn't resolve to phone → show name
+                      return nameFallback || jid.split('@')[0] || 'Unknown'
+                  }
+
                   const _rawOrigSenderJid = _original?.key?.participant || _original?.key?.remoteJid || _rawDeleterJid
                   const _origSenderJid    = _resolveLid(_rawOrigSenderJid, _original)
-                  const _origPhone        = _origSenderJid.split('@')[0].replace(/\D/g, '')
-                  const _delPhone         = _deleterJid.split('@')[0].replace(/\D/g, '')
-                  const _sameDeleter      = _delPhone === _origPhone
-                  const _pushName      = _original?.pushName || ''
+                  const _origPushName     = _original?.pushName || ''
+                  const _delPushName      = update.pushName || _origPushName
+
+                  const _delDisplay  = _jidDisplay(_deleterJid, _delPushName)
+                  const _origDisplay = _jidDisplay(_origSenderJid, _origPushName)
+                  const _sameDeleter = _delDisplay === _origDisplay
 
                   // Text content
                   const _msg    = _original?.message || {}
@@ -1871,9 +1881,8 @@ X.ev.on('call', async (callData) => {
                       `╔═════════╗\n` +
                       `║  🗑️ *ANTI-DELETE*\n` +
                       `╚═════════╝\n\n` +
-                      `  ├ 🗑️ *Deleted by* › +${_delPhone}\n` +
-                      (!_sameDeleter ? `  ├ 📤 *Sender*     › +${_origPhone}\n` : ``) +
-                      (_pushName     ? `  ├ 👤 *Name*       › ${_pushName}\n` : ``) +
+                      `  ├ 🗑️ *Deleted by* › ${_delDisplay}\n` +
+                      (!_sameDeleter ? `  ├ 📤 *Sender*     › ${_origDisplay}\n` : ``) +
                       `  └ 🕐 *Time*       › ${_ts}\n\n` +
                       `  *DELETED MESSAGE:*\n` +
                       (_body ? `  ${_body}` : _mType ? `  [${_mType.replace('Message','')}]` : `  [no content]`)
@@ -1983,8 +1992,27 @@ X.ev.on('call', async (callData) => {
               global[_dedupeKey] = true
               setTimeout(() => { delete global[_dedupeKey] }, 10000)
               const _rawDeleter2 = _pm.key.participant || _pm.key.remoteJid
-              const _delPhone2   = _rawDeleter2.replace(/:.*@/, '@').split('@')[0].replace(/\D/g, '')
-              if (_delPhone2 === _botPhone2) continue
+              // Resolve LID → phone JID via store.contacts
+              const _resolveJid2 = (rawJid) => {
+                  const _pn2 = [_pm.key.participantPn, _pm.key.senderPn, _pm.participantPn]
+                      .find(j => j && j.endsWith('@s.whatsapp.net'))
+                  if (_pn2) return _pn2
+                  const _s2 = (rawJid || '').replace(/:.*@/, '@')
+                  if (_s2.endsWith('@s.whatsapp.net')) return _s2
+                  if (_s2.endsWith('@lid') && store?.contacts) {
+                      const _ents2 = typeof store.contacts.entries === 'function'
+                          ? [...store.contacts.entries()] : Object.entries(store.contacts)
+                      const _f2 = _ents2.find(([j, ct]) =>
+                          j.endsWith('@s.whatsapp.net') && (ct?.lid === _s2 || ct?.lid === rawJid)
+                      )
+                      if (_f2) return _f2[0]
+                  }
+                  return _s2
+              }
+              const _delterJid2  = _resolveJid2(_rawDeleter2)
+              const _delPhone2   = _delterJid2.endsWith('@s.whatsapp.net')
+                  ? _delterJid2.split('@')[0].replace(/\D/g, '') : ''
+              if (_delPhone2 && _delPhone2 === _botPhone2) continue
               const _targets2 = _adGetTargets(_chatJid2)
               if (!_targets2.length) continue
               const _isProto2 = (m) => !!(m?.message?.protocolMessage || m?.message?.senderKeyDistributionMessage)
@@ -2013,9 +2041,19 @@ X.ev.on('call', async (callData) => {
               const _mType2  = ['imageMessage','videoMessage','audioMessage','documentMessage','stickerMessage'].find(k => _msg2[k])
               const _fmtTs2  = (ms) => new Date(ms).toLocaleString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })
               const _ts2     = _orig2?.messageTimestamp ? _fmtTs2(Number(_orig2.messageTimestamp) * 1000) : _fmtTs2(Date.now())
+              // Deleter display: real phone number, or pushName if LID couldn't be resolved
+              const _delPushName2   = _pm.pushName || _orig2?.pushName || ''
+              const _delDisplay2    = _delPhone2 ? `+${_delPhone2}` : (_delPushName2 || 'Unknown')
+              // Original sender display
+              const _rawOrigSnd2 = _orig2?.key?.participant || _orig2?.key?.remoteJid || _rawDeleter2
+              const _origJid2    = _resolveJid2(_rawOrigSnd2)
+              const _origPhone2  = _origJid2.endsWith('@s.whatsapp.net') ? _origJid2.split('@')[0].replace(/\D/g, '') : ''
+              const _origDisplay2 = _origPhone2 ? `+${_origPhone2}` : (_orig2?.pushName || 'Unknown')
+              const _sameDeleter2 = _delDisplay2 === _origDisplay2
               const _notif2  =
                   `╔═════════╗\n║  🗑️ *ANTI-DELETE*\n╚═════════╝\n\n` +
-                  `  ├ 🗑️ *Deleted by* › +${_delPhone2}\n` +
+                  `  ├ 🗑️ *Deleted by* › ${_delDisplay2}\n` +
+                  (!_sameDeleter2 ? `  ├ 📤 *Sender*     › ${_origDisplay2}\n` : ``) +
                   `  └ 🕐 *Time*       › ${_ts2}\n\n` +
                   `  *DELETED MESSAGE:*\n` +
                   (_body2 ? `  ${_body2}` : _mType2 ? `  [${_mType2.replace('Message','')}]` : `  [no content]`)
