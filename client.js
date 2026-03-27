@@ -17,6 +17,7 @@ require("./setting")
 const {
     downloadContentFromMessage,
     proto,
+    generateWAMessageContent,
     generateWAMessageFromContent,
     areJidsSameUser,
     useMultiFileAuthState,
@@ -2941,67 +2942,77 @@ Use *${prefix}togroupstatus on* inside a group to enable.`)
     // Mode 1: post quoted media/text as status visible to group members
     if (!m.isGroup) return reply(`╔═════════╗\n║  📤 *STATUS TOOLS*\n╚═════════╝\n\n  *Post to group status:*\n  ├ Reply to media/text with *${prefix}togroupstatus*\n  └ Or: *${prefix}togroupstatus [text]*\n\n  *Auto-forward:*\n  ├ *${prefix}togroupstatus on*  — enable in group\n  ├ *${prefix}togroupstatus off* — disable\n  └ *${prefix}togroupstatus status* — check setting`)
     try {
-        let freshMeta = await X.groupMetadata(from).catch(() => null)
-        let freshParts = (freshMeta?.participants?.length ? freshMeta.participants : participants)
-        const _normTGS = (j) => (j || '').split(':')[0].split('@')[0]
-        // Step 1: collect @s.whatsapp.net phone JIDs directly
-        let phoneJids = freshParts
-            .map(p => p?.id)
-            .filter(id => id && id.endsWith('@s.whatsapp.net'))
-        // Step 2: for @lid entries try to resolve → phone JID via participants lid field or store contacts
-        for (const p of freshParts) {
-            if (!p?.id || p.id.endsWith('@s.whatsapp.net')) continue
-            if (p.id.endsWith('@lid')) {
-                const lidKey = _normTGS(p.id)
-                const matchP = freshParts.find(x => x.id && !x.id.endsWith('@lid') && x.lid && _normTGS(x.lid) === lidKey)
-                if (matchP && !phoneJids.includes(matchP.id)) { phoneJids.push(matchP.id); continue }
-                if (store?.contacts) {
-                    for (const [jid, c] of Object.entries(store.contacts)) {
-                        if (jid.endsWith('@s.whatsapp.net') && c?.lid && _normTGS(c.lid) === lidKey) {
-                            if (!phoneJids.includes(jid)) phoneJids.push(jid)
-                            break
-                        }
-                    }
-                }
-            }
+        // Helper: download quoted media using downloadContentFromMessage
+        const _dlQuoted = async (type) => {
+            const ctxInfo = m.msg?.contextInfo
+            const qMsg = ctxInfo?.quotedMessage
+            if (!qMsg) throw new Error('No quoted message')
+            const mediaMsg = qMsg[`${type}Message`] || qMsg
+            const stream = await downloadContentFromMessage(mediaMsg, type)
+            const chunks = []
+            for await (const chunk of stream) chunks.push(chunk)
+            return Buffer.concat(chunks)
         }
-        // Step 3: build send options.
-        // - If phone JIDs resolved → targeted to group members via statusJidList
-        // - If none resolved (all @lid, store not populated) → omit statusJidList so WhatsApp
-        //   broadcasts to all contacts using the bot's own privacy settings (actually visible)
-        const targeted = phoneJids.length > 0
-        const sendOpts = targeted ? { statusJidList: phoneJids } : {}
-        const sentNote = targeted
-            ? `_(targeted to ${phoneJids.length} group members)_`
-            : `_(broadcast — group members will see it based on your privacy settings)_`
+
+        // Helper: post via groupStatusMessageV2 (posts to group status, visible to all members)
+        const _postGroupStatus = async (content) => {
+            const crypto = require('crypto')
+            const { backgroundColor } = content
+            delete content.backgroundColor
+            const inside = await generateWAMessageContent(content, {
+                upload: X.waUploadToServer,
+                backgroundColor: backgroundColor || '#9C27B0',
+            })
+            const secret = crypto.randomBytes(32)
+            const built = generateWAMessageFromContent(
+                from,
+                {
+                    messageContextInfo: { messageSecret: secret },
+                    groupStatusMessageV2: {
+                        message: {
+                            ...inside,
+                            messageContextInfo: { messageSecret: secret },
+                        },
+                    },
+                },
+                {}
+            )
+            await X.relayMessage(from, built.message, { messageId: built.key.id })
+        }
 
         if (m.quoted) {
-            let qType = m.quoted.mtype || ''
-            let qMime = m.quoted.mimetype || m.quoted.msg?.mimetype || ''
-            if (qType === 'imageMessage' || /image/.test(qMime)) {
-                let buf = await m.quoted.download()
-                let cap = m.quoted.text || m.quoted.caption || ''
-                await X.sendMessage('status@broadcast', { image: buf, caption: cap, backgroundColor: '#000000', font: 0 }, sendOpts)
-                reply(`✅ *Image posted to status!*\n${sentNote}`)
-            } else if (qType === 'videoMessage' || /video/.test(qMime)) {
-                let buf = await m.quoted.download()
-                let cap = m.quoted.text || m.quoted.caption || ''
-                await X.sendMessage('status@broadcast', { video: buf, caption: cap, gifPlayback: false }, sendOpts)
-                reply(`✅ *Video posted to status!*\n${sentNote}`)
+            const ctxInfo = m.msg?.contextInfo
+            const qMsg = ctxInfo?.quotedMessage
+            const qType = qMsg ? Object.keys(qMsg)[0] : (m.quoted.mtype || '')
+
+            if (/image|sticker/i.test(qType)) {
+                const mediaType = /sticker/i.test(qType) ? 'sticker' : 'image'
+                const buf = await _dlQuoted(mediaType)
+                const cap = m.quoted.text || m.quoted.caption || ''
+                await _postGroupStatus({ image: buf, caption: cap })
+                reply(`✅ *Image posted to group status!*`)
+            } else if (/video/i.test(qType)) {
+                const buf = await _dlQuoted('video')
+                const cap = m.quoted.text || m.quoted.caption || ''
+                await _postGroupStatus({ video: buf, caption: cap })
+                reply(`✅ *Video posted to group status!*`)
+            } else if (/audio/i.test(qType)) {
+                const buf = await _dlQuoted('audio')
+                await _postGroupStatus({ audio: buf, mimetype: 'audio/ogg; codecs=opus', ptt: true })
+                reply(`✅ *Audio posted to group status!*`)
             } else {
-                // Grab text from any property it might live in
                 const quotedText = m.quoted.text || m.quoted.body || m.quoted.caption
                     || m.quoted.conversation || m.quoted.title || m.quoted.description || ''
                 if (quotedText.trim()) {
-                    await X.sendMessage('status@broadcast', { text: quotedText, backgroundColor: '#075E54', font: 4 }, sendOpts)
-                    reply(`✅ *Text posted to status!*\n${sentNote}`)
+                    await _postGroupStatus({ text: quotedText, backgroundColor: '#9C27B0' })
+                    reply(`✅ *Text posted to group status!*`)
                 } else {
-                    reply(`❌ Unsupported type. Reply to an image, video, or text message.`)
+                    reply(`❌ Unsupported type. Reply to an image, video, audio, or text message.`)
                 }
             }
         } else if (text) {
-            await X.sendMessage('status@broadcast', { text: text, backgroundColor: '#075E54', font: 4 }, sendOpts)
-            reply(`✅ *Text posted to status!*\n${sentNote}`)
+            await _postGroupStatus({ text: text, backgroundColor: '#9C27B0' })
+            reply(`✅ *Text posted to group status!*`)
         } else {
             reply(`╔═════════╗\n║  📤 *GROUP STATUS POSTER*\n╚═════════╝\n\n  ├ Reply to media with *${prefix}togroupstatus*\n  ├ Or: *${prefix}togroupstatus [text]*\n  └ Auto-forward: *${prefix}togroupstatus on*`)
         }
