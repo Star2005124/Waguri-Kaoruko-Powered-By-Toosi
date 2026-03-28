@@ -8487,6 +8487,103 @@ global.ownerFontMode = 'off'
 reply(`✅ *Font mode disabled.*\n_Your messages will now send normally._`)
 } break
 
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ✨  FANCY TEXT — 35 numbered styles + pick-by-reply
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+case 'fancy':
+case 'fancytext':
+case 'stylish': {
+    await X.sendMessage(m.chat, { react: { text: '✨', key: m.key } })
+    // ── font table (from fontConverter.js) ──────────────────────────
+    const _FNTS = {
+        bold:            { l:'𝗮𝗯𝗰𝗱𝗲𝗳𝗴𝗵𝗶𝗷𝗸𝗹𝗺𝗻𝗼𝗽𝗾𝗿𝘀𝘁𝘂𝘃𝘄𝘅𝘆𝘇', u:'𝗔𝗕𝗖𝗗𝗘𝗙𝗚𝗛𝗜𝗝𝗞𝗟𝗠𝗡𝗢𝗣𝗤𝗥𝗦𝗧𝗨𝗩𝗪𝗫𝗬𝗭', d:'𝟬𝟭𝟮𝟯𝟰𝟱𝟲𝟳𝟴𝟵', n:'Bold' },
+        italic:          { l:'𝘢𝘣𝘤𝘥𝘦𝘧𝘨𝘩𝘪𝘫𝘬𝘭𝘮𝘯𝘰𝘱𝘲𝘳𝘴𝘵𝘶𝘷𝘸𝘹𝘺𝘻', u:'𝘈𝘉𝘊𝘋𝘌𝘍𝘎𝘏𝘐𝘑𝘒𝘓𝘔𝘕𝘖𝘗𝘘𝘙𝘚𝘛𝘜𝘝𝘞𝘟𝘠𝘡', d:'0123456789', n:'Italic' },
+        bolditalic:      { l:'𝙖𝙗𝙘𝙙𝙚𝙛𝙜𝙝𝙞𝙟𝙠𝙡𝙢𝙣𝙤𝙥𝙦𝙧𝙨𝙩𝙪𝙫𝙬𝙭𝙮𝙯', u:'𝘼𝘽𝘾𝘿𝙀𝙁𝙂𝙃𝙄𝙅𝙆𝙇𝙈𝙉𝙊𝙋𝙌𝙍𝙎𝙏𝙐𝙑𝙒𝙓𝙔𝙕', d:'0123456789', n:'Bold Italic' },
+        serif:           { l:'𝐚𝐛𝐜𝐝𝐞𝐟𝐠𝐡𝐢𝐣𝐤𝐥𝐦𝐧𝐨𝐩𝐪𝐫𝐬𝐭𝐮𝐯𝐰𝐱𝐲𝐳', u:'𝐀𝐁𝐂𝐃𝐄𝐅𝐆𝐇𝐈𝐉𝐊𝐋𝐌𝐍𝐎𝐏𝐐𝐑𝐒𝐓𝐔𝐕𝐖𝐗𝐘𝐙', d:'0123456789', n:'Serif Bold' },
+        serifitalic:     { l:'𝑎𝑏𝑐𝑑𝑒𝑓𝑔ℎ𝑖𝑗𝑘𝑙𝑚𝑛𝑜𝑝𝑞𝑟𝑠𝑡𝑢𝑣𝑤𝑥𝑦𝑧', u:'𝐴𝐵𝐶𝐷𝐸𝐹𝐺𝐻𝐼𝐽𝐾𝐿𝑀𝑁𝑂𝑃𝑄𝑅𝑆𝑇𝑈𝑉𝑊𝑋𝑌𝑍', d:'0123456789', n:'Serif Italic' },
+        serifbolditalic: { l:'𝒂𝒃𝒄𝒅𝒆𝒇𝒈𝒉𝒊𝒋𝒌𝒍𝒎𝒏𝒐𝒑𝒒𝒓𝒔𝒕𝒖𝒗𝒘𝒙𝒚𝒛', u:'𝑨𝑩𝑪𝑫𝑬𝑭𝑮𝑯𝑰𝑱𝑲𝑳𝑴𝑵𝑶𝑷𝑸𝑹𝑺𝑻𝑼𝑽𝑾𝑿𝒀𝒁', d:'0123456789', n:'Serif Bold Italic' },
+        script:          { l:'𝓪𝓫𝓬𝓭𝓮𝓯𝓰𝓱𝓲𝓳𝓴𝓵𝓶𝓷𝓸𝓹𝓺𝓻𝓼𝓽𝓾𝓿𝔀𝔁𝔂𝔃', u:'𝓐𝓑𝓒𝓓𝓔𝓕𝓖𝓗𝓘𝓙𝓚𝓛𝓜𝓝𝓞𝓟𝓠𝓡𝓢𝓣𝓤𝓥𝓦𝓧𝓨𝓩', d:'0123456789', n:'Script Bold' },
+        scriptlight:     { l:'𝒶𝒷𝒸𝒹𝑒𝒻𝑔𝒽𝒾𝒿𝓀𝓁𝓂𝓃𝑜𝓅𝓆𝓇𝓈𝓉𝓊𝓋𝓌𝓍𝓎𝓏', u:'𝒜𝐵𝒞𝒟𝐸𝐹𝒢𝐻𝐼𝒥𝒦𝐿𝑀𝒩𝒪𝒫𝒬𝑅𝒮𝒯𝒰𝒱𝒲𝒳𝒴𝒵', d:'0123456789', n:'Script' },
+        gothic:          { l:'𝔞𝔟𝔠𝔡𝔢𝔣𝔤𝔥𝔦𝔧𝔨𝔩𝔪𝔫𝔬𝔭𝔮𝔯𝔰𝔱𝔲𝔳𝔴𝔵𝔶𝔷', u:'𝔄𝔅ℭ𝔇𝔈𝔉𝔊ℌℑ𝔍𝔎𝔏𝔐𝔑𝔒𝔓𝔔ℜ𝔖𝔗𝔘𝔙𝔚𝔛𝔜ℨ', d:'0123456789', n:'Gothic' },
+        gothicbold:      { l:'𝖆𝖇𝖈𝖉𝖊𝖋𝖌𝖍𝖎𝖏𝖐𝖑𝖒𝖓𝖔𝖕𝖖𝖗𝖘𝖙𝖚𝖛𝖜𝖝𝖞𝖟', u:'𝕬𝕭𝕮𝕯𝕰𝕱𝕲𝕳𝕴𝕵𝕶𝕷𝕸𝕹𝕺𝕻𝕼𝕽𝕾𝕿𝖀𝖁𝖂𝖃𝖄𝖅', d:'0123456789', n:'Gothic Bold' },
+        mono:            { l:'𝚊𝚋𝚌𝚍𝚎𝚏𝚐𝚑𝚒𝚓𝚔𝚕𝚖𝚗𝚘𝚙𝚚𝚛𝚜𝚝𝚞𝚟𝚠𝚡𝚢𝚣', u:'𝙰𝙱𝙲𝙳𝙴𝙵𝙶𝙷𝙸𝙹𝙺𝙻𝙼𝙽𝙾𝙿𝚀𝚁𝚂𝚃𝚄𝚅𝚆𝚇𝚈𝚉', d:'𝟶𝟷𝟸𝟹𝟺𝟻𝟼𝟽𝟾𝟿', n:'Monospace' },
+        double:          { l:'𝕒𝕓𝕔𝕕𝕖𝕗𝕘𝕙𝕚𝕛𝕜𝕝𝕞𝕟𝕠𝕡𝕢𝕣𝕤𝕥𝕦𝕧𝕨𝕩𝕪𝕫', u:'𝔸𝔹ℂ𝔻𝔼𝔽𝔾ℍ𝕀𝕁𝕂𝕃𝕄ℕ𝕆ℙℚℝ𝕊𝕋𝕌𝕍𝕎𝕏𝕐ℤ', d:'𝟘𝟙𝟚𝟛𝟜𝟝𝟞𝟟𝟠𝟡', n:'Double Struck' },
+        circled:         { l:'ⓐⓑⓒⓓⓔⓕⓖⓗⓘⓙⓚⓛⓜⓝⓞⓟⓠⓡⓢⓣⓤⓥⓦⓧⓨⓩ', u:'ⒶⒷⒸⒹⒺⒻⒼⒽⒾⒿⓀⓁⓂⓃⓄⓅⓆⓇⓈⓉⓊⓋⓌⓍⓎⓏ', d:'⓪①②③④⑤⑥⑦⑧⑨', n:'Circled' },
+        squared:         { l:'🄰🄱🄲🄳🄴🄵🄶🄷🄸🄹🄺🄻🄼🄽🄾🄿🅀🅁🅂🅃🅄🅅🅆🅇🅈🅉', u:'🄰🄱🄲🄳🄴🄵🄶🄷🄸🄹🄺🄻🄼🄽🄾🄿🅀🅁🅂🅃🅄🅅🅆🅇🅈🅉', d:'0123456789', n:'Squared' },
+        fullwidth:       { l:'ａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚ', u:'ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ', d:'０１２３４５６７８９', n:'Full Width' },
+        smallcaps:       { l:'ᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘǫʀꜱᴛᴜᴠᴡxʏᴢ', u:'ABCDEFGHIJKLMNOPQRSTUVWXYZ', d:'0123456789', n:'Small Caps' },
+        superscript:     { l:'ᵃᵇᶜᵈᵉᶠᵍʰⁱʲᵏˡᵐⁿᵒᵖqʳˢᵗᵘᵛʷˣʸᶻ', u:'ᴬᴮᶜᴰᴱᶠᴳᴴᴵᴶᴷᴸᴹᴺᴼᴾQᴿˢᵀᵁⱽᵂˣʸᶻ', d:'⁰¹²³⁴⁵⁶⁷⁸⁹', n:'Superscript' },
+        inverted:        { l:'ɐqɔpǝɟƃɥᴉɾʞlɯuodbɹsʇnʌʍxʎz', u:'∀ꓭƆꓷƎꓞ⅁HIꓩꓘ⅂WNOꓒΌꓤSꓕꓵΛMX⅄Z', d:'0123456789', n:'Inverted/Flip' },
+        bubbles:         { l:'🅐🅑🅒🅓🅔🅕🅖🅗🅘🅙🅚🅛🅜🅝🅞🅟🅠🅡🅢🅣🅤🅥🅦🅧🅨🅩', u:'🅐🅑🅒🅓🅔🅕🅖🅗🅘🅙🅚🅛🅜🅝🅞🅟🅠🅡🅢🅣🅤🅥🅦🅧🅨🅩', d:'0123456789', n:'Bubbles' },
+        strikethrough:   { l:'a̶b̶c̶d̶e̶f̶g̶h̶i̶j̶k̶l̶m̶n̶o̶p̶q̶r̶s̶t̶u̶v̶w̶x̶y̶z̶', u:'A̶B̶C̶D̶E̶F̶G̶H̶I̶J̶K̶L̶M̶N̶O̶P̶Q̶R̶S̶T̶U̶V̶W̶X̶Y̶Z̶', d:'0123456789', n:'Strikethrough' },
+        sansserif:       { l:'𝖺𝖻𝖼𝖽𝖾𝖿𝗀𝗁𝗂𝗃𝗄𝗅𝗆𝗇𝗈𝗉𝗊𝗋𝗌𝗍𝗎𝗏𝗐𝗑𝗒𝗓', u:'𝖠𝖡𝖢𝖣𝖤𝖥𝖦𝖧𝖨𝖩𝖪𝖫𝖬𝖭𝖮𝖯𝖰𝖱𝖲𝖳𝖴𝖵𝖶𝖷𝖸𝖹', d:'𝟢𝟣𝟤𝟥𝟦𝟧𝟨𝟩𝟪𝟫', n:'Sans Serif' },
+        parenthesized:   { l:'⒜⒝⒞⒟⒠⒡⒢⒣⒤⒥⒦⒧⒨⒩⒪⒫⒬⒭⒮⒯⒰⒱⒲⒳⒴⒵', u:'ⒶⒷⒸⒹⒺⒻⒼⒽⒾⒿⓀⓁⓂⓃⓄⓅⓆⓇⓈⓉⓊⓋⓌⓍⓎⓏ', d:'⓪①②③④⑤⑥⑦⑧⑨', n:'Parenthesized' },
+    }
+    const _COMB = [
+        { n:'Underline',        c:'\u0332' }, { n:'Double Underline', c:'\u0333' },
+        { n:'Overline',         c:'\u0305' }, { n:'Wavy Below',       c:'\u0330' },
+        { n:'Dotted Above',     c:'\u0307' }, { n:'Ring Above',       c:'\u030A' },
+        { n:'Tilde Above',      c:'\u0303' }, { n:'Tilde Overlay',    c:'\u0334' },
+        { n:'Acute Above',      c:'\u0301' }, { n:'Grave Above',      c:'\u0300' },
+        { n:'Circumflex',       c:'\u0302' }, { n:'Diaeresis',        c:'\u0308' },
+        { n:'Slash Through',    c:'\u0338' },
+    ]
+    const _NL  = 'abcdefghijklmnopqrstuvwxyz'
+    const _NU  = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    const _ND  = '0123456789'
+    const _conv = (ch, f) => {
+        const li = _NL.indexOf(ch); if (li !== -1) return [...f.l][li] || ch
+        const ui = _NU.indexOf(ch); if (ui !== -1) return [...f.u][ui] || ch
+        const di = _ND.indexOf(ch); if (di !== -1) return [...f.d][di] || ch
+        return ch
+    }
+    // ── pick mode: user replied to a fancy list with a number ────────
+    const _fqText = m.quoted?.text || m.quoted?.body || m.quoted?.caption || ''
+    const _fIsFancyList = _fqText.includes('✨ *Fancy Styles for:*')
+    const _fIsNum = /^\d+$/.test(text?.trim() || '')
+    if (_fIsFancyList && _fIsNum) {
+        const _fPick = parseInt(text.trim())
+        const _fLines = _fqText.split('\n')
+        const _fTarget = _fLines.find(l => l.trimStart().startsWith(`*${_fPick}.*`))
+        if (!_fTarget) {
+            const _fMax = _fLines.filter(l => /^\*\d+\.\*/.test(l.trimStart())).length
+            return reply(`❌ Style #${_fPick} not found. Pick 1–${_fMax}.`)
+        }
+        const _fClean = _fTarget.replace(/^\*\d+\.\*\s*/, '').replace(/\s{2}_\[.+?\]_$/, '').trim()
+        return reply(_fClean)
+    }
+    // ── generate mode ────────────────────────────────────────────────
+    let _fInput = text?.trim() || _fqText.trim()
+    if (!_fInput) return reply(`╭──────────────────────────────╮\n│  ✨ *FANCY TEXT*\n╰──────────────────────────────╯\n\n  ▸  Usage: *${prefix}fancy [text]*\n  ▸  Example: ${prefix}fancy Hello World\n\n  _Or reply to any message with *${prefix}fancy*_\n  _Then reply the result with *${prefix}fancy [number]*_\n  _to send just that one style._`)
+    // build numbered list
+    const _fLines2 = []
+    let _fNum = 1
+    for (const font of Object.values(_FNTS)) {
+        const styled = [..._fInput].map(ch => _conv(ch, font)).join('')
+        _fLines2.push(`*${_fNum}.* ${styled}  _[${font.n}]_`)
+        _fNum++
+    }
+    for (const cs of _COMB) {
+        const styled = [..._fInput].map(ch => /\s/.test(ch) ? ch : ch + cs.c).join('')
+        _fLines2.push(`*${_fNum}.* ${styled}  _[${cs.n}]_`)
+        _fNum++
+    }
+    const _fTotal = _fLines2.length
+    const _fHeader = `✨ *Fancy Styles for:* _${_fInput}_\n━━━━━━━━━━━━━━━ (${_fTotal} styles)\n\n`
+    const _fFooter = `\n━━━━━━━━━━━━━━━\n_Reply to this message with_ *${prefix}fancy [number]* _to send just that style._`
+    const _fFull = _fHeader + _fLines2.join('\n') + _fFooter
+    if (_fFull.length <= 60000) {
+        await reply(_fFull)
+    } else {
+        let _fBuf = _fHeader
+        for (const line of _fLines2) {
+            if ((_fBuf + line + '\n').length > 60000) { await reply(_fBuf.trimEnd()); _fBuf = '' }
+            _fBuf += line + '\n'
+        }
+        if (_fBuf.trim()) await reply(_fBuf.trimEnd() + _fFooter)
+    }
+} break
+
 case 'font':
 case 'fonts': {
     await X.sendMessage(m.chat, { react: { text: '🔤', key: m.key } })
