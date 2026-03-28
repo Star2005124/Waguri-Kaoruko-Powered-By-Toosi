@@ -13,10 +13,12 @@ const searchMenu = `
 │  🎬  *MEDIA SEARCH*
 ╰──────────────────────────────╯
   ▸  \`.movie\`        →  [title]
+  ▸  \`.stream\`       →  [xcasper-id] [movie|tv]
   ▸  \`.anime\`        →  [title]
   ▸  \`.manga\`        →  [title]
   ▸  \`.wallpaper\`    →  [query]
   ▸  \`.lyrics\`       →  [song name]
+  ▸  \`.shazam\`       →  reply audio/video
 
 ╭──────────────────────────────╮
 │  📰  *NEWS & INFO*
@@ -24,6 +26,9 @@ const searchMenu = `
   ▸  \`.news\`         →  [topic]
   ▸  \`.wiki\`         →  [topic]
   ▸  \`.urban\`        →  [word]
+  ▸  \`.weather\`      →  [city]
+  ▸  \`.translate\`    →  [lang] [text]
+  ▸  \`.currency\`     →  [amt] [from] [to]
 
 ╭──────────────────────────────╮
 │  🐙  *GITHUB*
@@ -31,6 +36,7 @@ const searchMenu = `
   ▸  \`.github\`       →  [username]
   ▸  \`.git\`          →  [username]
   ▸  \`.repo\`         →  [user/repo]
-  ▸  \`.clone\`        →  [github url]`
+  ▸  \`.clone\`        →  [github url]
+`
 
 module.exports = searchMenu
