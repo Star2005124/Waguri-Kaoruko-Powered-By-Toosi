@@ -1620,28 +1620,26 @@ case 'ig':
       if (!text) return reply("Please provide the Instagram link");
       let _igUrl = null
 
-      // Source 1: igdl library
+      // Source 1: igdl library (btch-downloader)
       try {
           const mediaUrl = await igdl(text);
           if (mediaUrl?.[0]?.url) _igUrl = mediaUrl[0].url
+          console.log('[ig] igdl:', _igUrl ? 'success' : 'no url')
       } catch(_e1) { console.log('[ig] igdl:', _e1.message) }
 
-      // Source 2: EliteProTech /instagram
+      // Source 2: api-dylux ig downloader
       if (!_igUrl) {
         try {
-          let _epIg = await fetch(`https://eliteprotech-apis.zone.id/instagram?url=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(20000) })
-          let _epIgd = await _epIg.json()
-          console.log('[ig] eliteprotech:', _epIgd.status)
-          const _igEpUrl = _epIgd?.video || _epIgd?.result?.url || _epIgd?.url || _epIgd?.data?.[0]?.url
-          if ((_epIgd?.status || _epIgd?.success) && _igEpUrl) _igUrl = _igEpUrl
-        } catch(_e2) { console.log('[ig] eliteprotech:', _e2.message) }
+          const { igdl: _dyluxIg } = require('api-dylux')
+          const _dynRes = await Promise.race([_dyluxIg(text), new Promise(r=>setTimeout(()=>r(null),15000))])
+          if (_dynRes?.[0]?.url) { _igUrl = _dynRes[0].url; console.log('[ig] api-dylux: success') }
+        } catch(_e2) { console.log('[ig] api-dylux:', _e2.message) }
       }
 
       // Source 3: GiftedTech instadl
       if (!_igUrl) {
         try {
-          let _gifKey = process.env.GIFTED_API_KEY || 'gifted'
-          let _gtIg = await fetch(`https://api.giftedtech.co.ke/api/download/instadl?apikey=${_gifKey}&url=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(20000) })
+          let _gtIg = await fetch(`https://api.giftedtech.co.ke/api/download/instadl?apikey=${_giftedKey()}&url=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(20000) })
           let _gtIgd = await _gtIg.json()
           console.log('[ig] gifted:', _gtIgd.success)
           if (_gtIgd.success && _gtIgd.result?.download_url) _igUrl = _gtIgd.result.download_url
@@ -1671,22 +1669,25 @@ break
       if (!text) return reply(`Usage: ${prefix + command} <Twitter/X link>\nExample: ${prefix + command} https://x.com/i/status/...`)
       let _twUrl = null, _twThumb = null
 
-      // Source 1: EliteProTech /x
+      // Source 1: EliteProTech /twitter (working endpoint)
       try {
-        const _epX = await fetch(`https://eliteprotech-apis.zone.id/x?url=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(20000) })
-        const _epXd = await _epX.json()
-        if (_epXd.status === 'success' && _epXd.videos?.length) {
-          _twUrl = _epXd.videos[0].url
-          _twThumb = _epXd.thumbnail || null
+        const _epTw = await fetch(`https://eliteprotech-apis.zone.id/twitter?url=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(20000) })
+        const _epTwd = await _epTw.json()
+        console.log('[tw] eliteprotech/twitter: success=', _epTwd.success, 'count=', _epTwd.data?.length)
+        if (_epTwd.success && Array.isArray(_epTwd.data) && _epTwd.data.length) {
+          // Pick highest quality entry
+          const _sorted = [..._epTwd.data].sort((a,b) => (parseInt(b.quality||b.resolution)||0) - (parseInt(a.quality||a.resolution)||0))
+          const _pick = _sorted.find(x => x.url) || _sorted[0]
+          if (_pick?.url) { _twUrl = _pick.url; _twThumb = _epTwd.thumbnail || null }
         }
-      } catch(_e1) { console.log('[tw] eliteprotech:', _e1.message) }
+      } catch(_e1) { console.log('[tw] eliteprotech/twitter:', _e1.message) }
 
       // Source 2: GiftedTech twitter
       if (!_twUrl) {
         try {
-          const _gifKey = process.env.GIFTED_API_KEY || 'gifted'
-          const _gtTw = await fetch(`https://api.giftedtech.co.ke/api/download/twitter?apikey=${_gifKey}&url=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(20000) })
+          const _gtTw = await fetch(`https://api.giftedtech.co.ke/api/download/twitter?apikey=${_giftedKey()}&url=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(20000) })
           const _gtTwd = await _gtTw.json()
+          console.log('[tw] gifted:', _gtTwd.success)
           if (_gtTwd.success && _gtTwd.result?.videoUrls?.length) {
             const _sorted = _gtTwd.result.videoUrls.sort((a,b) => (parseInt(b.quality)||0) - (parseInt(a.quality)||0))
             _twUrl = _sorted[0].url
@@ -1965,17 +1966,30 @@ case 'ytplay': {
                 }
             } catch (e0) { console.log('[play] giftedtech:', e0.message) }
 
-          // Method 1.5: EliteProTech API — fast single-call MP3 URL
+          // Method 1.5a: EliteProTech /ytdl — fast single-call MP3 URL
           if (!audioUrl && !audioPath) {
               try {
-                  let _ep = await fetch(`https://eliteprotech-apis.zone.id/ytmp3?url=${encodeURIComponent(firstVideo.url)}`, { signal: AbortSignal.timeout(20000) })
+                  let _ep = await fetch(`https://eliteprotech-apis.zone.id/ytdl?url=${encodeURIComponent(firstVideo.url)}`, { signal: AbortSignal.timeout(25000) })
                   let _epd = await _ep.json()
-                  console.log('[play] eliteprotech: status=', _epd.status)
-                  if (_epd.status === true && _epd.result?.download) {
-                      audioUrl = _epd.result.download
-                      if (!videoTitle || videoTitle === 'Unknown Title') videoTitle = _epd.result.title || videoTitle
+                  console.log('[play] eliteprotech/ytdl: success=', _epd.success)
+                  if (_epd.success && _epd.link) {
+                      audioUrl = _epd.link
+                      if (!videoTitle || videoTitle === 'Unknown Title') videoTitle = _epd.title || videoTitle
                   }
-              } catch (_ep0) { console.log('[play] eliteprotech:', _ep0.message) }
+              } catch (_ep0) { console.log('[play] eliteprotech/ytdl:', _ep0.message) }
+          }
+
+          // Method 1.5b: EliteProTech /yt — alternative MP3 URL
+          if (!audioUrl && !audioPath) {
+              try {
+                  let _yt = await fetch(`https://eliteprotech-apis.zone.id/yt?url=${encodeURIComponent(firstVideo.url)}`, { signal: AbortSignal.timeout(25000) })
+                  let _ytd = await _yt.json()
+                  console.log('[play] eliteprotech/yt: status=', _ytd.status)
+                  if (_ytd.status === true && _ytd.downloadUrl) {
+                      audioUrl = _ytd.downloadUrl
+                      if (!videoTitle || videoTitle === 'Unknown Title') videoTitle = _ytd.title || videoTitle
+                  }
+              } catch (_yt0) { console.log('[play] eliteprotech/yt:', _yt0.message) }
           }
   
         }
