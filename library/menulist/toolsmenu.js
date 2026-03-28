@@ -10,8 +10,7 @@ const toolsMenu = `
 │  🛠️  *UTILITY TOOLS*
 ╰──────────────────────────────╯
   ▸  \`.weather\`       →  [city]
-  ▸  \`.translate\`     →  [lang] [text]
-  ▸  \`.currency\`      →  [amt] [from] [to]
+  ▸  \`.translate\`     →  [lang]|[text]
   ▸  \`.tinyurl\`       →  [url]
   ▸  \`.shorturl\`      →  [url]
   ▸  \`.removebg\`      →  reply image
