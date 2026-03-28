@@ -1,23 +1,36 @@
 const searchMenu = `
-╔═════════╗
-║  🔍  *SEARCH*
-╚═════════╝
-  ├◈  \`.google\`    › [query]
-  ├◈  \`.define\`    › [word]
-  ├◈  \`.dictionary\` › [word]
-  ├◈  \`.playstore\` › [app name]
-  ├◈  \`.yts\`       › [query]
-  ├◈  \`.img\`       › [query]
-  ├◈  \`.movie\`     › [name]
-  └◈  \`.wikimedia\` › [query]
+╔══════════════════════════════╗
+║  🔍  *WEB SEARCH*            ║
+╚══════════════════════════════╝
+  ├◈  \`.google\`      › [query]
+  ├◈  \`.define\`      › [word]
+  ├◈  \`.dictionary\`  › [word]
+  ├◈  \`.playstore\`   › [app name]
+  ├◈  \`.yts\`         › [query]
+  └◈  \`.img\`         › [query]
 
-╔═════════╗
-║  🎵  *MUSIC & LYRICS*
-╚═════════╝
-  ├◈  \`.lyrics\`    › [song - artist]
-  ├◈  \`.lyric\`     › [song name]
-  ├◈  \`.shazam\`    › reply audio
-  ├◈  \`.soundcloud\` › [query]
-  └◈  \`.weather\`   › [city]`
+╔══════════════════════════════╗
+║  🎬  *MEDIA SEARCH*          ║
+╚══════════════════════════════╝
+  ├◈  \`.movie\`       › [title]
+  ├◈  \`.anime\`       › [title]
+  ├◈  \`.manga\`       › [title]
+  ├◈  \`.wallpaper\`   › [query]
+  └◈  \`.lyrics\`      › [song name]
+
+╔══════════════════════════════╗
+║  📰  *NEWS & INFO*           ║
+╚══════════════════════════════╝
+  ├◈  \`.news\`        › [topic]
+  ├◈  \`.wiki\`        › [topic]
+  └◈  \`.urban\`       › [word]
+
+╔══════════════════════════════╗
+║  🐙  *GITHUB*                ║
+╚══════════════════════════════╝
+  ├◈  \`.github\`      › [username]
+  ├◈  \`.git\`         › [username]
+  ├◈  \`.repo\`        › [user/repo]
+  └◈  \`.clone\`       › [github url]`
 
 module.exports = searchMenu
