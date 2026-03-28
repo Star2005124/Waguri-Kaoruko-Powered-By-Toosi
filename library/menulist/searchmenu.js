@@ -18,7 +18,7 @@ const searchMenu = `
   ▸  \`.manga\`        →  [title]
   ▸  \`.wallpaper\`    →  [query]
   ▸  \`.lyrics\`       →  [song name]
-  ▸  \`.shazam\`       →  reply audio/video
+  ▸  \`.shazam\`       →  reply audio — identify song
 
 ╭──────────────────────────────╮
 │  📰  *NEWS & INFO*
@@ -27,8 +27,7 @@ const searchMenu = `
   ▸  \`.wiki\`         →  [topic]
   ▸  \`.urban\`        →  [word]
   ▸  \`.weather\`      →  [city]
-  ▸  \`.translate\`    →  [lang] [text]
-  ▸  \`.currency\`     →  [amt] [from] [to]
+  ▸  \`.translate\`    →  [lang]|[text]
 
 ╭──────────────────────────────╮
 │  🐙  *GITHUB*
