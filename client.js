@@ -1727,7 +1727,7 @@ break
   case 'tt':  
 case 'tiktok': {
     await X.sendMessage(m.chat, { react: { text: '🎵', key: m.key } })
-if (!text) return reply(`Example: ${prefix + command} <tiktok link>`)
+if (!text) return reply(`╭──────────────────────────────╮\n│  🎵 *TIKTOK DOWNLOADER*\n╰──────────────────────────────╯\n\n  ▸  Usage:  *${prefix}tt [tiktok url]*\n  ▸  Example: ${prefix}tt https://vm.tiktok.com/xxx`)
 try {
     let data = await fg.tiktok(text)
     if (!data || !data.result) return reply('Failed to download. The link may be invalid.')
@@ -5480,7 +5480,7 @@ case 'llama-ai':{
 break
 
 case 'gptturbo':{
-if (!text) return reply(`Example:\n${prefix}${command} Hello?`);
+if (!text) return reply(`╭──────────────────────────────╮\n│  ⚡ *GPT TURBO*\n╰──────────────────────────────╯\n\n  ▸  Usage: *${prefix}gptturbo [message]*\n  ▸  Example: ${prefix}gptturbo Tell me a joke`);
 try {
   await X.sendMessage(m.chat, { react: { text: '⚡', key: m.key } })
   const result = await _runAI('You are GPT Turbo, a fast and intelligent AI assistant. Provide clear, helpful responses.', text)
@@ -6779,7 +6779,7 @@ await X.sendMessage(m.chat, { image: { url: fallbackUrl }, caption: `🎨 *Gener
 case 'video':
 case 'ytv': {
     await X.sendMessage(m.chat, { react: { text: '📺', key: m.key } })
-if (!text) return reply(`Example: ${prefix}${command} [youtube url or search query]`)
+if (!text) return reply(`╭──────────────────────────────╮\n│  📺 *YOUTUBE VIDEO*\n╰──────────────────────────────╯\n\n  ▸  Usage: *${prefix}ytv [url or query]*\n  ▸  Example: ${prefix}ytv Afrobeats mix 2025`)
 let _vidTmp1 = null
 try {
 let url = text, title = text
@@ -6844,7 +6844,7 @@ finally { if (_vidTmp1 && fs.existsSync(_vidTmp1)) try { fs.unlinkSync(_vidTmp1)
 
 case 'ytdocplay': {
     await X.sendMessage(m.chat, { react: { text: '🎵', key: m.key } })
-if (!text) return reply(`Example: ${prefix}ytdocplay [search query]`)
+if (!text) return reply(`╭──────────────────────────────╮\n│  🎵 *YT DOC AUDIO*\n╰──────────────────────────────╯\n\n  ▸  Usage: *${prefix}ytdocplay [song name]*\n  ▸  Example: ${prefix}ytdocplay Tems Free Mind`)
 let _ytdocTmp = null
 try {
 let search = await yts(text)
@@ -6917,7 +6917,7 @@ finally { if (_ytdocTmp && fs.existsSync(_ytdocTmp)) try { fs.unlinkSync(_ytdocT
 
 case 'ytdocvideo': {
     await X.sendMessage(m.chat, { react: { text: '📺', key: m.key } })
-if (!text) return reply(`Example: ${prefix}ytdocvideo [search query]`)
+if (!text) return reply(`╭──────────────────────────────╮\n│  📺 *YT DOC VIDEO*\n╰──────────────────────────────╯\n\n  ▸  Usage: *${prefix}ytdocvideo [video name]*\n  ▸  Example: ${prefix}ytdocvideo Burna Boy live`)
 let _ytdocvTmp = null
 try {
 let search = await yts(text)
@@ -7092,7 +7092,7 @@ case 'apk': {
 
 case 'gitclone': {
     await X.sendMessage(m.chat, { react: { text: '📦', key: m.key } })
-if (!text) return reply(`Example: ${prefix}gitclone https://github.com/user/repo`)
+if (!text) return reply(`╭──────────────────────────────╮\n│  📦 *GIT CLONE INFO*\n╰──────────────────────────────╯\n\n  ▸  Usage: *${prefix}gitclone [github url]*\n  ▸  Example: ${prefix}gitclone https://github.com/user/repo`)
 try {
 let repoUrl = text.replace(/\.git$/, '')
 let match = repoUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/)
@@ -7108,7 +7108,7 @@ await X.sendMessage(m.chat, { document: { url: zipUrl }, mimetype: 'application/
 case 'yts':
 case 'ytsearch': {
     await X.sendMessage(m.chat, { react: { text: '🔍', key: m.key } })
-if (!text) return reply(`Example: ${prefix}${command} [query]`)
+if (!text) return reply(`╭──────────────────────────────╮\n│  🔍 *YOUTUBE SEARCH*\n╰──────────────────────────────╯\n\n  ▸  Usage: *${prefix}yts [query]*\n  ▸  Example: ${prefix}yts best Afrobeats 2025`)
 try {
 let yts = require('yt-search')
 let search = await yts(text)
@@ -7121,7 +7121,7 @@ reply(`╭───────────────────────�
 case 'img':
 case 'image': {
     await X.sendMessage(m.chat, { react: { text: '🖼️', key: m.key } })
-if (!text) return reply(`Example: ${prefix}${command} cats`)
+if (!text) return reply(`╭──────────────────────────────╮\n│  🖼️ *IMAGE SEARCH*\n╰──────────────────────────────╯\n\n  ▸  Usage: *${prefix}img [query]*\n  ▸  Example: ${prefix}img beautiful sunset`)
 try {
 let imgUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(text)}?width=512&height=512&nologo=true`
 await X.sendMessage(m.chat, { image: { url: imgUrl }, caption: `*Image:* ${text}` }, { quoted: m })
@@ -7463,7 +7463,7 @@ reply(`❌ *Shazam failed.*\n_${e.message || 'Unable to identify the song. Try a
 case 'fetch':
 case 'get': {
     await X.sendMessage(m.chat, { react: { text: '📥', key: m.key } })
-if (!text) return reply(`Example: ${prefix}fetch https://example.com/api`)
+if (!text) return reply(`╭──────────────────────────────╮\n│  📥 *API FETCH*\n╰──────────────────────────────╯\n\n  ▸  Usage: *${prefix}fetch [url]*\n  ▸  Example: ${prefix}fetch https://api.example.com/data`)
 try {
 let res = await fetch(text)
 let contentType = res.headers.get('content-type') || ''
@@ -7491,7 +7491,7 @@ case 'ss':
 case 'ssphone':
 case 'screenshot': {
     await X.sendMessage(m.chat, { react: { text: '📸', key: m.key } })
-if (!text) return reply(`Example: ${prefix}ss https://google.com`)
+if (!text) return reply(`╭──────────────────────────────╮\n│  📸 *SCREENSHOT*\n╰──────────────────────────────╯\n\n  ▸  Usage: *${prefix}ss [url]*\n  ▸  Example: ${prefix}ss https://google.com`)
 try {
     let ssUrl = null
     // Method 1: GiftedTech ssphone (mobile phone frame)
@@ -7509,7 +7509,7 @@ try {
 case 'trt':
 case 'translate': {
     await X.sendMessage(m.chat, { react: { text: '🌐', key: m.key } })
-if (!text) return reply(`Example: ${prefix}trt en|hello world\nOr reply to a message: ${prefix}trt en`)
+if (!text) return reply(`╭──────────────────────────────╮\n│  🌐 *TRANSLATOR*\n╰──────────────────────────────╯\n\n  ▸  Usage: *${prefix}translate [lang]|[text]*\n  ▸  Example: ${prefix}translate en|hola mundo\n\n  ▸  Or reply to a message:\n     *${prefix}translate [lang]*\n\n  _Common codes: en fr es de ar zh sw pt ru_`)
 try {
 let targetLang = 'en'
 let inputText = ''
@@ -7580,7 +7580,7 @@ try {
 case 'locate':
 case 'location': {
     await X.sendMessage(m.chat, { react: { text: '📍', key: m.key } })
-if (!text) return reply(`Example: ${prefix}location Nairobi, Kenya`)
+if (!text) return reply(`╭──────────────────────────────╮\n│  📍 *LOCATION*\n╰──────────────────────────────╯\n\n  ▸  Usage: *${prefix}location [city / address]*\n  ▸  Example: ${prefix}location Nairobi, Kenya`)
 try {
 let res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(text)}&format=json&limit=1`, { headers: { 'User-Agent': 'ToosiiBot/1.0' } })
 let data = await res.json()
@@ -7958,7 +7958,7 @@ reply(`╭───────────────────────�
 
 case '8ball': {
     await X.sendMessage(m.chat, { react: { text: '🎱', key: m.key } })
-if (!text) return reply(`Example: ${prefix}8ball Will I pass my exam?`)
+if (!text) return reply(`╭──────────────────────────────╮\n│  🎱 *MAGIC 8-BALL*\n╰──────────────────────────────╯\n\n  ▸  Usage: *${prefix}8ball [your question]*\n  ▸  Example: ${prefix}8ball Will I pass my exam?`)
 let responses8 = ['It is certain.', 'It is decidedly so.', 'Without a doubt.', 'Yes definitely.', 'You may rely on it.', 'As I see it, yes.', 'Most likely.', 'Outlook good.', 'Yes.', 'Signs point to yes.', 'Reply hazy, try again.', 'Ask again later.', 'Better not tell you now.', 'Cannot predict now.', 'Concentrate and ask again.', 'Don\'t count on it.', 'My reply is no.', 'My sources say no.', 'Outlook not so good.', 'Very doubtful.']
 reply(`╭──────────────────────────────╮\n│  🎱 *MAGIC 8-BALL*\n╰──────────────────────────────╯\n\n  ❓ *${text}*\n\n  🎱 ${responses8[Math.floor(Math.random() * responses8.length)]}`)
 } break
@@ -8451,7 +8451,7 @@ await X.sendMessage(m.chat, { image: { url: data.url }, caption: `*${pushname} f
 
 case 'anime': {
     await X.sendMessage(m.chat, { react: { text: '🎌', key: m.key } })
-if (!text) return reply(`Example: ${prefix}anime Naruto`)
+if (!text) return reply(`╭──────────────────────────────╮\n│  🎌 *ANIME SEARCH*\n╰──────────────────────────────╯\n\n  ▸  Usage: *${prefix}anime [title]*\n  ▸  Example: ${prefix}anime Naruto`)
 try {
 let res = await fetch(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(text)}&limit=5`)
 let data = await res.json()
@@ -9155,13 +9155,13 @@ reply(`╭───────────────────────�
 
 case 'tweet': {
     await X.sendMessage(m.chat, { react: { text: '🐦', key: m.key } })
-if (!text) return reply(`Example: ${prefix}tweet I love coding!`)
+if (!text) return reply(`╭──────────────────────────────╮\n│  🐦 *TWEET CARD*\n╰──────────────────────────────╯\n\n  ▸  Usage: *${prefix}tweet [message]*\n  ▸  Example: ${prefix}tweet I love coding!`)
 reply(`╭──────────────────────────────╮\n│  🐦 *TWEET*\n╰──────────────────────────────╯\n\n  👤 *@${pushname}*\n  ${text}\n\n  ❤️ ${Math.floor(Math.random() * 10000)}  🔁 ${Math.floor(Math.random() * 5000)}  💬 ${Math.floor(Math.random() * 1000)}`)
 } break
 
 case 'ytcomment': {
     await X.sendMessage(m.chat, { react: { text: '💬', key: m.key } })
-if (!text) return reply(`Example: ${prefix}ytcomment This video is amazing!`)
+if (!text) return reply(`╭──────────────────────────────╮\n│  💬 *YT COMMENT CARD*\n╰──────────────────────────────╯\n\n  ▸  Usage: *${prefix}ytcomment [message]*\n  ▸  Example: ${prefix}ytcomment This video is amazing!`)
 reply(`╭──────────────────────────────╮\n│  ▶️  *YOUTUBE COMMENT*\n╰──────────────────────────────╯\n\n  👤 *${pushname}*\n  ${text}\n\n  👍 ${Math.floor(Math.random() * 5000)}  👎  💬 ${Math.floor(Math.random() * 200)} replies`)
 } break
 
@@ -9226,7 +9226,7 @@ X.sendMessage(from, { text: `*⚡ @${triggeredTarget.split('@')[0]} is TRIGGERED
 case 'git':
 case 'github': {
     await X.sendMessage(m.chat, { react: { text: '🐙', key: m.key } })
-if (!text) return reply(`Example: ${prefix}github torvalds`)
+if (!text) return reply(`╭──────────────────────────────╮\n│  🐙 *GITHUB PROFILE*\n╰──────────────────────────────╯\n\n  ▸  Usage: *${prefix}github [username]*\n  ▸  Example: ${prefix}github torvalds`)
 try {
 let res = await fetch(`https://api.github.com/users/${encodeURIComponent(text)}`)
 let data = await res.json()
@@ -9317,7 +9317,7 @@ reply(scText)
 
 case 'clone': {
     await X.sendMessage(m.chat, { react: { text: '📦', key: m.key } })
-if (!text) return reply(`Example: ${prefix}clone https://github.com/user/repo`)
+if (!text) return reply(`╭──────────────────────────────╮\n│  🐙 *GITHUB CLONE*\n╰──────────────────────────────╯\n\n  ▸  Usage: *${prefix}clone [github url]*\n  ▸  Example: ${prefix}clone https://github.com/user/repo`)
 try {
 let match = text.match(/github\.com\/([^\/]+)\/([^\/\s]+)/)
 if (!match) return reply('Invalid GitHub URL.')
