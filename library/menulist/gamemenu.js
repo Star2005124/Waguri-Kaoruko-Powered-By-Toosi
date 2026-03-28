@@ -1,35 +1,48 @@
 const gameMenu = `
-╔═════════╗
-║  🧩  *TRIVIA GAMES*
-╚═════════╝
-  ├◈  \`.tebak\`      › [category]
+╔══════════════════════════════╗
+║  🧩  *TRIVIA GAMES*          ║
+╚══════════════════════════════╝
+  ├◈  \`.tebak\`       › [category]
   ├◈  \`.tebakld\`
   ├◈  \`.trivia\`
-  ├◈  \`.answer\`     › [answer]
+  ├◈  \`.answer\`      › [answer]
   ├◈  \`.hangman\`
   └◈  \`.hangmanend\`
 
-╔═════════╗
-║  🎮  *CLASSIC GAMES*
-╚═════════╝
-  ├◈  \`.ttt\`        › @user
-  ├◈  \`.tictactoe\`  › @user
+╔══════════════════════════════╗
+║  🎮  *CLASSIC GAMES*         ║
+╚══════════════════════════════╝
+  ├◈  \`.ttt\`         › @user
+  ├◈  \`.tictactoe\`   › @user
   ├◈  \`.tttend\`
-  ├◈  \`.rps\`        › [rock/paper/scissors]
+  ├◈  \`.rps\`         › rock/paper/scissors
   ├◈  \`.coinflip\`
-  ├◈  \`.dice\`       › [sides]
+  ├◈  \`.dice\`        › [sides]
   ├◈  \`.slot\`
-  └◈  \`.8ball\`      › [question]
+  ├◈  \`.8ball\`       › [question]
+  └◈  \`.eightball\`   › [question]
 
-╔═════════╗
-║  🎭  *SOCIAL GAMES*
-╚═════════╝
+╔══════════════════════════════╗
+║  🎭  *SOCIAL GAMES*          ║
+╚══════════════════════════════╝
   ├◈  \`.truth\`
   ├◈  \`.dare\`
-  ├◈  \`.ship\`   › @user @user
-  ├◈  \`.simp\`   › @user
-  ├◈  \`.stupid\` › @user
-  ├◈  \`.horny\`  › @user
-  └◈  \`.gay\`    › @user`
+  ├◈  \`.ship\`    › @user @user
+  ├◈  \`.simp\`    › @user
+  ├◈  \`.stupid\`  › @user
+  ├◈  \`.horny\`   › @user
+  ├◈  \`.flirt\`   › @user
+  └◈  \`.rizz\`    › @user
+
+╔══════════════════════════════╗
+║  🎲  *RANDOM FUN*            ║
+╚══════════════════════════════╝
+  ├◈  \`.wyr\`     › would you rather
+  ├◈  \`.nvhh\`    › never have I ever
+  ├◈  \`.joke\`
+  ├◈  \`.roast\`   › @user
+  ├◈  \`.quote\`
+  ├◈  \`.fact\`
+  └◈  \`.meme\`    › random meme`
 
 module.exports = gameMenu
