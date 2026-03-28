@@ -46,7 +46,8 @@ const groupMenu = `
   ▸  \`.antiimage\`      →  on/off
   ▸  \`.antivideo\`      →  on/off
   ▸  \`.antimention\`    →  on/off
-  ▸  \`.antigroupstatus\` →  on/off
+  ▸  \`.antigroupstatus\`  →  on/off
+  ▸  \`.antistatusmention\` →  on/warn/kick
   ▸  \`.antibot\`        →  on/off
   ▸  \`.antidelete\`     →  on/off
   ▸  \`.welcome\`        →  on/off
