@@ -838,10 +838,9 @@ if (m.isGroup && !isAdmins && !isOwner) {
 // ── Anti Status Mention enforcement ──────────────────────────────────────
 // Fires when someone posts a WhatsApp status that tags/mentions a group.
 // Applies warn (3-strike kick) / delete-notify / instant kick in that group.
-if (from === 'status@broadcast' && global.antiStatusMention && !m.key.fromMe) {
+if (from === 'status@broadcast' && global.antiStatusMentionGroups && Object.values(global.antiStatusMentionGroups).some(g => g?.enabled) && !m.key.fromMe) {
     try {
         const _asmSender  = sender  // JID of the person who posted the status
-        const _asmAction  = (global.antiStatusMentionAction || 'warn').toLowerCase()
         // Collect group JIDs mentioned directly in the status
         const _mentionedGroups = (m.mentionedJid || []).filter(j => j.endsWith('@g.us'))
         // Also detect WhatsApp group invite links in the status text
@@ -864,6 +863,11 @@ if (from === 'status@broadcast' && global.antiStatusMention && !m.key.fromMe) {
 
             for (const _gId of _targetGroups) {
                 try {
+                    // Only act if this specific group has antistatusmention enabled
+                    const _asmGrpCfg = global.antiStatusMentionGroups?.[_gId]
+                    if (!_asmGrpCfg?.enabled) continue
+                    const _asmAction = (_asmGrpCfg.action || 'warn').toLowerCase()
+
                     const _gMeta    = await X.groupMetadata(_gId).catch(() => null)
                     if (!_gMeta) continue
                     const _gParts   = _gMeta.participants || []
@@ -3658,35 +3662,39 @@ case 'antismention': {
     await X.sendMessage(m.chat, { react: { text: '🛡️', key: m.key } })
     if (!m.isGroup) return reply(mess.OnlyGrup)
     if (!isAdmins && !isOwner) return reply(mess.admin)
+    if (!global.antiStatusMentionGroups) global.antiStatusMentionGroups = {}
+    const _asmCfg = global.antiStatusMentionGroups[m.chat] || { enabled: false, action: 'warn' }
     let asmArg = (args[0] || '').toLowerCase()
+
     const _asmStatus = () => {
-        const _s = global.antiStatusMention ? '✅ ON' : '❌ OFF'
-        const _a = (global.antiStatusMentionAction || 'warn').toUpperCase()
+        const _s    = _asmCfg.enabled ? '✅ ON' : '❌ OFF'
+        const _a    = (_asmCfg.action || 'warn').toUpperCase()
         const _aIcon = _a === 'WARN' ? '⚠️' : _a === 'KICK' ? '🚫' : '🗑️'
-        return `╭──────────────────────────────╮\n│  🛡️  *ANTI STATUS MENTION*\n╰──────────────────────────────╯\n\n  ▸  📊 *Status*  →  ${_s}\n  ▸  ${_aIcon} *Action*  →  ${_a}\n  ▸  ℹ️  *Info*  →  Blocks group tags in statuses\n\n  *Commands:*\n  ▸  ${prefix}antistatusmention on\n  ▸  ${prefix}antistatusmention off\n  ▸  ${prefix}antistatusmention warn   — 3 strikes then kick\n  ▸  ${prefix}antistatusmention delete — auto-delete their msgs\n  ▸  ${prefix}antistatusmention kick   — instant removal\n\n  _Bot must be admin in the group._`
+        return `╭──────────────────────────────╮\n│  🛡️  *ANTI STATUS MENTION*\n╰──────────────────────────────╯\n\n  ▸  📊 *Status*  →  ${_s}\n  ▸  ${_aIcon} *Action*  →  ${_a}\n  ▸  📍 *Scope*   →  This group only\n\n  *Commands:*\n  ▸  ${prefix}antistatusmention on\n  ▸  ${prefix}antistatusmention off\n  ▸  ${prefix}antistatusmention warn   — 3 strikes then kick\n  ▸  ${prefix}antistatusmention delete — notify in group\n  ▸  ${prefix}antistatusmention kick   — instant removal\n\n  _Bot must be admin in the group._`
     }
+
+    const _save = (enabled, action) => {
+        global.antiStatusMentionGroups[m.chat] = { enabled, action: action || _asmCfg.action || 'warn' }
+    }
+
     if (!asmArg) {
         reply(_asmStatus())
     } else if (asmArg === 'on' || asmArg === 'enable') {
-        global.antiStatusMention = true
-        try { if (typeof _savePhoneState === 'function') _savePhoneState(X.user?.id?.split(':')[0]?.split('@')[0] || '') } catch {}
-        const _a = (global.antiStatusMentionAction || 'warn').toUpperCase()
-        reply(`╭──────────────────────────────╮\n│  🛡️  *ANTI STATUS MENTION*\n╰──────────────────────────────╯\n\n  ✅ *Enabled*\n  ▸  Action: *${_a}*\n\n  _Anyone who tags a group in their status\n  will be ${_a === 'WARN' ? 'warned (3x = kick)' : _a === 'KICK' ? 'instantly kicked' : 'have messages deleted'}._`)
+        _save(true, _asmCfg.action || 'warn')
+        const _a = (_asmCfg.action || 'warn').toUpperCase()
+        reply(`╭──────────────────────────────╮\n│  🛡️  *ANTI STATUS MENTION*\n╰──────────────────────────────╯\n\n  ✅ *Enabled for this group*\n  ▸  Action: *${_a}*\n\n  _Anyone who tags this group in their status\n  will be ${_a === 'WARN' ? 'warned (3x = kick)' : _a === 'KICK' ? 'instantly kicked' : 'notified and warned'}._`)
     } else if (asmArg === 'off' || asmArg === 'disable') {
-        global.antiStatusMention = false
-        reply(`╭──────────────────────────────╮\n│  🛡️  *ANTI STATUS MENTION*\n╰──────────────────────────────╯\n\n  ❌ *Disabled*\n  ▸  Group tagging in statuses no longer actioned.`)
+        _save(false, _asmCfg.action || 'warn')
+        reply(`╭──────────────────────────────╮\n│  🛡️  *ANTI STATUS MENTION*\n╰──────────────────────────────╯\n\n  ❌ *Disabled for this group*\n  ▸  Group tagging in statuses no longer actioned.`)
     } else if (asmArg === 'warn') {
-        global.antiStatusMention = true
-        global.antiStatusMentionAction = 'warn'
-        reply(`╭──────────────────────────────╮\n│  🛡️  *ANTI STATUS MENTION*\n╰──────────────────────────────╯\n\n  ⚠️ *WARN MODE — Enabled*\n  ▸  3 warnings → automatic kick\n\n  _Bot must be admin in the group._`)
+        _save(true, 'warn')
+        reply(`╭──────────────────────────────╮\n│  🛡️  *ANTI STATUS MENTION*\n╰──────────────────────────────╯\n\n  ⚠️ *WARN MODE — Enabled*\n  ▸  📍 This group only\n  ▸  3 warnings → automatic kick\n\n  _Bot must be admin in the group._`)
     } else if (asmArg === 'delete' || asmArg === 'del') {
-        global.antiStatusMention = true
-        global.antiStatusMentionAction = 'delete'
-        reply(`╭──────────────────────────────╮\n│  🛡️  *ANTI STATUS MENTION*\n╰──────────────────────────────╯\n\n  🗑️ *DELETE MODE — Enabled*\n  ▸  Their messages auto-deleted from group\n\n  _Bot must be admin in the group._`)
+        _save(true, 'delete')
+        reply(`╭──────────────────────────────╮\n│  🛡️  *ANTI STATUS MENTION*\n╰──────────────────────────────╯\n\n  🗑️ *DELETE MODE — Enabled*\n  ▸  📍 This group only\n  ▸  Group notified + sender DM'd\n\n  _Bot must be admin in the group._`)
     } else if (asmArg === 'kick' || asmArg === 'remove') {
-        global.antiStatusMention = true
-        global.antiStatusMentionAction = 'kick'
-        reply(`╭──────────────────────────────╮\n│  🛡️  *ANTI STATUS MENTION*\n╰──────────────────────────────╯\n\n  🚫 *KICK MODE — Enabled*\n  ▸  Instant removal from group\n\n  _Bot must be admin in the group._`)
+        _save(true, 'kick')
+        reply(`╭──────────────────────────────╮\n│  🛡️  *ANTI STATUS MENTION*\n╰──────────────────────────────╯\n\n  🚫 *KICK MODE — Enabled*\n  ▸  📍 This group only\n  ▸  Instant removal from group\n\n  _Bot must be admin in the group._`)
     } else {
         reply(`❌ Unknown option. Use: *on, off, warn, delete, kick*`)
     }
