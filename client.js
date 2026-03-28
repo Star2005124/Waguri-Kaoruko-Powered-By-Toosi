@@ -5852,75 +5852,44 @@ break
 
 case 'getcmd': {
   await X.sendMessage(m.chat, { react: { text: '🔍', key: m.key } })
-  if (!text) return reply(`╭──────────────────────────────╮\n│  🔍 *GET COMMAND INFO*\n╰──────────────────────────────╯\n\n  ▸  Usage: *${prefix}getcmd [command]*\n  ▸  Example: *${prefix}getcmd play*`)
+  if (!text) return reply(`╭──────────────────────────────╮\n│  🔍 *GET COMMAND CODE*\n╰──────────────────────────────╯\n\n  ▸  Usage: *${prefix}getcmd [command]*\n  ▸  Example: *${prefix}getcmd play*\n\n  Returns the real source code for that command.`)
   const _q = text.trim().toLowerCase().replace(/^\./, '')
-  const _cmdDB = {
-    // ── AI ──
-    chatgpt:    { cat:'🤖 AI', desc:'Ask ChatGPT a question', usage:`${prefix}chatgpt [question]`, ex:`${prefix}chatgpt what is gravity` },
-    copilot:    { cat:'🤖 AI', desc:'Ask Microsoft Copilot a question', usage:`${prefix}copilot [question]`, ex:`${prefix}copilot explain black holes` },
-    talkai:     { cat:'🤖 AI', desc:'Talk to an AI assistant', usage:`${prefix}talkai [message]`, ex:`${prefix}talkai hello how are you` },
-    imagine:    { cat:'🤖 AI', desc:'Generate an image from a text prompt', usage:`${prefix}imagine [prompt]`, ex:`${prefix}imagine a dragon on a mountain` },
-    gemini:     { cat:'🤖 AI', desc:'Ask Google Gemini a question', usage:`${prefix}gemini [question]`, ex:`${prefix}gemini summarise quantum physics` },
-    // ── DOWNLOADER ──
-    play:       { cat:'⬇️ Downloader', desc:'Search YouTube and download audio (MP3)', usage:`${prefix}play [song name]`, ex:`${prefix}play bohemian rhapsody` },
-    song:       { cat:'⬇️ Downloader', desc:'Alias for play — download audio from YouTube', usage:`${prefix}song [song name]`, ex:`${prefix}song blinding lights` },
-    ytdoc:      { cat:'⬇️ Downloader', desc:'Download a YouTube video as MP4', usage:`${prefix}ytdoc [YouTube URL]`, ex:`${prefix}ytdoc https://youtu.be/xxxxx` },
-    ig:         { cat:'⬇️ Downloader', desc:'Download an Instagram reel/post', usage:`${prefix}ig [Instagram URL]`, ex:`${prefix}ig https://www.instagram.com/reel/xxx` },
-    instagram:  { cat:'⬇️ Downloader', desc:'Alias for ig — download Instagram media', usage:`${prefix}instagram [URL]`, ex:`${prefix}instagram https://www.instagram.com/p/xxx` },
-    twitter:    { cat:'⬇️ Downloader', desc:'Download a video from a tweet', usage:`${prefix}twitter [tweet URL]`, ex:`${prefix}twitter https://x.com/user/status/xxx` },
-    tiktok:     { cat:'⬇️ Downloader', desc:'Download a TikTok video without watermark', usage:`${prefix}tiktok [TikTok URL]`, ex:`${prefix}tiktok https://vm.tiktok.com/xxx` },
-    tt:         { cat:'⬇️ Downloader', desc:'Alias for tiktok', usage:`${prefix}tt [TikTok URL]`, ex:`${prefix}tt https://vm.tiktok.com/xxx` },
-    fb:         { cat:'⬇️ Downloader', desc:'Download a Facebook video', usage:`${prefix}fb [Facebook URL]`, ex:`${prefix}fb https://www.facebook.com/xxx` },
-    spotify:    { cat:'⬇️ Downloader', desc:'Download audio from a Spotify track link', usage:`${prefix}spotify [Spotify URL]`, ex:`${prefix}spotify https://open.spotify.com/track/xxx` },
-    // ── TOOLS ──
-    qr:         { cat:'🛠️ Tools', desc:'Generate a QR code from text or a URL', usage:`${prefix}qr [text or URL]`, ex:`${prefix}qr https://github.com` },
-    readqr:     { cat:'🛠️ Tools', desc:'Scan and read a QR code from an image (reply to it)', usage:`${prefix}readqr`, ex:`(reply to an image) ${prefix}readqr` },
-    webcopier:  { cat:'🛠️ Tools', desc:'Download a full website as a ZIP file', usage:`${prefix}webcopier [URL]`, ex:`${prefix}webcopier https://example.com` },
-    tinyurl:    { cat:'🛠️ Tools', desc:'Shorten a long URL', usage:`${prefix}tinyurl [URL]`, ex:`${prefix}tinyurl https://very-long-link.com/path` },
-    shorturl:   { cat:'🛠️ Tools', desc:'Alias for tinyurl — shorten a URL', usage:`${prefix}shorturl [URL]`, ex:`${prefix}shorturl https://example.com/long` },
-    weather:    { cat:'🛠️ Tools', desc:'Get current weather for a city', usage:`${prefix}weather [city]`, ex:`${prefix}weather Lagos` },
-    translate:  { cat:'🛠️ Tools', desc:'Translate text to another language', usage:`${prefix}translate [lang]|[text]`, ex:`${prefix}translate fr|Hello world` },
-    removebg:   { cat:'🛠️ Tools', desc:'Remove background from an image (reply to it)', usage:`${prefix}removebg`, ex:`(reply to image) ${prefix}removebg` },
-    tempemail:  { cat:'🛠️ Tools', desc:'Generate a temporary disposable email address', usage:`${prefix}tempemail`, ex:`${prefix}tempemail` },
-    totext:     { cat:'🛠️ Tools', desc:'Convert voice/audio message to text (reply to it)', usage:`${prefix}totext`, ex:`(reply to voice note) ${prefix}totext` },
-    shazam:     { cat:'🛠️ Tools', desc:'Identify a song from an audio/voice message', usage:`${prefix}shazam`, ex:`(reply to audio) ${prefix}shazam` },
-    ping:       { cat:'🛠️ Tools', desc:'Check bot response speed', usage:`${prefix}ping`, ex:`${prefix}ping` },
-    runtime:    { cat:'🛠️ Tools', desc:'Show how long the bot has been running', usage:`${prefix}runtime`, ex:`${prefix}runtime` },
-    prefix:     { cat:'🛠️ Tools', desc:'Show the current command prefix', usage:`${prefix}prefix`, ex:`${prefix}prefix` },
-    // ── SEARCH ──
-    lyrics:     { cat:'🔎 Search', desc:'Find song lyrics', usage:`${prefix}lyrics [song name]`, ex:`${prefix}lyrics shape of you` },
-    google:     { cat:'🔎 Search', desc:'Search Google and return top results', usage:`${prefix}google [query]`, ex:`${prefix}google latest iPhone specs` },
-    ytsearch:   { cat:'🔎 Search', desc:'Search YouTube for a video', usage:`${prefix}ytsearch [query]`, ex:`${prefix}ytsearch funny cats` },
-    // ── STICKER ──
-    sticker:    { cat:'🖼️ Sticker', desc:'Convert an image or video to a WhatsApp sticker', usage:`${prefix}sticker`, ex:`(reply to image/video) ${prefix}sticker` },
-    s:          { cat:'🖼️ Sticker', desc:'Alias for sticker', usage:`${prefix}s`, ex:`(reply to image) ${prefix}s` },
-    // ── GROUP ──
-    kick:       { cat:'👥 Group', desc:'Remove a member from the group (admin only)', usage:`${prefix}kick @user`, ex:`${prefix}kick @John` },
-    add:        { cat:'👥 Group', desc:'Add a member to the group (admin only)', usage:`${prefix}add [number]`, ex:`${prefix}add 2349012345678` },
-    promote:    { cat:'👥 Group', desc:'Promote a member to admin (admin only)', usage:`${prefix}promote @user`, ex:`${prefix}promote @John` },
-    demote:     { cat:'👥 Group', desc:'Demote an admin to member (admin only)', usage:`${prefix}demote @user`, ex:`${prefix}demote @John` },
-    mute:       { cat:'👥 Group', desc:'Mute the group so only admins can send (admin only)', usage:`${prefix}mute`, ex:`${prefix}mute` },
-    unmute:     { cat:'👥 Group', desc:'Unmute the group (admin only)', usage:`${prefix}unmute`, ex:`${prefix}unmute` },
-    tagall:     { cat:'👥 Group', desc:'Tag all group members', usage:`${prefix}tagall [optional message]`, ex:`${prefix}tagall Good morning!` },
-    // ── FUN / OTHER ──
-    insult:     { cat:'😂 Fun', desc:'Send a random insult', usage:`${prefix}insult`, ex:`${prefix}insult` },
-    flirt:      { cat:'😂 Fun', desc:'Send a random flirt line', usage:`${prefix}flirt`, ex:`${prefix}flirt` },
-    rizz:       { cat:'😂 Fun', desc:'Send a random rizz line', usage:`${prefix}rizz`, ex:`${prefix}rizz` },
-    joke:       { cat:'😂 Fun', desc:'Tell a random joke', usage:`${prefix}joke`, ex:`${prefix}joke` },
-    quote:      { cat:'😂 Fun', desc:'Send a random inspirational quote', usage:`${prefix}quote`, ex:`${prefix}quote` },
-    fact:       { cat:'😂 Fun', desc:'Send a random fun fact', usage:`${prefix}fact`, ex:`${prefix}fact` },
-    // ── FONT CONVERTER ──
-    fancy:      { cat:'✏️ Font', desc:'Convert text to a fancy Unicode font style', usage:`${prefix}fancy [text]`, ex:`${prefix}fancy hello world` },
-    gothic:     { cat:'✏️ Font', desc:'Convert text to gothic font', usage:`${prefix}gothic [text]`, ex:`${prefix}gothic hello` },
-    cursive:    { cat:'✏️ Font', desc:'Convert text to cursive font', usage:`${prefix}cursive [text]`, ex:`${prefix}cursive hello` },
-    aesthetic:  { cat:'✏️ Font', desc:'Convert text to aesthetic font', usage:`${prefix}aesthetic [text]`, ex:`${prefix}aesthetic hello` },
-    tiny:       { cat:'✏️ Font', desc:'Convert text to tiny font', usage:`${prefix}tiny [text]`, ex:`${prefix}tiny hello` },
+  try {
+    const _src = fs.readFileSync(__filename, 'utf8')
+    const _lines = _src.split('\n')
+    // Find the case line — matches  case 'cmd':  or  case "cmd":
+    const _caseRe = new RegExp(`^\\s*case\\s+['"\`]${_q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}['"\`]\\s*[:{]?`)
+    let _startLine = -1
+    for (let _i = 0; _i < _lines.length; _i++) {
+      if (_caseRe.test(_lines[_i])) { _startLine = _i; break }
+    }
+    if (_startLine === -1) {
+      return reply(`╭──────────────────────────────╮\n│  🔍 *NOT FOUND*\n╰──────────────────────────────╯\n\n  ❌  No case block found for *${_q}*\n  ▸  Check spelling or try ${prefix}menu`)
+    }
+    // Walk forward tracking brace depth; stop at top-level  break
+    let _depth = 0, _endLine = _lines.length - 1
+    for (let _i = _startLine; _i < _lines.length; _i++) {
+      for (const _ch of _lines[_i]) {
+        if (_ch === '{') _depth++
+        else if (_ch === '}') _depth--
+      }
+      if (_i > _startLine && _depth <= 0 && /^\s*break\b/.test(_lines[_i])) {
+        _endLine = _i; break
+      }
+    }
+    let _block = _lines.slice(_startLine, _endLine + 1).join('\n').trimEnd()
+    const _totalLines = _endLine - _startLine + 1
+    const _MAX_CHARS = 60000
+    let _truncNote = ''
+    if (_block.length > _MAX_CHARS) {
+      _block = _block.slice(0, _MAX_CHARS)
+      _block = _block.slice(0, _block.lastIndexOf('\n'))
+      _truncNote = `\n\n  ⚠️ Output truncated — ${_totalLines} lines total`
+    }
+    reply(`╭──────────────────────────────╮\n│  🔍 *SOURCE: .${_q}*  (${_totalLines} lines)\n╰──────────────────────────────╯\n\n\`\`\`\n${_block}\n\`\`\`${_truncNote}`)
+  } catch (_gcErr) {
+    reply(`❌ Could not read source: ${_gcErr.message}`)
   }
-  const _found = _cmdDB[_q]
-  if (!_found) {
-    return reply(`╭──────────────────────────────╮\n│  🔍 *COMMAND NOT FOUND*\n╰──────────────────────────────╯\n\n  ❌  *${_q}* is not in the command list.\n\n  ▸  Check *${prefix}menu* for all commands\n  ▸  Try *${prefix}getcmd [exact command name]*`)
-  }
-  reply(`╭──────────────────────────────╮\n│  🔍 *COMMAND INFO*\n╰──────────────────────────────╯\n\n  📌  *Command:*  \`${prefix}${_q}\`\n  🗂️  *Category:*  ${_found.cat}\n  📖  *Description:*\n       ${_found.desc}\n\n  📝  *Usage:*\n       \`${_found.usage}\`\n\n  💡  *Example:*\n       \`${_found.ex}\`\n\n╰──────────────────────────────╯`)
 } break
 
 //━━━━━━━━━━━━━━━━━━━━━━━━//
