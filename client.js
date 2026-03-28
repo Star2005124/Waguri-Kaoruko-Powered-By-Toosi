@@ -5045,11 +5045,48 @@ case 'chatgpt':{
   if (!text) return reply(`╭──────────────────────────────╮\n│  🤖 *AI COMMAND*\n╰──────────────────────────────╯\n\n  ▸  Usage: *${prefix}${command} [message]*\n  ▸  Example: ${prefix}${command} Hello, how are you?`)
   try {
     await X.sendMessage(m.chat, { react: { text: '🤖', key: m.key } })
-    const result = await _runAI('You are ChatGPT, a highly intelligent AI assistant by OpenAI. Be helpful, clear and concise.', text)
-    reply(result)
+    let _cgResult = null
+    // Source 1: EliteProTech ChatGPT (primary)
+    try {
+      let _ep = await fetch(`https://eliteprotech-apis.zone.id/chatgpt?prompt=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(25000) })
+      let _epd = await _ep.json()
+      if (_epd.success && _epd.response) _cgResult = _epd.response
+    } catch {}
+    // Source 2: _runAI fallback
+    if (!_cgResult) {
+      try { _cgResult = await _runAI('You are ChatGPT, a highly intelligent AI assistant by OpenAI. Be helpful, clear and concise.', text) } catch {}
+    }
+    if (_cgResult) reply(_cgResult)
+    else reply('❌ ChatGPT is currently unavailable. Please try again.')
   } catch (e) {
     console.error('[CHATGPT ERROR]', e.message)
-    reply('❌ chatgpt is currently unavailable. Please try again.')
+    reply('❌ ChatGPT is currently unavailable. Please try again.')
+  }
+}
+break
+
+case 'talkai':
+case 'talkgpt':
+case 'eliteai': {
+  if (!text) return reply(`╭──────────────────────────────╮\n│  🧠 *TALK AI*\n╰──────────────────────────────╯\n\n  ▸  Usage: *${prefix}${command} [message]*\n  ▸  Example: ${prefix}${command} What is quantum computing?`)
+  try {
+    await X.sendMessage(m.chat, { react: { text: '🧠', key: m.key } })
+    let _taResult = null
+    // Source 1: EliteProTech Talk-AI (primary)
+    try {
+      let _ep = await fetch(`https://eliteprotech-apis.zone.id/talk-ai?q=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(25000) })
+      let _epd = await _ep.json()
+      if (_epd.success && _epd.response) _taResult = _epd.response
+    } catch {}
+    // Source 2: _runAI fallback
+    if (!_taResult) {
+      try { _taResult = await _runAI('You are a helpful and intelligent AI assistant. Respond clearly and accurately.', text) } catch {}
+    }
+    if (_taResult) reply(_taResult)
+    else reply('❌ Talk AI is currently unavailable. Please try again.')
+  } catch (e) {
+    console.error('[TALKAI ERROR]', e.message)
+    reply('❌ Talk AI is currently unavailable. Please try again.')
   }
 }
 break
@@ -6585,21 +6622,21 @@ case 'copilot':{
   try {
     await X.sendMessage(m.chat, { react: { text: '🪁', key: m.key } })
     let _cpResult = null
-    // Source 1: _runAI (primary)
-    try { _cpResult = await _runAI('You are Microsoft Copilot, a helpful AI assistant. Be productive, accurate and helpful.', text) } catch {}
-    // Source 2: EliteProTech Copilot
+    // Source 1: EliteProTech Copilot (primary — live & direct)
+    try {
+      let _ep = await fetch(`https://eliteprotech-apis.zone.id/copilot?q=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(25000) })
+      let _epd = await _ep.json()
+      if (_epd.success && _epd.text) _cpResult = _epd.text
+    } catch {}
+    // Source 2: _runAI fallback
     if (!_cpResult) {
-        try {
-            let _ep = await fetch(`https://eliteprotech-apis.zone.id/copilot?q=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(25000) })
-            let _epd = await _ep.json()
-            if (_epd.success && _epd.text) _cpResult = _epd.text
-        } catch {}
+      try { _cpResult = await _runAI('You are Microsoft Copilot, a helpful AI assistant. Be productive, accurate and helpful.', text) } catch {}
     }
     if (_cpResult) reply(_cpResult)
-    else reply('❌ copilot is currently unavailable. Please try again.')
+    else reply('❌ Copilot is currently unavailable. Please try again.')
   } catch (e) {
     console.error('[COPILOT ERROR]', e.message)
-    reply('❌ copilot is currently unavailable. Please try again.')
+    reply('❌ Copilot is currently unavailable. Please try again.')
   }
 }
 break
@@ -6775,16 +6812,33 @@ case 'flux': {
 if (!text) return reply(`╭──────────────────────────────╮\n│  🎨 *AI IMAGE GENERATOR*\n╰──────────────────────────────╯\n\n  ▸  *Usage:* ${prefix}${command} [description]\n\n  _Examples:_\n  • a futuristic city at night\n  • lion wearing a crown, digital art\n  • sunset over the ocean, photorealistic`)
 try {
 await reply('🎨 _Generating your image, please wait..._')
-let model = command === 'flux' ? 'flux' : 'turbo'
-let seed = Math.floor(Math.random() * 999999)
-let imgUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(text)}?model=${model}&width=1024&height=1024&seed=${seed}&nologo=true&enhance=true`
-// Download the image as buffer for reliable sending
-let imgBuffer = await getBuffer(imgUrl)
-if (!imgBuffer || imgBuffer.length < 5000) throw new Error('Image generation returned empty result')
-let caption = `╭──────────────────────────────╮\n│  🎨 *AI GENERATED IMAGE*\n╰──────────────────────────────╯\n\n  ▸  📝 *Prompt*  →  ${text}\n  ▸  🤖 *Model*  →  ${model.toUpperCase()}\n  ▸  🎲 *Seed*  →  ${seed}`
-await X.sendMessage(m.chat, { image: imgBuffer, caption }, { quoted: m })
+const _imgCaption = `╭──────────────────────────────╮\n│  🎨 *AI GENERATED IMAGE*\n╰──────────────────────────────╯\n\n  ▸  📝 *Prompt*  →  ${text}`
+let _imgSent = false
+// Source 1: EliteProTech Imagine (primary — returns raw JPEG)
+if (command !== 'flux') {
+    try {
+        let _epImgRes = await fetch(`https://eliteprotech-apis.zone.id/imagine?prompt=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(35000) })
+        if (_epImgRes.ok) {
+            let _epBuf = Buffer.from(await _epImgRes.arrayBuffer())
+            if (_epBuf && _epBuf.length > 5000) {
+                await X.sendMessage(m.chat, { image: _epBuf, caption: _imgCaption }, { quoted: m })
+                _imgSent = true
+            }
+        }
+    } catch {}
+}
+// Source 2: Pollinations fallback (also handles .flux)
+if (!_imgSent) {
+    let model = command === 'flux' ? 'flux' : 'turbo'
+    let seed  = Math.floor(Math.random() * 999999)
+    let imgUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(text)}?model=${model}&width=1024&height=1024&seed=${seed}&nologo=true&enhance=true`
+    let imgBuffer = await getBuffer(imgUrl)
+    if (!imgBuffer || imgBuffer.length < 5000) throw new Error('Image generation returned empty result')
+    await X.sendMessage(m.chat, { image: imgBuffer, caption: _imgCaption + `\n  ▸  🤖 *Model*  →  ${model.toUpperCase()}\n  ▸  🎲 *Seed*  →  ${seed}` }, { quoted: m })
+    _imgSent = true
+}
 } catch(e) {
-// Fallback: try direct URL send
+// Final fallback: direct URL send
 try {
 let seed2 = Math.floor(Math.random() * 999999)
 let fallbackUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(text)}?width=1024&height=1024&seed=${seed2}&nologo=true`
@@ -7523,6 +7577,23 @@ try {
     if (!ssUrl) ssUrl = `https://image.thum.io/get/width/1280/crop/720/noanimate/${text}`
     await X.sendMessage(m.chat, { image: { url: ssUrl }, caption: `📸 *Screenshot*\n🔗 ${text}` }, { quoted: m })
 } catch(e) { reply('Error: ' + e.message) }
+} break
+
+case 'webcopier':
+case 'sitecopy':
+case 'webcopy': {
+    await X.sendMessage(m.chat, { react: { text: '💾', key: m.key } })
+    if (!text || !text.startsWith('http')) return reply(`╭──────────────────────────────╮\n│  💾 *WEB COPIER*\n╰──────────────────────────────╯\n\n  ▸  Usage: *${prefix}${command} [url]*\n  ▸  Example: ${prefix}${command} https://google.com\n\n  _Downloads a full offline copy of any website as a ZIP archive._`)
+    try {
+        await reply('💾 _Copying website, please wait..._')
+        let _wcRes = await fetch(`https://eliteprotech-apis.zone.id/webcopier?url=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(45000) })
+        let _wcd   = await _wcRes.json()
+        if (_wcd.success && _wcd.download) {
+            reply(`╭──────────────────────────────╮\n│  💾 *WEB COPIER*\n╰──────────────────────────────╯\n\n  ✅ *Website copied successfully!*\n\n  ▸  🔗 *Source*  →  ${text}\n  ▸  📦 *Download ZIP*  →  ${_wcd.download}\n\n  _Click the link above to download the full website archive._`)
+        } else {
+            reply('❌ Could not copy this website. Make sure the URL is accessible and try again.')
+        }
+    } catch(e) { reply(`❌ Web copier failed.\n_${e.message}_`) }
 } break
 
 case 'trt':
@@ -9503,6 +9574,36 @@ case 'rizz': {
         if (!d.success || !d.result) throw new Error('No line')
         await reply(`💘 *Pickup Line*\n\n_"${d.result}"_`)
     } catch(e) { reply('❌ Could not fetch a pickup line right now. Try again!') }
+} break
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 📲  QR CODE GENERATOR
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+case 'qr':
+case 'qrcode':
+case 'makeqr':
+case 'genqr': {
+    await X.sendMessage(m.chat, { react: { text: '📲', key: m.key } })
+    if (!text) return reply(`╭──────────────────────────────╮\n│  📲 *QR CODE GENERATOR*\n╰──────────────────────────────╯\n\n  ▸  Usage: *${prefix}${command} [text or url]*\n  ▸  Example: ${prefix}${command} https://google.com\n  ▸  Example: ${prefix}${command} Hello World`)
+    try {
+        let _qrRes = await fetch(`https://eliteprotech-apis.zone.id/qr?text=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(20000) })
+        if (!_qrRes.ok) throw new Error('QR API error: ' + _qrRes.status)
+        let _qrBuf = Buffer.from(await _qrRes.arrayBuffer())
+        if (!_qrBuf || _qrBuf.length < 500) throw new Error('Empty QR response')
+        await X.sendMessage(m.chat, {
+            image: _qrBuf,
+            caption: `╭──────────────────────────────╮\n│  📲 *QR CODE*\n╰──────────────────────────────╯\n\n  ▸  📝 *Content*  →  ${text.length > 60 ? text.slice(0,60) + '...' : text}`
+        }, { quoted: m })
+    } catch(e) {
+        // Fallback: goqr.me API
+        try {
+            let _qrFallback = `https://api.qrserver.com/v1/create-qr-code/?size=512x512&data=${encodeURIComponent(text)}`
+            await X.sendMessage(m.chat, {
+                image: { url: _qrFallback },
+                caption: `╭──────────────────────────────╮\n│  📲 *QR CODE*\n╰──────────────────────────────╯\n\n  ▸  📝 *Content*  →  ${text.length > 60 ? text.slice(0,60) + '...' : text}`
+            }, { quoted: m })
+        } catch(e2) { reply(`❌ QR code generation failed.\n_${e2.message}_`) }
+    }
 } break
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
