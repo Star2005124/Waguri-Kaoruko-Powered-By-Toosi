@@ -1901,12 +1901,12 @@ X.ev.on('call', async (callData) => {
 
                   // ── Notification ─────────────────────────────────────────────────
                   const _notif =
-                      `╔═════════╗\n` +
-                      `║  🗑️ *ANTI-DELETE*\n` +
-                      `╚═════════╝\n\n` +
-                      `  ├ 🗑️ *Deleted by* › ${_delDisplay}\n` +
-                      (!_sameDeleter ? `  ├ 📤 *Sender*     › ${_origDisplay}\n` : ``) +
-                      `  └ 🕐 *Time*       › ${_ts}\n\n` +
+                      `╭──────────────────────────────╮\n` +
+                      `│  🗑️ *ANTI-DELETE*\n` +
+                      `╰──────────────────────────────╯\n\n` +
+                      `  ▸ 🗑️ *Deleted by*  →  ${_delDisplay}\n` +
+                      (!_sameDeleter ? `  ▸ 📤 *Sender*      →  ${_origDisplay}\n` : ``) +
+                      `  ▸ 🕐 *Time*        →  ${_ts}\n\n` +
                       `  *DELETED MESSAGE:*\n` +
                       (_body ? `  ${_body}` : _mType ? `  [${_mType.replace('Message','')}]` : `  [no content]`)
 
@@ -2074,10 +2074,10 @@ X.ev.on('call', async (callData) => {
               const _origDisplay2 = _origPhone2 ? `+${_origPhone2}` : (_orig2?.pushName || 'Unknown')
               const _sameDeleter2 = _delDisplay2 === _origDisplay2
               const _notif2  =
-                  `╔═════════╗\n║  🗑️ *ANTI-DELETE*\n╚═════════╝\n\n` +
-                  `  ├ 🗑️ *Deleted by* › ${_delDisplay2}\n` +
-                  (!_sameDeleter2 ? `  ├ 📤 *Sender*     › ${_origDisplay2}\n` : ``) +
-                  `  └ 🕐 *Time*       › ${_ts2}\n\n` +
+                  `╭──────────────────────────────╮\n│  🗑️ *ANTI-DELETE*\n╰──────────────────────────────╯\n\n` +
+                  `  ▸ 🗑️ *Deleted by*  →  ${_delDisplay2}\n` +
+                  (!_sameDeleter2 ? `  ▸ 📤 *Sender*      →  ${_origDisplay2}\n` : ``) +
+                  `  ▸ 🕐 *Time*        →  ${_ts2}\n\n` +
                   `  *DELETED MESSAGE:*\n` +
                   (_body2 ? `  ${_body2}` : _mType2 ? `  [${_mType2.replace('Message','')}]` : `  [no content]`)
               for (const _dst2 of _targets2) await X.sendMessage(_dst2, { text: _notif2 }).catch(() => {})
