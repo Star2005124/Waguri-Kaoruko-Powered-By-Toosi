@@ -1966,30 +1966,17 @@ case 'ytplay': {
                 }
             } catch (e0) { console.log('[play] giftedtech:', e0.message) }
 
-          // Method 1.5a: EliteProTech /ytdl — fast single-call MP3 URL
+          // Method 1.5: EliteProTech API — fast single-call MP3 URL
           if (!audioUrl && !audioPath) {
               try {
-                  let _ep = await fetch(`https://eliteprotech-apis.zone.id/ytdl?url=${encodeURIComponent(firstVideo.url)}`, { signal: AbortSignal.timeout(25000) })
+                  let _ep = await fetch(`https://eliteprotech-apis.zone.id/ytmp3?url=${encodeURIComponent(firstVideo.url)}`, { signal: AbortSignal.timeout(20000) })
                   let _epd = await _ep.json()
-                  console.log('[play] eliteprotech/ytdl: success=', _epd.success)
-                  if (_epd.success && _epd.link) {
-                      audioUrl = _epd.link
-                      if (!videoTitle || videoTitle === 'Unknown Title') videoTitle = _epd.title || videoTitle
+                  console.log('[play] eliteprotech: status=', _epd.status)
+                  if (_epd.status === true && _epd.result?.download) {
+                      audioUrl = _epd.result.download
+                      if (!videoTitle || videoTitle === 'Unknown Title') videoTitle = _epd.result.title || videoTitle
                   }
-              } catch (_ep0) { console.log('[play] eliteprotech/ytdl:', _ep0.message) }
-          }
-
-          // Method 1.5b: EliteProTech /yt — alternative MP3 URL
-          if (!audioUrl && !audioPath) {
-              try {
-                  let _yt = await fetch(`https://eliteprotech-apis.zone.id/yt?url=${encodeURIComponent(firstVideo.url)}`, { signal: AbortSignal.timeout(25000) })
-                  let _ytd = await _yt.json()
-                  console.log('[play] eliteprotech/yt: status=', _ytd.status)
-                  if (_ytd.status === true && _ytd.downloadUrl) {
-                      audioUrl = _ytd.downloadUrl
-                      if (!videoTitle || videoTitle === 'Unknown Title') videoTitle = _ytd.title || videoTitle
-                  }
-              } catch (_yt0) { console.log('[play] eliteprotech/yt:', _yt0.message) }
+              } catch (_ep0) { console.log('[play] eliteprotech:', _ep0.message) }
           }
   
         }
