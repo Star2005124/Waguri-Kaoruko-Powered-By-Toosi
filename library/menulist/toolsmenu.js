@@ -5,6 +5,7 @@ const toolsMenu = `
   ▸  \`.totalfitur\`   ▸  \`.prefix\`
   ▸  \`.pair\`         ▸  \`.save\`   →  reply msg
   ▸  \`.ping\`         ▸  \`.runtime\`
+  ▸  \`.getcmd\`       →  [command] — command info
 
 ╭──────────────────────────────╮
 │  🛠️  *UTILITY TOOLS*
