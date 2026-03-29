@@ -1862,6 +1862,33 @@ break
       } catch(e) { reply(`❌ Could not fetch Instagram profile *${_igsu}*.`) }
   } break
 
+  case 'twitterstalk':
+  case 'xstalk': {
+      await X.sendMessage(m.chat, { react: { text: '🐦', key: m.key } })
+      const _twsu = q?.trim() || text?.trim()
+      if (!_twsu) return reply(`╌══〔 🐦 TWITTER/X STALK 〕═╌\n║ *Usage:* ${prefix}twitterstalk [@username]\n║ Example: ${prefix}twitterstalk @elonmusk\n╚═══════════════════════╝`)
+      try {
+          await reply(`🔍 _Stalking X/Twitter: ${_twsu}..._`)
+          const _twsd = await _keithFetch(`/stalker/twitter?user=${encodeURIComponent(_twsu.replace('@',''))}`)
+          const _twsp = _twsd?.profile || _twsd?.result?.profile || _twsd
+          if (!_twsp?.username) throw new Error('User not found')
+          let msg = `╌══〔 🐦 TWITTER/X PROFILE 〕╌\n`
+          msg += `\n👤 *@${_twsp.username}*\n`
+          if (_twsp.displayName || _twsp.name) msg += `   🏷️ ${_twsp.displayName || _twsp.name}\n`
+          if (_twsp.bio || _twsp.description) msg += `\n💬 *Bio:* ${_twsp.bio || _twsp.description}\n`
+          if (_twsp.followers !== undefined) msg += `\n👥 *Followers:* ${(_twsp.followers || 0).toLocaleString()}\n`
+          if (_twsp.following !== undefined) msg += `💞 *Following:* ${(_twsp.following || 0).toLocaleString()}\n`
+          if (_twsp.tweets !== undefined) msg += `📝 *Tweets:* ${(_twsp.tweets || 0).toLocaleString()}\n`
+          if (_twsp.likes !== undefined) msg += `❤️ *Likes:* ${(_twsp.likes || 0).toLocaleString()}\n`
+          if (_twsp.location) msg += `📍 *Location:* ${_twsp.location}\n`
+          if (_twsp.verified || _twsp.isVerified) msg += `✅ *Verified Account*\n`
+          if (_twsp.joinDate || _twsp.created) msg += `📅 *Joined:* ${_twsp.joinDate || _twsp.created}\n`
+          msg += `\n╚═══════════════════════╝`
+          await reply(msg)
+      } catch(e) { reply(`❌ Could not stalk *${_twsu}*. Check the username and try again.`) }
+  } break
+
+
   case 'githubtrends':
   case 'ghtrend': {
       await X.sendMessage(m.chat, { react: { text: '💜', key: m.key } })
@@ -8106,6 +8133,38 @@ case 'searchmovie': {
     } catch(e) { reply('❌ Movie search failed. Try again later.') }
 } break
 
+case 'trailer':
+case 'movietrailer': {
+    await X.sendMessage(m.chat, { react: { text: '🎬', key: m.key } })
+    const _trq = q?.trim() || text?.trim()
+    if (!_trq) return reply(`╌══〔 🎬 MOVIE TRAILER 〕══╌\n║ *Usage:* ${prefix}trailer [movie name]\n║ Example: ${prefix}trailer avengers\n╚═══════════════════════╝`)
+    try {
+        await reply(`🎬 _Searching trailer for: ${_trq}..._`)
+        const _trd = await _keithFetch(`/movie/trailer?q=${encodeURIComponent(_trq)}`)
+        const _trr = _trd?.result || _trd
+        if (!_trr?.title) {
+            // fallback: use youtube search for trailer
+            const _yts = await fetch(`https://www.youtube.com/results?search_query=${encodeURIComponent(_trq + ' official trailer')}`)
+            const _ythtml = await _yts.text()
+            const _ytmatch = _ythtml.match(/\"videoId\":\"([^\"]{11})\"/)
+            if (_ytmatch) {
+                const _ytUrl = `https://www.youtube.com/watch?v=${_ytmatch[1]}`
+                await reply(`🎬 *Trailer: ${_trq}*\n\n🔗 ${_ytUrl}\n\n_Use .ytdl to download the trailer!_`)
+            } else throw new Error('No trailer found')
+        } else {
+            let msg = `╌══〔 🎬 TRAILER 〕═══════╌\n`
+            msg += `\n🎬 *${_trr.title}*\n`
+            if (_trr.year) msg += `   📅 Year: ${_trr.year}\n`
+            if (_trr.rating) msg += `   ⭐ Rating: ${_trr.rating}\n`
+            if (_trr.trailerUrl || _trr.url) msg += `\n🔗 *Trailer:* ${_trr.trailerUrl || _trr.url}\n`
+            if (_trr.description || _trr.overview) msg += `\n📝 _${(_trr.description || _trr.overview).slice(0, 200)}_\n`
+            msg += `\n╚═══════════════════════╝`
+            await reply(msg)
+        }
+    } catch(e) { reply(`❌ Could not find trailer for *${_trq}*. Try another title.`) }
+} break
+
+
 
 // ── Direct stream lookup: .stream [xcasper-id] [movie|tv] [season?] [ep?]
 case 'stream':
@@ -8738,6 +8797,31 @@ case 'upscale': {
         await safeSendMedia(m.chat, { image: { url: _hdUrl }, caption: '✅ *Image enhanced to HD quality!*' }, {}, { quoted: m })
     } catch(e) { reply(`❌ HD upscale failed: ${e.message}`) }
 } break
+
+case 'imageedit':
+case 'imgfilter': {
+    await X.sendMessage(m.chat, { react: { text: '🎨', key: m.key } })
+    const _ieMsg = m.quoted || m
+    const _ieMime = _ieMsg?.message?.imageMessage?.mimetype || ''
+    if (!_ieMime.startsWith('image/')) return reply('❌ *Reply to an image* then use .imageedit [effect]\n\n*Effects:* grayscale | sepia | blur | sharpen | flip | rotate | vintage | bright | dark | cartoon')
+    const _ieEffect = (q?.trim() || text?.trim() || 'enhance').toLowerCase()
+    try {
+        await reply(`🎨 _Applying ${_ieEffect} effect..._`)
+        const _ieBuf = await X.downloadMediaMessage(_ieMsg)
+        const _ieB64 = _ieBuf.toString('base64')
+        const _ieRes = await fetch('https://apiskeith.top/images/edit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image: _ieB64, effect: _ieEffect }),
+            signal: AbortSignal.timeout(40000)
+        })
+        const _ieData = await _ieRes.json()
+        const _ieUrl = _ieData?.result?.url || _ieData?.url || _ieData?.imageUrl
+        if (!_ieUrl) throw new Error('No edited image returned')
+        await safeSendMedia(m.chat, { image: { url: _ieUrl }, caption: `🎨 *Effect:* ${_ieEffect}` }, {}, { quoted: m })
+    } catch(e) { reply(`❌ Image edit failed: ${e.message}`) }
+} break
+
 
 
 //━━━━━━━━━━━━━━━━━━━━━━━━//
@@ -9532,6 +9616,18 @@ case 'stylish': {
         _fLines2.push(`*${_fNum}.* ${styled}  _[${cs.n}]_`)
         _fNum++
     }
+    // ── Keith API extra styles ────────────────────────────────────────
+    try {
+        const _kfData = await _keithFetch(`/fancytext?q=${encodeURIComponent(_fInput)}`)
+        const _kfStyles = _kfData?.result || _kfData?.styles || (Array.isArray(_kfData) ? _kfData : null)
+        if (Array.isArray(_kfStyles)) {
+            for (const s of _kfStyles.slice(0, 15)) {
+                const _kfText = typeof s === 'string' ? s : (s.text || s.style || s.value)
+                const _kfName = typeof s === 'string' ? 'Keith Style' : (s.name || s.font || 'Keith Style')
+                if (_kfText && _kfText !== _fInput) _fLines2.push(`*${_fNum}.* ${_kfText}  _[${_kfName}]_`); _fNum++
+            }
+        }
+    } catch {} // Keith bonus styles optional
     const _fTotal = _fLines2.length
     const _fHeader = `╔═══〔 ✨ FANCY TEXT 〕════╗\n_${_fInput}_ · ${_fTotal} styles\n\n\n╚═══════════════════════╝`
     const _fFooter = `\n╚═══════════════════════╝ _Reply with_ *${prefix}fancy [number]* _to send just that style_`
