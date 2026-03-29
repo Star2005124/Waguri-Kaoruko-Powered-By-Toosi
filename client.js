@@ -514,6 +514,18 @@ if (!X._botSentTracked) {
     if (!global._botSentIds) global._botSentIds = new Set()
     const _origSM = X.sendMessage.bind(X)
     X.sendMessage = async (..._smArgs) => {
+        // ── Global empty-message guard ──────────────────────────────────────
+        // Block any outgoing message where text is '', '   ', undefined, or null.
+        // This catches ALL code paths (commands, handlers, auto-features) in one place.
+        const _msgPayload = _smArgs[1]
+        if (_msgPayload && 'text' in _msgPayload) {
+            const _txt = _msgPayload.text
+            if (_txt === undefined || _txt === null || (typeof _txt === 'string' && !_txt.trim())) {
+                console.log('[EmptyGuard] Blocked empty text send to', _smArgs[0])
+                return null
+            }
+        }
+        // ───────────────────────────────────────────────────────────────────
         const _sent = await _origSM(..._smArgs)
         if (_sent?.key?.id) {
             global._botSentIds.add(_sent.key.id)
@@ -6871,7 +6883,7 @@ case 'hidetag': {
     await X.sendMessage(m.chat, { react: { text: '🏷️', key: m.key } })
 if (!m.isGroup) return reply(mess.OnlyGrup)
 if (!isAdmins && !isOwner) return reply(mess.admin)
-let htText = text || ''
+let htText = text || '​'  // zero-width space: invisible but non-empty, bypasses empty guard
 let htMentions = participants.map(p => p.id).filter(id => !id.endsWith('@newsletter'))
 X.sendMessage(from, { text: htText, mentions: htMentions }, { quoted: m })
 } break
