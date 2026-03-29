@@ -12,6 +12,34 @@ by Toosii Tech • 2024 - 2026
 //═════════════════════════════════//
 //━━━━━━━━━━━━━━━━━━━━━━━━//
 // Module
+// ── Auto-restart supervisor ──────────────────────────────────────────────────
+// When the bot process exits for ANY reason (update, crash, OOM, etc.),
+// the supervisor parent automatically restarts it after 3 seconds.
+// Works WITHOUT pm2 — the supervisor stays alive as the parent process.
+if (!process.env._BOT_CHILD) {
+    const { spawn } = require('child_process')
+    let _restartDelay = 3000
+    const _spawnBot = () => {
+        const _c = spawn(process.execPath, process.argv.slice(1), {
+            stdio: 'inherit',
+            env: { ...process.env, _BOT_CHILD: '1' }
+        })
+        _c.on('close', (code) => {
+            console.log('[AutoRestart] Process exited (code=' + code + '), restarting in ' + (_restartDelay/1000) + 's...')
+            _restartDelay = Math.min(_restartDelay * 1.5, 30000) // backoff up to 30s
+            setTimeout(_spawnBot, _restartDelay)
+        })
+        _c.on('error', (err) => {
+            console.error('[AutoRestart] Spawn error:', err.message)
+            setTimeout(_spawnBot, 5000)
+        })
+        _c.on('spawn', () => { _restartDelay = 3000 }) // reset backoff on successful spawn
+    }
+    _spawnBot()
+    return // supervisor stays alive; stop it from running bot code below
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 require('dotenv').config()          // ← FIX 1: load .env FIRST so SESSION_ID is available
 require("./setting")
 
@@ -258,7 +286,7 @@ function autoLoadSessionFromEnv() {
     }
 }
 
-//━━━━━━━━━━━━━━━━━━━━━━━━//
+//━━━━━━��━━━━━━━━━━━━━━━━━//
 // Console Login Interface
 
 async function handleSessionLogin(sessionId) {
@@ -1615,7 +1643,7 @@ in *${groupName}*
 ┌────────────────────────���────
 │ 👤 Role     : Member
 │ 👥 Members  : ${totalMembers}
-└─────────────────────────────
+└──────────���──────────────────
 
 _You are now a regular member._ 🔄`
                     await X.sendMessage(anu.id, {
