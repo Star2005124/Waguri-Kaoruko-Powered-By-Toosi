@@ -9190,7 +9190,6 @@ reply(`╔══〔 🔥 DARE CHALLENGE 〕══╗\n║ 🎯 ${_dareQ}\n╚═
       } catch(e) { reply('❌ Could not get a NHIE statement. Try again!') }
   } break
 
-  case 'trivia':
   case 'question': {
       await X.sendMessage(m.chat, { react: { text: '🧩', key: m.key } })
       try {
