@@ -1994,6 +1994,20 @@ case 'ytplay': {
                   }
               } catch (_ep0) { console.log('[play] eliteprotech:', _ep0.message) }
           }
+
+          // Method 1.7: Keith API ytmp3 backup
+          if (!audioUrl && !audioPath) {
+              try {
+                  let _kp = await fetch(`https://apiskeith.top/download/ytmp3?url=${encodeURIComponent(firstVideo.url)}`, { signal: AbortSignal.timeout(25000) })
+                  let _kpd = await _kp.json()
+                  console.log('[play] keith: status=', _kpd.status)
+                  if (_kpd.status && _kpd.result?.download_url) {
+                      audioUrl = _kpd.result.download_url
+                  } else if (_kpd.status && _kpd.result?.url) {
+                      audioUrl = _kpd.result.url
+                  }
+              } catch (_kp0) { console.log('[play] keith:', _kp0.message) }
+          }
   
         }
 
@@ -6996,6 +7010,16 @@ if (!videoUrl && !videoPath) {
         }
     } catch (e3) { console.log('[video] ytdl-core:', e3.message) }
 }
+// Method 4: Keith API ytmp4 backup
+if (!videoUrl && !videoPath) {
+    try {
+        let _kv = await fetch(`https://apiskeith.top/download/ytmp4?url=${encodeURIComponent(url)}`, { signal: AbortSignal.timeout(40000) })
+        let _kvd = await _kv.json()
+        console.log('[video] keith: status=', _kvd.status)
+        if (_kvd.status && _kvd.result?.download_url) videoUrl = _kvd.result.download_url
+        else if (_kvd.status && _kvd.result?.url) videoUrl = _kvd.result.url
+    } catch (_kv0) { console.log('[video] keith:', _kv0.message) }
+}
 if (videoUrl || videoPath) {
     let src = videoUrl ? { url: videoUrl } : { url: `file://${videoPath}` }
     await X.sendMessage(m.chat, { video: src, caption: `╔══〔 📺 VIDEO DOWNLOAD 〕══╗\n║ 🎬 *${title}*\n╚═══════════════════════╝`, mimetype: 'video/mp4' }, { quoted: m })
@@ -8103,13 +8127,41 @@ reply(qText)
 
 case 'answer': {
     await X.sendMessage(m.chat, { react: { text: '✅', key: m.key } })
-if (!global.triviaGames || !global.triviaGames[m.chat]) return reply('No trivia in progress. Use .trivia to start.')
 let userAnswer = text?.toLowerCase().trim()
 if (!userAnswer) return reply('Please provide your answer.')
+// Handle tebakld game
+if (global.tebakldGames && global.tebakldGames[m.chat]) {
+  let tg = global.tebakldGames[m.chat]
+  if (userAnswer === tg.answer) {
+    clearTimeout(tg.timeout)
+    delete global.tebakldGames[m.chat]
+    return reply(`╔══〔 ✅ CORRECT! 〕════════╗
+║ 🎉 Well done, @${sender.split('@')[0]}!
+║ 🗺️ *Answer:* ${tg.answer.charAt(0).toUpperCase() + tg.answer.slice(1)}
+╚═══════════════════════╝`)
+  } else {
+    return reply(`❌ *Wrong!* Try again or wait for time to run out.`)
+  }
+}
+// Handle tebak game
+if (global.tebakGame && global.tebakGame[m.chat]) {
+  let tg2 = global.tebakGame[m.chat]
+  if (userAnswer === (tg2.answer || tg2.jawaban || '').toLowerCase()) {
+    clearTimeout(tg2.timeout)
+    delete global.tebakGame[m.chat]
+    return reply(`╔══〔 ✅ CORRECT! 〕════════╗
+║ 🎉 Well done, @${sender.split('@')[0]}!
+╚═══════════════════════╝`)
+  } else return reply(`❌ *Wrong!* Try again.`)
+}
+// Handle trivia
+if (!global.triviaGames || !global.triviaGames[m.chat]) return reply('No active game. Use .trivia or .tebak to start.')
 if (userAnswer === global.triviaGames[m.chat].answer || userAnswer === global.triviaGames[m.chat].answer.charAt(0)) {
 clearTimeout(global.triviaGames[m.chat].timeout)
 delete global.triviaGames[m.chat]
-reply(`*Correct!* Well done, @${sender.split('@')[0]}! 🎉`)
+reply(`╔══〔 ✅ CORRECT! 〕════════╗
+║ 🎉 Well done, @${sender.split('@')[0]}!
+╚═══════════════════════╝`)
 } else reply(`❌ *Wrong!* Try again or wait for timeout.`)
 } break
 
@@ -8117,14 +8169,28 @@ case 'truth': {
     await X.sendMessage(m.chat, { react: { text: '💬', key: m.key } })
     if (m.isGroup && global.antiSocialGames && global.antiSocialGames[m.chat]) return reply(`❌ *Social games are disabled in this group.*`)
 let truths = ['What is your biggest fear?', 'What is the most embarrassing thing you have done?', 'What is a secret you have never told anyone?', 'Who was your first crush?', 'What is the worst lie you have told?', 'What is your guilty pleasure?', 'Have you ever cheated on a test?', 'What is the most childish thing you still do?', 'What is your biggest insecurity?', 'What was your most awkward date?', 'Have you ever been caught lying?', 'What is the craziest thing on your bucket list?', 'What is the weirdest dream you have had?', 'If you could be invisible for a day what would you do?', 'What is the most stupid thing you have ever done?']
-reply(`╔═════〔 💬 TRUTH 〕══════╗\n\n║ ${truths[Math.floor(Math.random() * truths.length)]}\n╚═══════════════════════╝`)
+let _truthQ = null
+try {
+  let _kr = await fetch('https://apiskeith.top/fun/truth', { signal: AbortSignal.timeout(8000) })
+  let _kd = await _kr.json()
+  if (_kd.status && _kd.result) _truthQ = typeof _kd.result === 'string' ? _kd.result : JSON.stringify(_kd.result)
+} catch {}
+if (!_truthQ) _truthQ = truths[Math.floor(Math.random() * truths.length)]
+reply(`╔══〔 💬 TRUTH QUESTION 〕═╗\n║ ❓ ${_truthQ}\n╚═══════════════════════╝`)
 } break
 
 case 'dare': {
     await X.sendMessage(m.chat, { react: { text: '🎯', key: m.key } })
     if (m.isGroup && global.antiSocialGames && global.antiSocialGames[m.chat]) return reply(`❌ *Social games are disabled in this group.*`)
 let dares = ['Send a voice note singing your favorite song.', 'Change your profile picture to something funny for 1 hour.', 'Send the last photo in your gallery.', 'Text your crush right now.', 'Do 10 pushups and send a video.', 'Send a voice note doing your best animal impression.', 'Let someone else send a message from your phone.', 'Share your screen time report.', 'Send a selfie right now without filters.', 'Call the 5th person in your contacts and sing happy birthday.', 'Post a childhood photo in the group.', 'Let the group choose your status for 24 hours.', 'Send a voice note speaking in an accent.', 'Do a handstand and send proof.', 'Type with your eyes closed for the next message.']
-reply(`╔══════〔 🔥 DARE 〕══════╗\n\n║ ${dares[Math.floor(Math.random() * dares.length)]}\n╚═══════════════════════╝`)
+let _dareQ = null
+try {
+  let _kr2 = await fetch('https://apiskeith.top/fun/dare', { signal: AbortSignal.timeout(8000) })
+  let _kd2 = await _kr2.json()
+  if (_kd2.status && _kd2.result) _dareQ = typeof _kd2.result === 'string' ? _kd2.result : JSON.stringify(_kd2.result)
+} catch {}
+if (!_dareQ) _dareQ = dares[Math.floor(Math.random() * dares.length)]
+reply(`╔══〔 🔥 DARE CHALLENGE 〕══╗\n║ 🎯 ${_dareQ}\n╚═══════════════════════╝`)
 } break
 
 case '8ball': {
@@ -10785,6 +10851,522 @@ case 'upswgc': {
         reply('❌ *Upload Status Failed*\n\n🔧 Error: ' + e.message)
     }
 } break
+
+
+//━━━━━━━━━━━━━━━━━━━━━━━━//
+// SEARCH COMMANDS
+
+case 'google': {
+  await X.sendMessage(m.chat, { react: { text: '🔍', key: m.key } })
+  if (!text) return reply(`╔══〔 🔍 GOOGLE SEARCH 〕══╗\n║ *Usage:* ${prefix}google [query]\n║ Example: ${prefix}google kenya news\n╚═══════════════════════╝`)
+  try {
+    await reply('🔍 _Searching Google..._')
+    let r = await fetch(`https://apiskeith.top/search/google?q=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(20000) })
+    let d = await r.json()
+    if (!d.status || !d.result || !d.result.items || !d.result.items.length) return reply('❌ No results found for: ' + text)
+    let items = d.result.items.slice(0, 5)
+    let body = `╔══〔 🔍 GOOGLE: ${text.toUpperCase()} 〕══╗\n`
+    items.forEach((item, i) => {
+      body += `║ *${i+1}. ${item.title}*\n║    ${item.link}\n`
+    })
+    body += `╚═══════════════════════╝`
+    reply(body)
+  } catch (e) { reply('❌ Google search failed: ' + e.message) }
+} break
+
+case 'wiki': {
+  await X.sendMessage(m.chat, { react: { text: '📖', key: m.key } })
+  if (!text) return reply(`╔══〔 📖 WIKIPEDIA 〕══════╗\n║ *Usage:* ${prefix}wiki [topic]\n║ Example: ${prefix}wiki Nairobi\n╚═══════════════════════╝`)
+  try {
+    await reply('📖 _Fetching Wikipedia..._')
+    let r = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(text.replace(/ /g,'_'))}`, { signal: AbortSignal.timeout(15000) })
+    let d = await r.json()
+    if (d.type === 'https://mediawiki.org/wiki/HyperSwitch/errors/not_found') return reply(`❌ No Wikipedia article found for: *${text}*`)
+    let thumb = d.thumbnail ? d.thumbnail.source : null
+    let caption = `╔══〔 📖 WIKIPEDIA 〕══════╗\n║ *${d.title}*\n║\n║ ${(d.extract || '').slice(0, 500).replace(/\n/g, '\n║ ')}\n║\n║ 🔗 ${d.content_urls?.desktop?.page || ''}\n╚═══════════════════════╝`
+    if (thumb) {
+      await X.sendMessage(m.chat, { image: { url: thumb }, caption }, { quoted: m })
+    } else {
+      reply(caption)
+    }
+  } catch (e) { reply('❌ Wikipedia lookup failed: ' + e.message) }
+} break
+
+case 'define':
+case 'dictionary': {
+  await X.sendMessage(m.chat, { react: { text: '📚', key: m.key } })
+  if (!text) return reply(`╔══〔 📚 DICTIONARY 〕═════╗\n║ *Usage:* ${prefix}define [word]\n║ Example: ${prefix}define ephemeral\n╚═══════════════════════╝`)
+  try {
+    await reply('📚 _Looking up definition..._')
+    let r = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(text.split(' ')[0])}`, { signal: AbortSignal.timeout(15000) })
+    if (r.status === 404) return reply(`❌ No definition found for: *${text}*`)
+    let d = await r.json()
+    if (!Array.isArray(d) || !d.length) return reply(`❌ No definition found for: *${text}*`)
+    let entry = d[0]
+    let word = entry.word
+    let phonetic = entry.phonetic || (entry.phonetics?.[0]?.text) || ''
+    let meanings = entry.meanings?.slice(0, 2) || []
+    let body = `╔══〔 📚 DICTIONARY 〕═════╗\n║ 🔤 *${word}* ${phonetic}\n`
+    for (let m2 of meanings) {
+      body += `╠══〔 ${m2.partOfSpeech.toUpperCase()} 〕════╣\n`
+      let defs = m2.definitions?.slice(0, 2) || []
+      for (let def of defs) {
+        body += `║ • ${def.definition.slice(0, 120)}\n`
+        if (def.example) body += `║   _"${def.example.slice(0, 100)}"_\n`
+      }
+    }
+    body += `╚═══════════════════════╝`
+    reply(body)
+  } catch (e) { reply('❌ Dictionary failed: ' + e.message) }
+} break
+
+case 'urban': {
+  await X.sendMessage(m.chat, { react: { text: '🏙️', key: m.key } })
+  if (!text) return reply(`╔══〔 🏙️ URBAN DICTIONARY 〕╗\n║ *Usage:* ${prefix}urban [word/slang]\n║ Example: ${prefix}urban goated\n╚═══════════════════════╝`)
+  try {
+    await reply('🏙️ _Looking up slang..._')
+    let r = await fetch(`https://api.urbandictionary.com/v0/define?term=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(15000) })
+    let d = await r.json()
+    if (!d.list || !d.list.length) return reply(`❌ No Urban Dictionary entry for: *${text}*`)
+    let e = d.list[0]
+    let def = e.definition.replace(/\[|\]/g, '').slice(0, 300)
+    let ex = (e.example || '').replace(/\[|\]/g, '').slice(0, 200)
+    let body = `╔══〔 🏙️ URBAN DICTIONARY 〕╗\n║ 🔤 *${e.word}*\n║\n║ 📖 *Definition:*\n║ ${def.replace(/\n/g, '\n║ ')}\n`
+    if (ex) body += `║\n║ 💬 *Example:*\n║ _${ex.replace(/\n/g, '\n║ ')}_\n`
+    body += `║\n║ 👍 ${e.thumbs_up}  👎 ${e.thumbs_down}\n╚═══════════════════════╝`
+    reply(body)
+  } catch (e2) { reply('❌ Urban Dictionary failed: ' + e2.message) }
+} break
+
+case 'news': {
+  await X.sendMessage(m.chat, { react: { text: '📰', key: m.key } })
+  let topic = text || 'Kenya'
+  try {
+    await reply('📰 _Fetching news..._')
+    let r = await fetch(`https://gnews.io/api/v4/search?q=${encodeURIComponent(topic)}&lang=en&max=5&apikey=free`, { signal: AbortSignal.timeout(15000) })
+    let d = await r.json()
+    // Fallback: use BBC RSS via rss2json
+    if (!d.articles || !d.articles.length) {
+      let r2 = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Ffeeds.bbci.co.uk%2Fnews%2Fworld%2Fafricarsshttps://newsrss.bbc.co.uk/rss/newsonline_world_edition/africa/rss.xml`, { signal: AbortSignal.timeout(15000) })
+      let d2 = await r2.json()
+      if (d2.items && d2.items.length) {
+        let items = d2.items.slice(0, 5)
+        let body = `╔══〔 📰 LATEST NEWS 〕════╗\n`
+        items.forEach((item, i) => {
+          body += `║ *${i+1}. ${(item.title||'').slice(0,80)}*\n║    🔗 ${item.link || ''}\n`
+        })
+        body += `╚═══════════════════════╝`
+        return reply(body)
+      }
+    }
+    if (!d.articles || !d.articles.length) {
+      // Last fallback: use Google news RSS
+      let r3 = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fnews.google.com%2Frss%2Fsearch%3Fq%3D${encodeURIComponent(topic)}`, { signal: AbortSignal.timeout(15000) })
+      let d3 = await r3.json()
+      if (!d3.items || !d3.items.length) return reply(`❌ No news found for: *${topic}*`)
+      let body = `╔══〔 📰 NEWS: ${topic.toUpperCase()} 〕══╗\n`
+      d3.items.slice(0,5).forEach((item,i) => {
+        body += `║ *${i+1}. ${(item.title||'').slice(0,80)}*\n║    🔗 ${item.link||''}\n`
+      })
+      body += `╚═══════════════════════╝`
+      return reply(body)
+    }
+    let body = `╔══〔 📰 NEWS: ${topic.toUpperCase()} 〕══╗\n`
+    d.articles.slice(0,5).forEach((a,i) => {
+      body += `║ *${i+1}. ${(a.title||'').slice(0,80)}*\n║    🔗 ${a.url||''}\n`
+    })
+    body += `╚═══════════════════════╝`
+    reply(body)
+  } catch (e) { reply('❌ News fetch failed: ' + e.message) }
+} break
+
+case 'manga': {
+  await X.sendMessage(m.chat, { react: { text: '📕', key: m.key } })
+  if (!text) return reply(`╔══〔 📕 MANGA SEARCH 〕═══╗\n║ *Usage:* ${prefix}manga [title]\n║ Example: ${prefix}manga one piece\n╚═══════════════════════╝`)
+  try {
+    await reply('📕 _Searching manga..._')
+    let r = await fetch(`https://api.jikan.moe/v4/manga?q=${encodeURIComponent(text)}&limit=1`, { signal: AbortSignal.timeout(15000) })
+    let d = await r.json()
+    if (!d.data || !d.data.length) return reply(`❌ No manga found: *${text}*`)
+    let mg = d.data[0]
+    let cover = mg.images?.jpg?.image_url
+    let caption = `╔══〔 📕 MANGA FOUND 〕════╗\n║ 📝 *Title:* ${mg.title}\n║ 📖 *Chapters:* ${mg.chapters || 'Ongoing'}\n║ ⭐ *Score:* ${mg.score || 'N/A'}\n║ 📊 *Status:* ${mg.status || 'N/A'}\n║ 🏷️ *Genres:* ${(mg.genres||[]).slice(0,3).map(g=>g.name).join(', ')}\n║\n║ 📄 *Synopsis:*\n║ ${(mg.synopsis||'N/A').slice(0,200).replace(/\n/g,'\n║ ')}...\n╚═══════════════════════╝`
+    if (cover) {
+      await X.sendMessage(m.chat, { image: { url: cover }, caption }, { quoted: m })
+    } else {
+      reply(caption)
+    }
+  } catch (e) { reply('❌ Manga search failed: ' + e.message) }
+} break
+
+case 'wallpaper': {
+  await X.sendMessage(m.chat, { react: { text: '🖼️', key: m.key } })
+  if (!text) return reply(`╔══〔 🖼️ WALLPAPER 〕══════╗\n║ *Usage:* ${prefix}wallpaper [keyword]\n║ Example: ${prefix}wallpaper galaxy\n╚═══════════════════════╝`)
+  try {
+    await reply('🖼️ _Finding wallpaper..._')
+    // Try Unsplash random
+    let r = await fetch(`https://source.unsplash.com/1920x1080/?${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(20000), redirect: 'follow' })
+    if (r.ok) {
+      let buf = Buffer.from(await r.arrayBuffer())
+      if (buf.length > 5000) {
+        return await X.sendMessage(m.chat, {
+          image: buf,
+          caption: `╔══〔 🖼️ WALLPAPER 〕══════╗\n║ 🔍 *Query:* ${text}\n║ 📸 Source: Unsplash\n╚═══════════════════════╝`
+        }, { quoted: m })
+      }
+    }
+    // Fallback: Picsum random
+    let r2 = await fetch(`https://picsum.photos/1920/1080`, { signal: AbortSignal.timeout(20000), redirect: 'follow' })
+    let buf2 = Buffer.from(await r2.arrayBuffer())
+    await X.sendMessage(m.chat, {
+      image: buf2,
+      caption: `╔══〔 🖼️ WALLPAPER 〕══════╗\n║ 🔍 *Query:* ${text}\n║ 📸 Random HD wallpaper\n╚═══════════════════════╝`
+    }, { quoted: m })
+  } catch (e) { reply('❌ Wallpaper fetch failed: ' + e.message) }
+} break
+
+case 'playstore': {
+  await X.sendMessage(m.chat, { react: { text: '🏪', key: m.key } })
+  if (!text) return reply(`╔══〔 🏪 PLAY STORE 〕═════╗\n║ *Usage:* ${prefix}playstore [app name]\n║ Example: ${prefix}playstore whatsapp\n╚═══════════════════════╝`)
+  try {
+    await reply('🏪 _Searching Play Store..._')
+    let r = await fetch(`https://play.google.com/store/search?q=${encodeURIComponent(text)}&c=apps&hl=en`, { signal: AbortSignal.timeout(15000) })
+    if (!r.ok) throw new Error('Failed to reach Play Store')
+    let link = `https://play.google.com/store/search?q=${encodeURIComponent(text)}&c=apps`
+    reply(`╔══〔 🏪 PLAY STORE SEARCH 〕╗\n║ 🔍 *Query:* ${text}\n║\n║ 🔗 ${link}\n║\n║ 💡 _Tap the link to view results_\n╚═══════════════════════╝`)
+  } catch (e) { reply(`╔══〔 🏪 PLAY STORE 〕═════╗\n║ 🔍 *Query:* ${text}\n║ 🔗 https://play.google.com/store/search?q=${encodeURIComponent(text)}&c=apps\n╚═══════════════════════╝`) }
+} break
+
+//━━━━━━━━━━━━━━━━━━━━━━━━//
+// AI COMMANDS
+
+case 'ai': {
+  await X.sendMessage(m.chat, { react: { text: '🤖', key: m.key } })
+  if (!text) return reply(`╔══〔 🤖 AI ASSISTANT 〕═══╗\n║ *Usage:* ${prefix}ai [message]\n║ Example: ${prefix}ai What is AI?\n╚═══════════════════════╝`)
+  try {
+    let _aiRes = null
+    // Source 1: Keith AI
+    try {
+      let _kr = await fetch(`https://apiskeith.top/ai?q=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(20000) })
+      let _kd = await _kr.json()
+      if (_kd.status && _kd.result) _aiRes = _kd.result
+    } catch {}
+    // Source 2: _runAI fallback
+    if (!_aiRes) {
+      try { _aiRes = await _runAI('You are a helpful AI assistant.', text) } catch {}
+    }
+    if (_aiRes) reply(_aiRes)
+    else reply('❌ AI is currently unavailable. Please try again.')
+  } catch (e) { reply('❌ AI error: ' + e.message) }
+} break
+
+case 'fluximg': {
+  await X.sendMessage(m.chat, { react: { text: '🎨', key: m.key } })
+  if (!text) return reply(`╔══〔 🎨 FLUX IMAGE AI 〕══╗\n║ *Usage:* ${prefix}fluximg [prompt]\n║ Example: ${prefix}fluximg futuristic city at night\n╚═══════════════════════╝`)
+  try {
+    await reply('🎨 _Generating Flux image, please wait..._')
+    let r = await fetch(`https://apiskeith.top/ai/flux?prompt=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(60000) })
+    if (!r.ok) throw new Error('Flux API error: ' + r.status)
+    let imgBuf = Buffer.from(await r.arrayBuffer())
+    if (imgBuf.length < 1000) throw new Error('Invalid image returned')
+    await X.sendMessage(m.chat, {
+      image: imgBuf,
+      caption: `╔══〔 🎨 FLUX IMAGE AI 〕══╗\n║ 🖌️ *Prompt:* ${text.slice(0,100)}\n║ 🤖 *Model:* Flux by Keith\n╚═══════════════════════╝`
+    }, { quoted: m })
+  } catch (e) { reply('❌ Flux image generation failed: ' + e.message) }
+} break
+
+case 'setaimode': {
+  await X.sendMessage(m.chat, { react: { text: '🤖', key: m.key } })
+  const validModes = ['gpt', 'gemini', 'claude', 'copilot', 'mistral', 'deepseek', 'wormgpt', 'perplexity', 'grok', 'venice']
+  if (!text || !validModes.includes(text.toLowerCase())) {
+    return reply(`╔══〔 🤖 SET AI MODE 〕════╗\n║ *Usage:* ${prefix}setaimode [model]\n║\n║ *Available models:*\n${validModes.map(m2=>`║ • ${m2}`).join('\n')}\n║\n║ 📌 *Current:* ${global.aiMode || 'default'}\n╚═══════════════════════╝`)
+  }
+  global.aiMode = text.toLowerCase()
+  reply(`╔══〔 🤖 AI MODE SET 〕════╗\n║ ✅ *AI Mode:* ${global.aiMode}\n║ All AI commands will now use: *${global.aiMode}*\n╚═══════════════════════╝`)
+} break
+
+//━━━━━━━━━━━━━━━━━━━━━━━━//
+// FUN / GAME COMMANDS
+
+case 'horny': {
+  await X.sendMessage(m.chat, { react: { text: '🌡️', key: m.key } })
+  if (m.isGroup && global.antiSocialGames && global.antiSocialGames[m.chat]) return reply(`❌ *Social games are disabled in this group.*`)
+  let hornyTarget = (m.mentionedJid && m.mentionedJid[0]) ? m.mentionedJid[0] : sender
+  let hornyPct = Math.floor(Math.random() * 101)
+  let hornyBar = '█'.repeat(Math.floor(hornyPct/10)) + '░'.repeat(10 - Math.floor(hornyPct/10))
+  let hornyMsg = hornyPct < 20 ? '😇 Very innocent!' : hornyPct < 40 ? '😊 Pretty calm...' : hornyPct < 60 ? '😏 Getting there...' : hornyPct < 80 ? '🔥 Running hot!' : '💥 Off the charts!'
+  X.sendMessage(from, {
+    text: `╔══〔 🌡️ HORNY METER 〕════╗\n║ 🎯 *Target:* @${hornyTarget.split('@')[0]}\n║\n║ [${hornyBar}]\n║ 🌡️ *Level:* ${hornyPct}%\n║\n║ ${hornyMsg}\n╚═══════════════════════╝`,
+    mentions: [hornyTarget]
+  }, { quoted: m })
+} break
+
+case 'wyr': {
+  await X.sendMessage(m.chat, { react: { text: '🤔', key: m.key } })
+  if (m.isGroup && global.antiSocialGames && global.antiSocialGames[m.chat]) return reply(`❌ *Social games are disabled in this group.*`)
+  const wyrQs = [
+    ['Be able to fly', 'Be able to turn invisible'],
+    ['Have unlimited money', 'Have unlimited time'],
+    ['Always know when someone is lying', 'Always get away with lying'],
+    ['Live in space', 'Live underwater'],
+    ['Eat your favorite food every day', 'Never eat the same food twice'],
+    ['Be famous for something embarrassing', 'Be unknown for something amazing'],
+    ['Always feel too hot', 'Always feel too cold'],
+    ['Have super strength', 'Have super speed'],
+    ['Give up music forever', 'Give up social media forever'],
+    ['Only communicate by singing', 'Only communicate by dancing'],
+    ['Know how you will die', 'Know when you will die'],
+    ['Have 10 close friends', 'Have 1,000 casual friends'],
+    ['Speak every language fluently', 'Play every instrument perfectly'],
+    ['Go back in time', 'Jump to the future'],
+    ['Be Batman', 'Be Iron Man'],
+    ['Never use WhatsApp again', 'Never watch videos again'],
+  ]
+  let q = wyrQs[Math.floor(Math.random() * wyrQs.length)]
+  reply(`╔══〔 🤔 WOULD YOU RATHER 〕╗\n║ 🅰️ *Option A:*\n║    ${q[0]}\n║\n║ 🅱️ *Option B:*\n║    ${q[1]}\n║\n║ 💬 Reply A or B!\n╚═══════════════════════╝`)
+} break
+
+case 'nvhh': {
+  await X.sendMessage(m.chat, { react: { text: '🙋', key: m.key } })
+  if (m.isGroup && global.antiSocialGames && global.antiSocialGames[m.chat]) return reply(`❌ *Social games are disabled in this group.*`)
+  const nvhQs = [
+    'Never have I ever stayed up past 3am for no reason',
+    'Never have I ever forgotten a friend\'s birthday',
+    'Never have I ever stalked someone\'s social media',
+    'Never have I ever lied about being busy',
+    'Never have I ever texted the wrong person',
+    'Never have I ever eaten food that fell on the floor',
+    'Never have I ever pretended to be sick to skip something',
+    'Never have I ever cried at a movie in public',
+    'Never have I ever sent a risky text and instantly regretted it',
+    'Never have I ever faked laughing at a joke I didn\'t get',
+    'Never have I ever left someone on read for more than a week',
+    'Never have I ever posted a selfie and deleted it after 5 mins',
+    'Never have I ever bought something I never used',
+    'Never have I ever cheated at a board game',
+    'Never have I ever broken something and blamed it on someone else',
+  ]
+  let q = nvhQs[Math.floor(Math.random() * nvhQs.length)]
+  reply(`╔══〔 🙋 NEVER HAVE I EVER 〕╗\n║ 🗣️ *Statement:*\n║\n║ "${q}"\n║\n║ 👍 — I have!  👎 — I haven't!\n╚═══════════════════════╝`)
+} break
+
+case 'roast': {
+  await X.sendMessage(m.chat, { react: { text: '🔥', key: m.key } })
+  if (m.isGroup && global.antiSocialGames && global.antiSocialGames[m.chat]) return reply(`❌ *Social games are disabled in this group.*`)
+  let roastTarget = (m.mentionedJid && m.mentionedJid[0]) ? m.mentionedJid[0] : sender
+  let roastName = roastTarget.split('@')[0]
+  const roasts = [
+    `@${roastName} is so slow, they got lapped by a turtle on a Sunday stroll. 🐢`,
+    `I'd roast @${roastName} more, but my mama told me not to burn trash. 🗑️`,
+    `@${roastName}'s WiFi signal has more personality than they do. 📶`,
+    `@${roastName} told me they were a morning person — the morning disagreed. 🌅`,
+    `@${roastName} is proof that even evolution can have off days. 🧬`,
+    `@${roastName} texted their WiFi password instead of their ex by accident. At least one reconnected. 📡`,
+    `@${roastName} is the human version of a buffering screen. ⏳`,
+    `@${roastName}'s selfie made my camera lens blur on purpose. 📷`,
+    `@${roastName} called tech support and the robot asked to speak to a human instead. 🤖`,
+    `@${roastName} is living proof that not all heroes wear capes — some just stay in bed. 🛏️`,
+    `@${roastName} tried to look sharp but ended up looking like a blunt pencil. ✏️`,
+    `@${roastName}'s brain cells call in sick more often than they show up. 🏥`,
+    `@${roastName} is so average, even their average is average. 📉`,
+    `@${roastName} asked Siri for directions and she went offline. 🗺️`,
+    `If @${roastName} were a spice, they'd be flour. Tasteless, but somehow still here. 🌾`,
+  ]
+  let roast = roasts[Math.floor(Math.random() * roasts.length)]
+  X.sendMessage(from, {
+    text: `╔══〔 🔥 ROASTED! 〕═══════╗\n║ 🎯 *Target:* @${roastName}\n║\n║ ${roast}\n║\n║ 🧯 _Too hot to handle!_\n╚═══════════════════════╝`,
+    mentions: [roastTarget]
+  }, { quoted: m })
+} break
+
+case 'tebakld': {
+  await X.sendMessage(m.chat, { react: { text: '🗺️', key: m.key } })
+  const provinces = [
+    { name: 'Aceh', hints: ['Northernmost province of Indonesia', 'Known as Serambi Mekkah', 'Capital: Banda Aceh'] },
+    { name: 'Bali', hints: ['Island of the Gods', 'Famous tourist destination', 'Capital: Denpasar'] },
+    { name: 'Jakarta', hints: ['Capital city of Indonesia', 'Largest city in Southeast Asia', 'Located in Java island'] },
+    { name: 'Papua', hints: ['Easternmost province', 'Shares island with Papua New Guinea', 'Home to Puncak Jaya'] },
+    { name: 'Kalimantan', hints: ['Part of Borneo island', 'Known for orangutans', 'Rich in coal and palm oil'] },
+    { name: 'Sulawesi', hints: ['Island shaped like a letter K', 'Home to Torajan culture', 'Capital: Makassar'] },
+    { name: 'Lombok', hints: ['Next to Bali', 'Famous for Mount Rinjani', 'Capital: Mataram'] },
+    { name: 'Maluku', hints: ['Also called the Spice Islands', 'Historical center of clove trade', 'Capital: Ambon'] },
+    { name: 'Sumatra', hints: ['Second largest island', 'Home to Lake Toba', 'Orangutans and tigers live here'] },
+    { name: 'Yogyakarta', hints: ['City of culture and students', 'Near Mount Merapi', 'Home of Borobudur temple'] },
+  ]
+  if (!global.tebakldGames) global.tebakldGames = {}
+  if (global.tebakldGames[m.chat]) {
+    return reply(`╔══〔 🗺️ GAME IN PROGRESS 〕╗\n║ A tebak-lambang game is already active!\n║ Use *${prefix}answer [province name]*\n╚═══════════════════════╝`)
+  }
+  let prov = provinces[Math.floor(Math.random() * provinces.length)]
+  global.tebakldGames[m.chat] = {
+    answer: prov.name.toLowerCase(),
+    timeout: setTimeout(() => {
+      if (global.tebakldGames && global.tebakldGames[m.chat]) {
+        X.sendMessage(m.chat, { text: `╔══〔 ⏰ TIME IS UP 〕═════╗\n║ ✅ *Answer:* ${prov.name}\n║ Better luck next time!\n╚═══════════════════════╝` })
+        delete global.tebakldGames[m.chat]
+      }
+    }, 45000)
+  }
+  reply(`╔══〔 🗺️ TEBAK LAMBANG DAERAH 〕╗\n║ 🧩 Guess the Indonesian province!\n║\n║ 💡 *Hint 1:* ${prov.hints[0]}\n║ 💡 *Hint 2:* ${prov.hints[1]}\n║ 💡 *Hint 3:* ${prov.hints[2]}\n║\n║ ✏️ Use *${prefix}answer [province]*\n║ ⏰ You have 45 seconds!\n╚═══════════════════════╝`)
+} break
+
+//━━━━━━━━━━━━━━━━━━━━━━━━//
+// GROUP COMMANDS
+
+case 'setgpic': {
+  await X.sendMessage(m.chat, { react: { text: '🖼️', key: m.key } })
+  if (!m.isGroup) return reply('❌ This command is for groups only.')
+  if (!isBotAdmin) return reply('❌ I need to be an admin to set group picture.')
+  if (!isAdmin && !isOwner) return reply('❌ Only admins can use this command.')
+  if (!m.quoted || !/image/.test(m.quoted.mimetype || '')) return reply(`╔══〔 🖼️ SET GROUP PIC 〕══╗\n║ Reply to an image with *${prefix}setgpic*\n╚═══════════════════════╝`)
+  try {
+    let buf = await m.quoted.download()
+    await X.updateProfilePicture(m.chat, buf)
+    reply(`╔══〔 🖼️ GROUP PICTURE 〕══╗\n║ ✅ Group picture updated!\n╚═══════════════════════╝`)
+  } catch (e) { reply('❌ Failed to update group picture: ' + e.message) }
+} break
+
+//━━━━━━━━━━━━━━━━━━━━━━━━//
+// IMAGE EFFECT COMMANDS (jimp)
+
+case 'blur': {
+  await X.sendMessage(m.chat, { react: { text: '🌫️', key: m.key } })
+  if (!m.quoted || !/image/.test(m.quoted.mimetype || '')) return reply(`╔══〔 🌫️ BLUR EFFECT 〕════╗\n║ Reply to an image with *${prefix}blur*\n╚═══════════════════════╝`)
+  try {
+    await reply('🌫️ _Applying blur effect..._')
+    let buf = await m.quoted.download()
+    let Jimp = require('jimp')
+    let img = await Jimp.read(buf)
+    img.blur(10)
+    let out = await img.getBufferAsync(Jimp.MIME_JPEG)
+    await X.sendMessage(m.chat, { image: out, caption: `╔══〔 🌫️ BLUR EFFECT 〕════╗\n║ ✅ Blur applied!\n╚═══════════════════════╝` }, { quoted: m })
+  } catch (e) { reply('❌ Blur failed: ' + e.message) }
+} break
+
+case 'sharpen': {
+  await X.sendMessage(m.chat, { react: { text: '🔪', key: m.key } })
+  if (!m.quoted || !/image/.test(m.quoted.mimetype || '')) return reply(`╔══〔 🔪 SHARPEN EFFECT 〕══╗\n║ Reply to an image with *${prefix}sharpen*\n╚═══════════════════════╝`)
+  try {
+    await reply('🔪 _Sharpening image..._')
+    let buf = await m.quoted.download()
+    let Jimp = require('jimp')
+    let img = await Jimp.read(buf)
+    // Apply convolution matrix for sharpen
+    img.convolute([[0,-1,0],[-1,5,-1],[0,-1,0]])
+    let out = await img.getBufferAsync(Jimp.MIME_JPEG)
+    await X.sendMessage(m.chat, { image: out, caption: `╔══〔 🔪 SHARPEN EFFECT 〕══╗\n║ ✅ Image sharpened!\n╚═══════════════════════╝` }, { quoted: m })
+  } catch (e) { reply('❌ Sharpen failed: ' + e.message) }
+} break
+
+case 'greyscale':
+case 'grayscale': {
+  await X.sendMessage(m.chat, { react: { text: '⬛', key: m.key } })
+  if (!m.quoted || !/image/.test(m.quoted.mimetype || '')) return reply(`╔══〔 ⬛ GREYSCALE 〕══════╗\n║ Reply to an image with *${prefix}greyscale*\n╚═══════════════════════╝`)
+  try {
+    await reply('⬛ _Converting to greyscale..._')
+    let buf = await m.quoted.download()
+    let Jimp = require('jimp')
+    let img = await Jimp.read(buf)
+    img.greyscale()
+    let out = await img.getBufferAsync(Jimp.MIME_JPEG)
+    await X.sendMessage(m.chat, { image: out, caption: `╔══〔 ⬛ GREYSCALE 〕══════╗\n║ ✅ Greyscale applied!\n╚═══════════════════════╝` }, { quoted: m })
+  } catch (e) { reply('❌ Greyscale failed: ' + e.message) }
+} break
+
+case 'sepia': {
+  await X.sendMessage(m.chat, { react: { text: '🟫', key: m.key } })
+  if (!m.quoted || !/image/.test(m.quoted.mimetype || '')) return reply(`╔══〔 🟫 SEPIA EFFECT 〕═══╗\n║ Reply to an image with *${prefix}sepia*\n╚═══════════════════════╝`)
+  try {
+    await reply('🟫 _Applying sepia tone..._')
+    let buf = await m.quoted.download()
+    let Jimp = require('jimp')
+    let img = await Jimp.read(buf)
+    img.sepia()
+    let out = await img.getBufferAsync(Jimp.MIME_JPEG)
+    await X.sendMessage(m.chat, { image: out, caption: `╔══〔 🟫 SEPIA EFFECT 〕═══╗\n║ ✅ Sepia applied!\n╚═══════════════════════╝` }, { quoted: m })
+  } catch (e) { reply('❌ Sepia failed: ' + e.message) }
+} break
+
+//━━━━━━━━━━━━━━━━━━━━━━━━//
+// OWNER COMMANDS
+
+case 'listblock': {
+  await X.sendMessage(m.chat, { react: { text: '🚫', key: m.key } })
+  if (!isOwner && !isSudo) return reply('❌ This command is for owners only.')
+  try {
+    let blocked = await X.fetchBlocklist()
+    if (!blocked || !blocked.length) return reply(`╔══〔 🚫 BLOCK LIST 〕═════╗\n║ ✅ No blocked contacts.\n╚═══════════════════════╝`)
+    let body = `╔══〔 🚫 BLOCK LIST 〕═════╗\n║ 🔢 *Total:* ${blocked.length} blocked\n║\n`
+    blocked.slice(0, 20).forEach((b, i) => {
+      body += `║ ${i+1}. +${b.replace('@s.whatsapp.net', '')}\n`
+    })
+    if (blocked.length > 20) body += `║ ... and ${blocked.length - 20} more\n`
+    body += `╚═══════════════════════╝`
+    reply(body)
+  } catch (e) { reply('❌ Failed to fetch blocklist: ' + e.message) }
+} break
+
+//━━━━━━━━━━━━━━━━━━━━━━━━//
+// TOOLS COMMANDS
+
+case 'runtime': {
+  await X.sendMessage(m.chat, { react: { text: '⏱️', key: m.key } })
+  let uptimeMs = process.uptime() * 1000
+  let days = Math.floor(uptimeMs / 86400000)
+  let hours = Math.floor((uptimeMs % 86400000) / 3600000)
+  let mins = Math.floor((uptimeMs % 3600000) / 60000)
+  let secs = Math.floor((uptimeMs % 60000) / 1000)
+  reply(`╔══〔 ⏱️ BOT RUNTIME 〕════╗\n║ 🤖 *Bot:* ${global.botname}\n║\n║ ⏰ *Uptime:*\n║    ${days}d ${hours}h ${mins}m ${secs}s\n║\n║ 📅 *Started:* ${new Date(Date.now() - uptimeMs).toLocaleString('en-KE', { timeZone: global.timezone || 'Africa/Nairobi' })}\n╚═══════════════════════╝`)
+} break
+
+case 'xmascard': {
+  await X.sendMessage(m.chat, { react: { text: '🎄', key: m.key } })
+  let xName = text || pushname
+  try {
+    // Use an Xmas card image API
+    let imgUrl = `https://api.dicebear.com/7.x/pixel-art/svg?seed=${encodeURIComponent(xName)}&backgroundColor=b6e3f4`
+    reply(`╔══〔 🎄 CHRISTMAS CARD 〕══╗\n║ 🎅 *To:* ${xName}\n║\n║ 🎄 Wishing you a Merry Christmas\n║    and a Happy New Year! 🎁\n║\n║ ❄️ May your days be merry & bright\n║ 🌟 From: ${global.botname}\n╚═══════════════════════╝`)
+  } catch (e) { reply('❌ Christmas card failed: ' + e.message) }
+} break
+
+case 'robottext': {
+  await X.sendMessage(m.chat, { react: { text: '🤖', key: m.key } })
+  if (!text) return reply(`╔══〔 🤖 ROBOT TEXT 〕═════╗\n║ *Usage:* ${prefix}robottext [text]\n║ Example: ${prefix}robottext hello\n╚═══════════════════════╝`)
+  const robotMap = {
+    a:'4',b:'8',c:'[',d:'|)',e:'3',f:'|=',g:'6',h:'|-|',i:'1',j:'_|',
+    k:'|<',l:'1',m:'|\\/|',n:'|\\|',o:'0',p:'|°',q:'(,)',r:'|2',
+    s:'5',t:'7',u:'|_|',v:'\\/',w:'\\^/',x:'><',y:'`/',z:'2',
+    ' ':' '
+  }
+  let robot = text.toLowerCase().split('').map(c => robotMap[c] || c).join('')
+  reply(`╔══〔 🤖 ROBOT TEXT 〕═════╗\n║ *Original:* ${text}\n║\n║ *Robot:*\n║ ${robot}\n╚═══════════════════════╝`)
+} break
+
+case 'transcript': {
+  await X.sendMessage(m.chat, { react: { text: '📝', key: m.key } })
+  if (!m.quoted || !/audio|video/.test(m.quoted.mimetype || '')) return reply(`╔══〔 📝 TRANSCRIPT 〕═════╗\n║ Reply to an audio/video with *${prefix}transcript*\n║ _Converts speech to text_\n╚═══════════════════════╝`)
+  try {
+    await reply('📝 _Transcribing audio, please wait..._')
+    let mediaBuf = await m.quoted.download()
+    if (!mediaBuf || mediaBuf.length < 100) throw new Error('Failed to download media')
+    let tmpPath = require('path').join(__dirname, 'tmp', `trans_${Date.now()}.ogg`)
+    fs.writeFileSync(tmpPath, mediaBuf)
+    let audioUrl = await CatBox(tmpPath)
+    fs.unlinkSync(tmpPath)
+    if (!audioUrl || !audioUrl.startsWith('http')) throw new Error('Upload failed')
+    // Use AssemblyAI free tier or GiftedTech
+    let trResult = null
+    try {
+      let _gr = await fetch(`https://api.giftedtech.co.ke/api/tools/speech2text?apikey=${_giftedKey()}&url=${encodeURIComponent(audioUrl)}`, { signal: AbortSignal.timeout(40000) })
+      let _gd = await _gr.json()
+      if (_gd.success && _gd.result) trResult = _gd.result
+    } catch {}
+    if (!trResult) throw new Error('Transcription service unavailable')
+    reply(`╔══〔 📝 TRANSCRIPT 〕═════╗\n║ 🎙️ *Audio transcribed:*\n║\n║ ${trResult.replace(/\n/g, '\n║ ')}\n╚═══════════════════════╝`)
+  } catch (e) { reply('❌ Transcript failed: ' + e.message) }
+} break
+
 
 //━━━━━━━━━━━━━━━━━━━━━━━━//
 default:
