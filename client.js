@@ -3350,7 +3350,6 @@ break
 //━━━━━━━━━━━━━━━━━━━━━━━━//
 // Post to bot's own WhatsApp status
 case 'tostatus':
-case 'poststatus':
 case 'mystatus': {
     try {
         // Build statusJidList from store contacts — targets them directly,
@@ -10100,9 +10099,7 @@ case 'shorten': {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // 💘  PICKUP LINE
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-case 'pickupline':
-case 'flirt':
-case 'rizz': {
+case 'pickupline': {
     await X.sendMessage(m.chat, { react: { text: '💘', key: m.key } })
     try {
         let r = await fetch(`https://api.giftedtech.co.ke/api/fun/pickupline?apikey=${_giftedKey()}`, { signal: AbortSignal.timeout(15000) })
@@ -11040,8 +11037,7 @@ case 'antimention': {
     reply(`╔══〔 📣  ANTI MENTION 〕══╗\n\n║ ${_amArg === 'on' ? '✅ *ENABLED* — mass mentions will be removed.' : '❌ *DISABLED* — mentions are allowed.'}\n╚═══════════════════════╝`)
 } break
 
-case 'clearwarn':
-case 'resetwarn': {
+case 'clearwarn': {
     await X.sendMessage(m.chat, { react: { text: '✅', key: m.key } })
     if (!m.isGroup) return reply(mess.OnlyGrup)
     if (!isAdmins && !isOwner) return reply(mess.admin)
