@@ -1,60 +1,60 @@
 const groupMenu = `
-╭─⊷ *👥 MEMBER MANAGEMENT*
-│
-│  • .add         →  [number]
-│  • .kick        →  @user
-│  • .remove      →  @user
-│  • .promote     →  @user
-│  • .demote      →  @user
-│  • .ban         →  @user
-│  • .unban       →  @user
-│  • .warn        →  @user [reason]
-│  • .unwarn      →  @user
-│  • .clearwarn   →  @user
+╔══〔 👥 MEMBER MANAGEMENT 〕══╗
+
+│  • .add       
+│  • .kick      
+│  • .remove    
+│  • .promote   
+│  • .demote    
+│  • .ban       
+│  • .unban     
+│  • .warn      
+│  • .unwarn    
+│  • .clearwarn 
 │  • .warnlist
-│  • .approve     →  [all/number]
-│  • .reject      →  [all/number]
-│  • .delete      →  reply msg
+│  • .approve   
+│  • .reject    
+│  • .delete    
 │  • .mute        • .unmute
 │  • .open        • .close
-│  • .kickall     →  remove all members
-│
-╰─⊷
+│  • .kickall   
 
-╭─⊷ *⚙️ GROUP SETTINGS*
-│
-│  • .setgname     →  [name]
-│  • .setgdesc     →  [description]
-│  • .setgpic      →  reply image
-│  • .link         →  group invite link
-│  • .revoke       →  reset invite link
-│  • .hidetag      →  silent mention all
-│  • .tagall       →  mention all members
-│  • .creategroup  →  [name] @users
-│  • .swgc         →  post group status
-│  • .getsw        →  save member status
-│  • .disp-1       →  disappear 1 day
-│  • .disp-7       →  disappear 7 days
-│  • .disp-90      →  disappear 90 days
-│  • .disp-off     →  disable disappearing
-│
-╰─⊷
+╚═══════════════════════╝
 
-╭─⊷ *🛡️ GROUP PROTECTION*
-│
-│  • .antilink          →  on/off
-│  • .antilinkgc        →  on/off (GC links)
-│  • .antiimage         →  on/off
-│  • .antivideo         →  on/off
-│  • .antimention       →  on/off
-│  • .antigroupstatus   →  on/off
+╔══〔 ⚙️ GROUP SETTINGS 〕══╗
+
+│  • .setgname   
+│  • .setgdesc   
+│  • .setgpic    
+│  • .link       
+│  • .revoke     
+│  • .hidetag    
+│  • .tagall     
+│  • .creategroup
+│  • .swgc       
+│  • .getsw      
+│  • .disp-1     
+│  • .disp-7     
+│  • .disp-90    
+│  • .disp-off   
+
+╚═══════════════════════╝
+
+╔══〔 🛡️ GROUP PROTECTION 〕══╗
+
+│  • .antilink        
+│  • .antilinkgc      
+│  • .antiimage       
+│  • .antivideo       
+│  • .antimention     
+│  • .antigroupstatus 
 │  • .antistatusmention →  on/warn/kick
-│  • .antibot           →  on/off
-│  • .antidelete        →  on/off
-│  • .welcome           →  on/off
-│  • .trash-group       →  nuke group name
-│
-╰─⊷
+│  • .antibot         
+│  • .antidelete      
+│  • .welcome         
+│  • .trash-group     
+
+╚═══════════════════════╝
 `
 
 module.exports = groupMenu
