@@ -10645,7 +10645,7 @@ case 'shorturl':
 case 'tinyurl':
 case 'shorten': {
     await X.sendMessage(m.chat, { react: { text: '🔗', key: m.key } })
-    if (!text || !text.startsWith('http')) return reply('╌════〔 🔗 URL SHORTENER 〕══╌\n\n║ *Usage:* ${prefix}tinyurl [url]\n║ Example: ${prefix}tinyurl https://google.com\n╚═══════════════════════╝')
+    if (!text || !text.startsWith('http')) return reply(`╌════〔 🔗 URL SHORTENER 〕══╌\n\n║ *Usage:* ${prefix}tinyurl [url]\n║ Example: ${prefix}tinyurl https://google.com\n╚═══════════════════════╝`)
     try {
         let _suUrl = null
         // Keith first
