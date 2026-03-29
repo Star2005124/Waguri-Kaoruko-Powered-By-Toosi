@@ -1378,8 +1378,7 @@ switch(command) {
 // help command
 case 'help': {
     await X.sendMessage(m.chat, { react: { text: '📋', key: m.key } })
-const helpText = `╭─⊷
-│  📋  *QUICK HELP GUIDE*\n╰─⊷
+const helpText = `╭─⊷ 📋  *QUICK HELP GUIDE*
 
   •  .menu  →  all commands
   •  .menu ai  →  AI & chat
@@ -1393,8 +1392,7 @@ const helpText = `╭─⊷
   •  .menu other  →  effects & fonts
   •  .menu football  →  sports & scores
 
-╭─⊷
-│  ⚡  *POPULAR COMMANDS*\n╰─⊷
+╭─⊷ ⚡  *POPULAR COMMANDS*
   •  .ai  →  [question]
   •  .sticker  →  reply media
   •  .play  →  [song name]
@@ -1403,8 +1401,7 @@ const helpText = `╭─⊷
   •  .toimage  →  sticker → image
   •  .save  →  reply any message
 
-╭─⊷
-│  📞  *CONTACT*\n╰─⊷
+╭─⊷ 📞  *CONTACT*
   •  wa.me/254748340864
   •  Telegram: @toosiitech
 
@@ -1431,8 +1428,7 @@ const otherMenu = require('./library/menulist/othermenu');
 const downloaderMenu = require('./library/menulist/downloadermenu');
 const footballMenu = require('./library/menulist/footballmenu');
 const textmakerMenu = `
-╭─⊷
-│  ✨  *TEXT EFFECTS*\n╰─⊷
+╭─⊷ ✨ *TEXT EFFECTS*
   •  .metallic  •  .ice
   •  .snow      •  .neon
   •  .fire      •  .glitch
@@ -1444,8 +1440,7 @@ const textmakerMenu = `
   •  .impressive   •  .leaves
   •  all accept → [text]
 
-╭─⊷
-│  🔤  *FONT CONVERTER*\n╰─⊷
+╭─⊷ 🔤 *FONT CONVERTER*
   •  .fonts  →  show all styles
   •  .allfonts  →  [text]
   •  .bold         •  .italic
@@ -1462,9 +1457,7 @@ const textmakerMenu = `
 
   let subcmd = args[0] ? args[0].toLowerCase() : '';
 
-  let infoBot = `╭─⊷
-│   ⚡  *TOOSII-XD ULTRA*
-│   _WhatsApp Multi-Device Bot_\n╰─⊷
+  let infoBot = `╭─⊷ ⚡ *TOOSII-XD ULTRA* · _WhatsApp Multi-Device Bot_
 
   👋 Hey *${pushname}*! ${waktuucapan}
 
@@ -1477,8 +1470,7 @@ const textmakerMenu = `
   •  ✈️  *Telegram*  →  t.me/toosiitech
   •  🔑 *Session*  →  ${global.sessionUrl}
 
-╭─⊷
-│  📂  *BROWSE BY CATEGORY*\n╰─⊷
+╭─⊷ 📂  *BROWSE BY CATEGORY*
   •  .menu ai  →  AI & Chat
   •  .menu tools  →  Utilities
   •  .menu owner  →  Bot Settings
@@ -1491,8 +1483,7 @@ const textmakerMenu = `
   •  .menu football  →  Sports & Scores
   •  .menu textmaker  →  Text Effects
 
-╭─⊷
-│  📜  *FULL COMMAND LIST*\n╰─⊷`.trim();
+╭─⊷ 📜  *FULL COMMAND LIST*`.trim();
 
   let menu = '';
 
@@ -2376,14 +2367,13 @@ Tips:
     // Split into chunks if lyrics are too long (WA message limit ~65KB)
     const _MAX_CHUNK = 3500
     const _lyrHeader =
-`╭─⊷
-│  🎵 *SONG LYRICS*\n╰─⊷
+`╭─⊷ 🎵 *SONG LYRICS*
 
   •  🎤 *Title*  →  ${_lyrResult.title}
   •  👤 *Artist*  →  ${_lyrResult.artist}${_lyrResult.album ? `\n  •  💿 *Album*  →  ${_lyrResult.album}` : ''}
   •  📡 *Source*  →  ${_lyrSource}
 
-┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+
 
 `
 
@@ -2441,9 +2431,7 @@ Tips:
 case 'owner':
 case 'creator': {
     await X.sendMessage(m.chat, { react: { text: '👑', key: m.key } })
-    await reply(`╭─⊷
-│   ⚡ *TOOSII-XD ULTRA*
-│   _WhatsApp Multi-Device Bot_\n╰─⊷
+    await reply(`╭─⊷ ⚡ *TOOSII-XD ULTRA* · _WhatsApp Multi-Device Bot_
 
   •  🧑‍💻 *Name*  →  ${global.ownername || 'Toosii Tech'}
   •  ✈️  *Telegram*  →  @toosiitech
@@ -2455,7 +2443,7 @@ case 'creator': {
   •  +254746677793
   •  +254788781373
 
-┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+
 _👇 Tap a contact card below to reach the owner_`)
     const namaown = global.ownername || 'Toosii Tech'
     const ownerNumbers = ['254748340864', '254746677793', '254788781373']
@@ -2475,9 +2463,7 @@ break
 case 'infobot':
 case 'botinfo': {
     await X.sendMessage(m.chat, { react: { text: '🤖', key: m.key } })
-  const botInfo = `╭─⊷
-│   ⚡ *TOOSII-XD ULTRA*
-│   _WhatsApp Multi-Device Bot_\n╰─⊷
+  const botInfo = `╭─⊷ ⚡ *TOOSII-XD ULTRA* · _WhatsApp Multi-Device Bot_
 
   •  📛 *Name*  →  ${botname}
   •  👑 *Owner*  →  ${ownername}
@@ -2490,7 +2476,7 @@ case 'botinfo': {
   •  ✈️  *Telegram*  →  @toosiitech
   •  🔑 *Session*  →  ${global.sessionUrl}
 
-┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+
 _⚡ Powered by Toosii Tech — wa.me/254748340864_`
   reply(botInfo)
 }
@@ -2633,7 +2619,7 @@ break
 case 'take':
 case 'steal': {
     await X.sendMessage(m.chat, { react: { text: '🎨', key: m.key } })
-    if (!quoted) return reply(`Reply to a *sticker* with *${prefix + command}* to re-send it with your pack info.\n\nUsage: *${prefix + command} [packname|author]*\nExample: *${prefix}take MyPack|MyName*`)
+    if (!quoted) return reply(`╭─⊷ 🎨 *TAKE STICKER*\n\n  •  Reply to a sticker with *${prefix + command}*\n  •  Usage: *${prefix + command} [packname|author]*\n  •  Example: ${prefix}take MyPack|MyName`)
     if (mime !== 'image/webp') return reply(`Reply to a *sticker* to use *${prefix + command}*`)
 
     let _tkPack = global.packname || 'XD Ultra'
@@ -2921,7 +2907,7 @@ case 'statusreact': {
     }
 
     if (_arAction === 'emoji') {
-        if (!_arVal) return reply(`❌ Usage: *${prefix}als emoji ❤️*`)
+        if (!_arVal) return reply(`╭─⊷ ❤️ *AUTO LIKE STATUS*\n\n  •  Usage: *${prefix}als emoji [emoji]*\n  •  Example: ${prefix}als emoji ❤️`)
         _ar.fixedEmoji = _arVal
         _ar.mode = 'fixed'
         global.autoLikeEmoji = _arVal
@@ -2929,14 +2915,14 @@ case 'statusreact': {
     }
 
     if (_arAction === 'add') {
-        if (!_arVal) return reply(`❌ Usage: *${prefix}als add 🔥*`)
+        if (!_arVal) return reply(`╭─⊷ 🔥 *AUTO LIKE STATUS*\n\n  •  Usage: *${prefix}als add [emoji]*\n  •  Example: ${prefix}als add 🔥`)
         if (_ar.reactions.includes(_arVal)) return reply(`⚠️ *${_arVal}* already in pool.`)
         _ar.reactions.push(_arVal)
         return reply(`✅ *${_arVal}* added.\n\n${_ar.reactions.join(' ')}`)
     }
 
     if (_arAction === 'remove') {
-        if (!_arVal) return reply(`❌ Usage: *${prefix}als remove 🔥*`)
+        if (!_arVal) return reply(`╭─⊷ 🗑️ *AUTO LIKE STATUS*\n\n  •  Usage: *${prefix}als remove [emoji]*\n  •  Example: ${prefix}als remove 🔥`)
         const _ri = _ar.reactions.indexOf(_arVal)
         if (_ri === -1) return reply(`❌ *${_arVal}* not in pool.`)
         _ar.reactions.splice(_ri, 1)
@@ -2982,7 +2968,7 @@ case 'statusreact': {
                 return reply(`✅ *Video posted to status!*\n  •  Visible to ${_jidList.length} contact(s)`)
             }
         }
-        if (!_postText) return reply(`❌ Usage:\n• *${prefix}als post [text]* — post text to status\n• Reply to an image/video with *${prefix}als post* — post that media to status`)
+        if (!_postText) return reply(`╭─⊷ 📤 *POST TO STATUS*\n\n  •  ${prefix}als post [text] — text status\n  •  Reply to image/video with ${prefix}als post — media status`)
         await X.sendMessage('status@broadcast', { text: _postText }, { statusJidList: _jidList })
         return reply(`✅ *Posted to status!*\n  •  Visible to ${_jidList.length} contact(s)`)
     }
@@ -3046,8 +3032,7 @@ let replyState = global.autoReplyStatus ? `✅ ON ("${global.autoReplyStatusMsg}
 let fwdState = global.statusToGroup ? '✅ ON' : '❌ OFF'
 let fwdGroup = global.statusToGroup ? global.statusToGroup : 'Not set'
 let asmState = global.antiStatusMention ? `✅ ON (${(global.antiStatusMentionAction||'warn').toUpperCase()})` : '❌ OFF'
-reply(`╭─⊷
-│  📊 *STATUS TOOLS CONFIG*\n╰─⊷
+reply(`╭─⊷ 📊 *STATUS TOOLS CONFIG*
 
   •  👀 *Auto View*  →  ${viewState}
   •  ❤️  *Auto Like*  →  ${likeState}
@@ -3055,7 +3040,7 @@ reply(`╭─⊷
   •  📤 *Forward*  →  ${fwdState}
   •  🛡️  *Anti-Mention*  →  ${asmState}
 
-┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+
   ⚙️  *Commands*
   •  ${prefix}autoviewstatus
   •  ${prefix}autolikestatus [emoji/off]
@@ -3283,7 +3268,7 @@ break
 case 'join': {
     await X.sendMessage(m.chat, { react: { text: '🔗', key: m.key } })
 if (!isOwner) return reply(mess.OnlyOwner)
-if (!q) return reply(`*Usage:* ${prefix}join [group invite link]\n\n*Example:*\n${prefix}join https://chat.whatsapp.com/AbCdEfGhIjK`)
+if (!q) return reply(`╭─⊷ 🔗 *JOIN GROUP*\n\n  •  Usage: *${prefix}join [invite link]*\n  •  Example: ${prefix}join https://chat.whatsapp.com/...`)
 let linkMatch = q.match(/chat\.whatsapp\.com\/([0-9A-Za-z]{20,24})/)
 if (!linkMatch) return reply('Invalid group invite link. Please send a valid WhatsApp group link.')
 try {
@@ -3360,7 +3345,7 @@ case 'botname': {
     await X.sendMessage(m.chat, { react: { text: '✏️', key: m.key } })
 if (!isOwner) return reply(mess.OnlyOwner)
 let newName = args.join(' ').trim()
-if (!newName) return reply(`*Current Bot Name:* ${global.botname}\n\nUsage: ${prefix}botname [new name]`)
+if (!newName) return reply(`╭─⊷ 🤖 *BOT NAME*\n\n  •  Current: *${global.botname}*\n  •  Usage: *${prefix}botname [new name]*`)
 global.botname = newName
 reply(`✅ *Bot name updated*  →  *${newName}*`)
 }
@@ -3371,7 +3356,7 @@ case 'author': {
     await X.sendMessage(m.chat, { react: { text: '✏️', key: m.key } })
 if (!isOwner) return reply(mess.OnlyOwner)
 let newAuthor = args.join(' ').trim()
-if (!newAuthor) return reply(`*Current Sticker Author:* ${global.author}\n\nUsage: ${prefix}author [name]`)
+if (!newAuthor) return reply(`╭─⊷ ✏️ *STICKER AUTHOR*\n\n  •  Current: *${global.author}*\n  •  Usage: *${prefix}author [new name]*`)
 global.author = newAuthor
 reply(`✅ *Sticker author updated*  →  *${newAuthor}*`)
 }
@@ -3382,7 +3367,7 @@ case 'packname': {
     await X.sendMessage(m.chat, { react: { text: '✏️', key: m.key } })
 if (!isOwner) return reply(mess.OnlyOwner)
 let newPack = args.join(' ').trim()
-if (!newPack) return reply(`*Current Sticker Pack:* ${global.packname}\n\nUsage: ${prefix}packname [name]`)
+if (!newPack) return reply(`╭─⊷ 📦 *STICKER PACK*\n\n  •  Current: *${global.packname}*\n  •  Usage: *${prefix}packname [new name]*`)
 global.packname = newPack
 reply(`✅ *Sticker pack updated*  →  *${newPack}*`)
 }
@@ -3443,9 +3428,7 @@ case 'settz': {
         const _cur = global.botTimezone || 'Africa/Nairobi'
         const _now = moment().tz(_cur)
         return reply(
-            `╭─⊷\n` +
-            `│  🕐 *TIMEZONE*\n` +
-            `╰─⊷\n\n` +
+            `╭─⊷ 🕐 *TIMEZONE*\n\n` +
             `  •  🌍 *Current*  →  ${_cur}\n` +
             `  •  🕐 *Time*  →  ${_now.format('HH:mm:ss')}\n` +
             `  •  📅 *Date*  →  ${_now.format('DD/MM/YYYY')}\n` +
@@ -3465,9 +3448,7 @@ case 'settz': {
         global.botTimezone = _aliasMatch
         const _now = moment().tz(_aliasMatch)
         return reply(
-            `╭─⊷\n` +
-            `│  🕐 *TIMEZONE*\n` +
-            `╰─⊷\n\n` +
+            `╭─⊷ 🕐 *TIMEZONE*\n\n` +
             `  ✅ *Updated!*\n\n` +
             `  •  🌍 *Timezone*  →  ${_aliasMatch}\n` +
             `  •  🕐 *Time*  →  ${_now.format('HH:mm:ss')}\n` +
@@ -3481,9 +3462,7 @@ case 'settz': {
         global.botTimezone = _tzArg
         const _now = moment().tz(_tzArg)
         return reply(
-            `╭─⊷\n` +
-            `│  🕐 *TIMEZONE*\n` +
-            `╰─⊷\n\n` +
+            `╭─⊷ 🕐 *TIMEZONE*\n\n` +
             `  ✅ *Updated!*\n\n` +
             `  •  🌍 *Timezone*  →  ${_tzArg}\n` +
             `  •  🕐 *Time*  →  ${_now.format('HH:mm:ss')}\n` +
@@ -3497,9 +3476,7 @@ case 'settz': {
     const _matches = _allZones.filter(z => z.toLowerCase().includes(_query)).slice(0, 20)
     if (_matches.length) {
         return reply(
-            `╭─⊷\n` +
-            `│  🕐 *TIMEZONE*\n` +
-            `╰─⊷\n\n` +
+            `╭─⊷ 🕐 *TIMEZONE*\n\n` +
             `  ❌ *"${_tzArg}"* not found.\n` +
             `  Did you mean one of these?\n\n` +
             _matches.map((z, i) => {
@@ -3516,9 +3493,7 @@ case 'settz': {
     const _continent = _tzArg.split('/')[0] || ''
     const _contSearch = _allZones.filter(z => z.toLowerCase().startsWith(_continent.toLowerCase())).slice(0, 10)
     reply(
-        `╭─⊷\n` +
-        `│  🕐 *TIMEZONE*\n` +
-        `╰─⊷\n\n` +
+        `╭─⊷ 🕐 *TIMEZONE*\n\n` +
         `  ❌ *"${_tzArg}"* is not a valid timezone.\n\n` +
         (_contSearch.length ? `  *${_continent} timezones:*\n` + _contSearch.map(z => `  • ${z}`).join('\n') + '\n\n' : '') +
         `  🔍 Search: ${prefix}timezone ${_continent || 'Africa'}\n` +
@@ -3556,7 +3531,7 @@ case 'setboturl': {
     await X.sendMessage(m.chat, { react: { text: '🔗', key: m.key } })
 if (!isOwner) return reply(mess.OnlyOwner)
 let newUrl = args.join(' ').trim()
-if (!newUrl) return reply(`*Current Bot URL:* ${global.botUrl || global.wagc}\n\nUsage: ${prefix}boturl [url]`)
+if (!newUrl) return reply(`╭─⊷ 🌐 *BOT URL*\n\n  •  Current: *${global.botUrl || global.wagc}*\n  •  Usage: *${prefix}boturl [url]*`)
 global.botUrl = newUrl
 global.wagc = newUrl
 reply(`✅ *Bot URL updated*  →  *${newUrl}*`)
@@ -3753,9 +3728,7 @@ case 'antidelete':
           const _gcSt = _ad.gc.enabled ? _modeLabel(_ad.gc.mode) : '❌ OFF'
           const _pmSt = _ad.pm.enabled ? _modeLabel(_ad.pm.mode) : '❌ OFF'
           return (
-              `╭─⊷\n` +
-              `│  🗑️  *ANTI-DELETE*\n` +
-              `╰─⊷\n\n` +
+              `╭─⊷ 🗑️ *ANTI-DELETE*\n\n` +
               `  •  👥 *Groups*  →  ${_gcSt}\n` +
               `  •  💬 *PMs*  →  ${_pmSt}\n` +
               `  •  📈 *Tracked*  →  ${_ad.stats.total} msgs\n` +
@@ -3846,9 +3819,7 @@ case 'antidelete':
       // ── stats ──────────────────────────────────────────────────────────
       if (_arg === 'stats') {
           return reply(
-              `╭─⊷\n` +
-              `│  📊 *ANTI-DELETE STATS*\n` +
-              `╰─⊷\n\n` +
+              `╭─⊷ 📊 *ANTI-DELETE STATS*\n\n` +
               `  •  👥 *Groups*  →  ${_ad.gc.enabled ? _modeLabel(_ad.gc.mode) : '❌ OFF'}\n` +
               `  •  💬 *PMs*  →  ${_ad.pm.enabled ? _modeLabel(_ad.pm.mode) : '❌ OFF'}\n` +
               `  •  📈 *Tracked*  →  ${_ad.stats.total}\n` +
@@ -3999,8 +3970,7 @@ case 'botconfig': {
 if (!isOwner) return reply(mess.OnlyOwner)
 const on = '✅ ON'
 const off = '❌ OFF'
-let settingsText = `╭─⊷
-│  ⚙️  *BOT SETTINGS*\n╰─⊷
+let settingsText = `╭─⊷ ⚙️  *BOT SETTINGS*
 
   •  📛 *Name*  →  ${global.botname}
   •  🏷️  *Version*  →  v${global.botver}
@@ -4012,7 +3982,7 @@ let settingsText = `╭─⊷
   •  📦 *Pack*  →  ${global.packname}
   •  ✍️  *Author*  →  ${global.author}
 
-┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+
   🤖 *Auto Features*
   •  👁️  Auto Read  →  ${global.autoRead ? on : off}
   •  📝 Auto Bio  →  ${global.autoBio ? on : off}
@@ -4069,8 +4039,7 @@ const run = (cmd, cwd) => new Promise(resolve => {
     })
 })
 
-await reply(`╭─⊷
-│  🔃 *CHECKING FOR UPDATES*\n╰─⊷
+await reply(`╭─⊷ 🔃 *CHECKING FOR UPDATES*
 
   •  📦 ${repoUrl}`)
 
@@ -4137,8 +4106,7 @@ try {
     // ── Step 9: Done ──────────────────────────────────────────────────
     const newCommit = await run('git rev-parse HEAD')
     const newHash = newCommit.stdout.slice(0, 7)
-    await reply(`╭─⊷
-│  ✅ *BOT UPDATED*\n╰─⊷
+    await reply(`╭─⊷ ✅ *BOT UPDATED*
 
   •  🌿 *Branch*  →  ${branch}
   •  🔖 *Commits*  →  ${localHash} → ${newHash}
@@ -4280,7 +4248,7 @@ break
                                 } else if (text) {
                                         addTarget = text.replace(/\D/g, '') + '@s.whatsapp.net';
                                 }
-                                if (!addTarget) return reply(`📌 *Usage:* ${prefix + command} @user or number\n\n_Example: ${prefix + command} 254xxxxxxxxx_`);
+                                if (!addTarget) return reply(`╭─⊷ ➕ *ADD USER*\n\n  •  Usage: *${prefix + command} @user*\n  •  Or type the number: ${prefix + command} 254xxxxxxxxx`);
                                 try {
                                         let res = await X.groupParticipantsUpdate(m.chat, [addTarget], 'add');
                                         for (let i of res) {
@@ -4324,7 +4292,7 @@ break
                                 if (!isOwner && !isAdmins) return reply(mess.admin);
                                 if (!isBotAdmins) return reply(mess.botAdmin);
                                 let kickTarget = (m.mentionedJid && m.mentionedJid[0]) ? m.mentionedJid[0] : m.quoted ? m.quoted.sender : text ? text.replace(/[^0-9]/g, '') + '@s.whatsapp.net' : null;
-                                if (!kickTarget) return reply(`📌 *Usage:* ${prefix + command} @user or reply to their message`);
+                                if (!kickTarget) return reply(`╭─⊷ 👢 *KICK USER*\n\n  •  Usage: *${prefix + command} @user*\n  •  Or reply to their message`)
                                 let kickNum = kickTarget.split('@')[0]
                                 let isTargetOwner = owner.some(o => kickTarget.includes(o)) || (typeof X.areJidsSameUser === 'function' && owner.some(o => X.areJidsSameUser(kickTarget, o + '@s.whatsapp.net')))
                                 if (isTargetOwner) return reply('🛡️ Cannot remove the bot owner.');
@@ -4345,7 +4313,7 @@ break
                         case 'del':
                         case 'delete': {
     await X.sendMessage(m.chat, { react: { text: '🗑️', key: m.key } })
-                                if (!m.quoted) return reply(`*Usage:* Reply to a message with ${prefix + command} to delete it.`);
+                                if (!m.quoted) return reply(`╭─⊷ 🗑️ *DELETE*\n\n  •  Reply to any message with *${prefix + command}* to delete it`);
                                 let quotedKey = m.quoted.fakeObj ? { ...m.quoted.fakeObj.key } : { remoteJid: m.quoted.chat || m.chat, fromMe: m.quoted.fromMe || false, id: m.quoted.id }
                                 if (m.isGroup && !quotedKey.participant) {
                                         quotedKey.participant = m.quoted.sender
@@ -4371,7 +4339,7 @@ break
                                 if (!isOwner && !isAdmins) return reply(mess.admin);
                                 if (!isBotAdmins) return reply(mess.botAdmin);
                                 let warnUser = (m.mentionedJid && m.mentionedJid[0]) ? m.mentionedJid[0] : m.quoted ? m.quoted.sender : text ? text.replace(/[^0-9]/g, '') + '@s.whatsapp.net' : null;
-                                if (!warnUser) return reply(`📌 *Usage:* ${prefix}warn @user [reason]\n_Reply to a message or mention someone._`);
+                                if (!warnUser) return reply(`╭─⊷ ⚠️ *WARN USER*\n\n  •  Usage: *${prefix}warn @user [reason]*\n  •  Or reply to a message`);
                                 let isWarnOwner = owner.some(o => warnUser.includes(o)) || (typeof X.areJidsSameUser === 'function' && owner.some(o => X.areJidsSameUser(warnUser, o + '@s.whatsapp.net')))
                                 if (isWarnOwner) return reply('🛡️ Cannot warn the bot owner.');
                                 let warnReason = args.slice(m.mentionedJid && m.mentionedJid[0] ? 1 : 0).join(' ') || 'No reason given';
@@ -4412,7 +4380,7 @@ break
                                 if (!m.isGroup) return reply(mess.OnlyGrup);
                                 if (!isOwner && !isAdmins) return reply(mess.admin);
                                 let uwUser = (m.mentionedJid && m.mentionedJid[0]) ? m.mentionedJid[0] : m.quoted ? m.quoted.sender : text ? text.replace(/[^0-9]/g, '') + '@s.whatsapp.net' : null;
-                                if (!uwUser) return reply(`📌 *Usage:* ${prefix}unwarn @user\n_Reply to a message or mention someone._`);
+                                if (!uwUser) return reply(`╭─⊷ ✅ *UNWARN USER*\n\n  •  Usage: *${prefix}unwarn @user*\n  •  Or reply to a message`);
                                 let uwDbPath = path.join(__dirname, 'database', 'warnings.json');
                                 let uwDb = {};
                                 try { uwDb = JSON.parse(fs.readFileSync(uwDbPath, 'utf-8')); } catch { uwDb = {}; }
@@ -4449,7 +4417,7 @@ break
                                     });
                                     warnListText += `│\n`;
                                 }
-                                warnListText += `╰━━━━━━━━━━━━━━━━━╯`
+                                warnListText += `╰─⊷`
                                 X.sendMessage(from, { text: warnListText, mentions: warnMentions }, { quoted: m });
                         }
                         break;
@@ -4460,7 +4428,7 @@ break
                                 if (!isOwner && !isAdmins) return reply(mess.admin)
                                 if (!isBotAdmins) return reply(mess.botAdmin)
                                 let promoteTarget = (m.mentionedJid && m.mentionedJid[0]) ? m.mentionedJid[0] : m.quoted ? m.quoted.sender : text ? text.replace(/[^0-9]/g, '') + '@s.whatsapp.net' : null
-                                if (!promoteTarget) return reply(`📌 *Usage:* ${prefix + command} @user or reply to their message`)
+                                if (!promoteTarget) return reply(`╭─⊷ ⬆️ *PROMOTE*\n\n  •  Usage: *${prefix + command} @user*\n  •  Or reply to their message`)
                                 try {
                                     await X.groupParticipantsUpdate(m.chat, [promoteTarget], 'promote')
                                     let promoteNum = promoteTarget.split('@')[0]
@@ -4482,7 +4450,7 @@ break
                                 if (!isOwner && !isAdmins) return reply(mess.admin)
                                 if (!isBotAdmins) return reply(mess.botAdmin)
                                 let demoteTarget = (m.mentionedJid && m.mentionedJid[0]) ? m.mentionedJid[0] : m.quoted ? m.quoted.sender : text ? text.replace(/[^0-9]/g, '') + '@s.whatsapp.net' : null
-                                if (!demoteTarget) return reply(`📌 *Usage:* ${prefix + command} @user or reply to their message`)
+                                if (!demoteTarget) return reply(`╭─⊷ ⬇️ *DEMOTE*\n\n  •  Usage: *${prefix + command} @user*\n  •  Or reply to their message`)
                                 let demoteNum = demoteTarget.split('@')[0]
                                 let isDemoteOwner = owner.some(o => demoteTarget.includes(o)) || (typeof X.areJidsSameUser === 'function' && owner.some(o => X.areJidsSameUser(demoteTarget, o + '@s.whatsapp.net')))
                                 if (isDemoteOwner) return reply('🛡️ Cannot demote the bot owner.')
@@ -5689,7 +5657,7 @@ case 'tebak': {
   const kategori = args[0]?.toLowerCase();
   if (!kategori) {
     const daftar = kategoriUnik.join(', ');
-    return reply(`📚 Usage: .tebak [category]\nExample: .tebak lagu\n\nAvailable categories:\n${daftar}`);
+    return reply(`╭─⊷ 📚 *TEBAK*\n\n  •  Usage: *.tebak [category]*\n  •  Example: .tebak lagu\n\n${daftar}`);
   }
 
   if (!kategoriUnik.includes(kategori)) {
@@ -5811,8 +5779,7 @@ async function getServerInfo() {
 
   const latensi = (Date.now() - start)
 
-  const responseText = `╭─⊷
-│  🤖 *${global.botname || 'TOOSII-XD ULTRA'}*\n╰─⊷
+  const responseText = `╭─⊷ 🤖 *${global.botname || 'TOOSII-XD ULTRA'}*
   •  🟢 *Bot uptime*  →  ${runtime(process.uptime())}
   •  🖥️  *Server uptime*  →  ${runtime(os.uptime())}
 
@@ -5825,7 +5792,7 @@ async function getServerInfo() {
   •  🔴 *RAM Used*  →  ${formatp(usedMem)}
   •  🟢 *RAM Free*  →  ${formatp(freeMem)}${storageText ? `
 
-┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+
 💿 *Storage*
 ${storageText.replace(/\*STORAGE\*\n/,'').replace(/• /g,'  •  ')}` : ''}
 
@@ -6179,7 +6146,7 @@ case 'sudo': {
     await X.sendMessage(m.chat, { react: { text: '👑', key: m.key } })
 if (!isOwner) return reply(mess.OnlyOwner)
 let sudoNum = (args[0] || '').replace(/[^0-9]/g, '')
-if (!sudoNum) return reply(`*Sudo Users:* ${global.owner.join(', ')}\n\nUsage:\n${prefix}sudo add [number]\n${prefix}sudo remove [number]`)
+if (!sudoNum) return reply(`╭─⊷ 🛡️ *SUDO USERS*\n\n  •  Current: ${global.owner.join(', ')}\n  •  ${prefix}sudo add [number]\n  •  ${prefix}sudo remove [number]`)
 let sudoAction = args[0]?.toLowerCase()
 if (sudoAction === 'add' && args[1]) {
 let num = args[1].replace(/[^0-9]/g, '')
@@ -6197,7 +6164,7 @@ case 'setowner': {
     await X.sendMessage(m.chat, { react: { text: '👑', key: m.key } })
 if (!isOwner) return reply(mess.OnlyOwner)
 let newOwner = (args[0] || '').replace(/[^0-9]/g, '')
-if (!newOwner) return reply(`*Current Owner Number:* ${global.ownerNumber}\nUsage: ${prefix}setowner [number]`)
+if (!newOwner) return reply(`╭─⊷ 👑 *SET OWNER*\n\n  •  Current: *${global.ownerNumber}*\n  •  Usage: *${prefix}setowner [number]*`)
 global.ownerNumber = newOwner
 if (!global.owner.includes(newOwner)) global.owner.push(newOwner)
 reply(`✅ *Owner updated*  →  ${newOwner}`)
@@ -6282,7 +6249,7 @@ case 'ban': {
 if (!m.isGroup) return reply(mess.OnlyGrup)
 if (!isAdmins && !isOwner) return reply(mess.admin)
 let banUser = (m.mentionedJid && m.mentionedJid[0]) ? m.mentionedJid[0] : m.quoted ? m.quoted.sender : text ? text.replace(/[^0-9]/g, '') + '@s.whatsapp.net' : null
-if (!banUser) return reply(`📌 *Usage:* ${prefix}ban @user`)
+if (!banUser) return reply(`╭─⊷ 🚫 *BAN USER*\n\n  •  Usage: *${prefix}ban @user*`)
 let isBanOwner = owner.some(o => banUser.includes(o)) || (typeof X.areJidsSameUser === 'function' && owner.some(o => X.areJidsSameUser(banUser, o + '@s.whatsapp.net')))
 if (isBanOwner) return reply('🛡️ Cannot ban the bot owner.')
 let banUsers = loadUsers()
@@ -6297,7 +6264,7 @@ case 'unban': {
 if (!m.isGroup) return reply(mess.OnlyGrup)
 if (!isAdmins && !isOwner) return reply(mess.admin)
 let unbanUser = (m.mentionedJid && m.mentionedJid[0]) ? m.mentionedJid[0] : m.quoted ? m.quoted.sender : text ? text.replace(/[^0-9]/g, '') + '@s.whatsapp.net' : null
-if (!unbanUser) return reply(`📌 *Usage:* ${prefix}unban @user`)
+if (!unbanUser) return reply(`╭─⊷ ✅ *UNBAN USER*\n\n  •  Usage: *${prefix}unban @user*`)
 let usersDb = loadUsers()
 if (usersDb[unbanUser]) { usersDb[unbanUser].banned = false; saveUsers(usersDb) }
 X.sendMessage(from, { text: `✅ *@${unbanUser.split('@')[0]} has been unbanned.*`, mentions: [unbanUser] }, { quoted: m })
@@ -6370,7 +6337,7 @@ case 'setgdesc': {
 if (!m.isGroup) return reply(mess.OnlyGrup)
 if (!isAdmins && !isOwner) return reply(mess.admin)
 if (!isBotAdmins) return reply(mess.botAdmin)
-if (!text) return reply(`📌 *Usage:* ${prefix}setgdesc [new description]`)
+if (!text) return reply(`╭─⊷ ✏️ *SET GROUP DESC*\n\n  •  Usage: *${prefix}setgdesc [description]*`)
 try {
 await X.groupUpdateDescription(m.chat, text)
 reply('✅ *Group description updated.*')
@@ -6509,7 +6476,7 @@ X.sendMessage(from, { text: tagText, mentions }, { quoted: m })
 case 'tag': {
     await X.sendMessage(m.chat, { react: { text: '📢', key: m.key } })
 if (!m.isGroup) return reply(mess.OnlyGrup)
-if (!text) return reply(`📌 *Usage:* ${prefix}tag [message]`)
+if (!text) return reply(`╭─⊷ 📣 *TAG ALL*\n\n  •  Usage: *${prefix}tag [message]*`)
 let tagMentions = participants.map(p => p.id).filter(id => !id.endsWith('@newsletter'))
 X.sendMessage(from, { text: text, mentions: tagMentions }, { quoted: m })
 } break
@@ -6536,7 +6503,7 @@ X.sendMessage(from, { text: tnaText, mentions: nonAdmins }, { quoted: m })
 case 'mention': {
     await X.sendMessage(m.chat, { react: { text: '📢', key: m.key } })
 if (!m.isGroup) return reply(mess.OnlyGrup)
-if (!text) return reply(`📌 *Usage:* ${prefix}mention [message]`)
+if (!text) return reply(`╭─⊷ 📢 *MENTION ALL*\n\n  •  Usage: *${prefix}mention [message]*`)
 let mentionIds = participants.map(p => p.id).filter(id => !id.endsWith('@newsletter'))
 X.sendMessage(from, { text: text, mentions: mentionIds }, { quoted: m })
 } break
@@ -6678,9 +6645,7 @@ await X.groupLeave(m.chat)
 case 'pair': {
       await X.sendMessage(m.chat, { react: { text: '🔗', key: m.key } })
       await reply(
-          `╭─⊷\n` +
-          `│  🔗 *PAIRING SITE*\n` +
-          `╰─⊷\n\n` +
+          `╭─⊷ 🔗 *PAIRING SITE*\n\n` +
           `  Click the link below to get your pairing code:\n\n` +
           `  🌐 https://toosii-xd-ultra.onrender.com/pair\n\n` +
           `  •  Enter your WhatsApp number\n` +
@@ -7287,9 +7252,7 @@ case 'film':
 case 'series': {
     await X.sendMessage(m.chat, { react: { text: '🎬', key: m.key } })
     if (!text) return reply(
-        `╭─⊷\n` +
-        `│  🎬 *MOVIE / SERIES*\n` +
-        `╰─⊷\n\n` +
+        `╭─⊷ 🎬 *MOVIE / SERIES*\n\n` +
         `  Search any movie or TV series and get info + stream links.\n\n` +
         `  •  *${prefix}movie* Inception\n` +
         `  •  *${prefix}movie* Breaking Bad\n` +
@@ -7329,9 +7292,7 @@ case 'series': {
         const _xcIsTV   = !_xcMovies[0] && !!_xcTV[0]
 
         if (!_tmdbAll.length && !_xcPick) return reply(
-            `╭─⊷\n` +
-            `│  🎬 *MOVIE SEARCH*\n` +
-            `╰─⊷\n\n` +
+            `╭─⊷ 🎬 *MOVIE SEARCH*\n\n` +
             `  ❌ *Not found:* _${text}_\n\n` +
             `  _Try a different spelling or add the year._\n` +
             `  _Example:_ *${prefix}movie Inception 2010*`
@@ -7375,9 +7336,7 @@ case 'series': {
         const _vipFiles  = _files.filter(f =>  f.vip_only && f.path && f.path.startsWith('http'))
         const _allPlayable = [..._freeFiles, ..._vipFiles]
 
-        let _cap  = `╭─⊷\n`
-            _cap += `│  ${_icon} *${_tStr} INFO*\n`
-            _cap += `╰─⊷\n\n`
+        let _cap  = `╭─⊷ ${_icon} *${_tStr} INFO*\n\n`
             _cap += `  *${_title2}*  _(${_yr2 || '?'})_\n\n`
             _cap += `  •  🎭 *Genre*  →  ${_genres}\n`
             _cap += `  •  ⏱️  *Runtime*  →  ${_rt}\n`
@@ -7393,10 +7352,8 @@ case 'series': {
 
         // Stream section
         if (_allPlayable.length) {
-            _cap += `\n━━━━━━━━━━━━━━━━━━━━━━\n`
-            _cap += `📥 *STREAM / DOWNLOAD LINKS*\n`
-            if (_isTV) _cap += `_Season 1, Episode 1 — use ${prefix}stream for other episodes_\n`
-            _cap += `━━━━━━━━━━━━━━━━━━━━━━\n`
+            _cap += `\n├─⊷ 📥 *STREAM / DOWNLOAD LINKS*\n`
+            if (_isTV) _cap += `  _Season 1, Ep 1 — use ${prefix}stream for other episodes_\n`
             for (const _f of _allPlayable.slice(0, 5)) {
                 _cap += `\n🎞️ *${_f.quality || '?'}* ${_f.format ? `(${_f.format.toUpperCase()})` : ''} — ${_f.size || '?'}\n`
                 _cap += `${_f.path}\n`
@@ -7405,8 +7362,7 @@ case 'series': {
             _cap += `\n_Open links in VLC / MX Player / browser to watch_`
         } else if (_xcPick) {
             // Has xcasper data but no free stream links (VIP only or not yet available)
-            _cap += `\n━━━━━━━━━━━━━━━━━━━━━━\n`
-            _cap += `📡 *STREAM*\n`
+            _cap += `\n├─⊷ 📡 *STREAM*\n`
             _cap += `_Streams for this title require VIP access on ShowBox._\n`
             if (_isTV) {
                 _cap += `\nUse *${prefix}stream ${_xcPick.id} tv [season] [ep]* to check specific episodes`
@@ -7564,9 +7520,7 @@ if (!auddData?.result) {
 let r = auddData.result
 // Build response
 let lines = []
-lines.push(`╭─⊷`)
-lines.push(`┃  🎵 *SONG IDENTIFIED!*`)
-lines.push(`┗━━━━━━━━━━━━━━━━━━━━━━━┛`)
+lines.push(`╭─⊷ 🎵 *SONG IDENTIFIED!*`)
 lines.push(``)
 lines.push(`🎤 *Title:*   ${r.title || 'Unknown'}`)
 lines.push(`👤 *Artist:*  ${r.artist || 'Unknown'}`)
@@ -7591,7 +7545,7 @@ if (r.apple_music?.previews?.[0]?.url) {
     lines.push(`🔊 *Preview available*`)
     lines.push(``)
 }
-lines.push(`━━━━━━━━━━━━━━━━━━━━━━━`)
+lines.push(`╰─⊷`)
 lines.push(`_Powered by TOOSII-XD ULTRA_`)
 let replyText = lines.join('\n')
 await reply(replyText)
@@ -8202,7 +8156,7 @@ case 'insult': {
   case 'tellstory':
   case 'generatestory': {
       await X.sendMessage(m.chat, { react: { text: '📖', key: m.key } })
-      if (!text) return reply(`📖 *Story Generator*\n\nUsage: ${prefix}story [topic or theme]\nExamples:\n• ${prefix}story a hero saves the world\n• ${prefix}story two friends lost in the forest`)
+      if (!text) return reply(`╭─⊷ 📖 *STORY GENERATOR*\n\n  •  Usage: *${prefix}story [topic or theme]*\n  •  Example: ${prefix}story a hero saves the world`)
       try {
           await reply('📖 _Writing your story, please wait..._')
           let _epS = await fetch(`https://eliteprotech-apis.zone.id/story?text=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(30000) })
@@ -8644,7 +8598,7 @@ case 'setfont': {
 if (!isOwner) return reply(mess.OnlyOwner)
 const _validFonts = ['bold','italic','bolditalic','mono','serif','serifbold','serifitalic','scriptfont','scriptbold','fraktur','frakturbold','doublestruck','smallcaps','bubble','bubblebold','square','squarebold','wide','upsidedown','strikethrough','underline','aesthetic','tiny','cursive','gothic','medieval','oldeng','inverted','mirror','currency','dotted','parenthesis','flags']
 let _chosen = (text || '').toLowerCase().trim()
-if (!_chosen) return reply(`*🔤 Set Font Mode*\n\nUsage: ${prefix}setfont [fontname]\n\nAvailable fonts:\n${_validFonts.map(f=>'• '+f).join('\n')}\n\n_Every message you send will auto-convert until you use ${prefix}fontoff_`)
+if (!_chosen) return reply(`╭─⊷ 🔤 *SET FONT*\n\n  •  Usage: *${prefix}setfont [fontname]*\n  •  Fonts: ${_validFonts.join(' · ')}\n\n  _Auto-converts your messages until ${prefix}fontoff_`)
 if (!_validFonts.includes(_chosen)) return reply(`❌ Unknown font: *${_chosen}*\n\nValid options:\n${_validFonts.map(f=>'• '+f).join('\n')}`)
 global.ownerFontMode = _chosen
 reply(`✅ *Font mode set to: ${_chosen}*\n\n_Every message you send will now appear in ${_chosen} style._\n_Use ${prefix}fontoff to return to normal._`)
@@ -9418,7 +9372,7 @@ X.sendMessage(from, { text: `╭─⊷ 🚔 *POLICE ALERT!*\n\n  🚨 @${policeT
 case 'namecard': {
     await X.sendMessage(m.chat, { react: { text: '🪪', key: m.key } })
 let ncName = text || pushname
-reply(`╭─⊷\n   *${ncName}*\n   ${global.botname}\n╰─⊷`)
+reply(`╭─⊷ 🪪 *${ncName}*\n\n  •  Bot → ${global.botname}\n╰─⊷`)
 } break
 
 case 'tweet': {
@@ -9523,24 +9477,11 @@ let res = await fetch(`https://api.github.com/repos/${encodeURIComponent(owner)}
 let data = await res.json()
 if (data.message) {
     return reply(
-        `╭─⊷ ❌ *REPO NOT FOUND*\n\n` +
-        `│\n` +
-        `│ Could not find: *${repoPath}*\n` +
-        `│\n` +
-        `│ 💡 Try: *.repo owner/reponame*\n` +
-        `│\n` +
-        `│ 📦 *Bot Repo:*\n` +
-        `│ github.com/TOOSII102/TOOSII-XD-ULTRA\n` +
-        `│\n` +
-        `│ ⭐ *Star* & 🍴 *Fork* the bot repo!\n` +
-        `│ 👉 ${global.repoUrl}/fork\n` +
-        `│\n` +
-        `╰━━━━━━━━━━━━━━━━━╯`
+        `╭─⊷ ❌ *REPO NOT FOUND*\n\n  •  Could not find: *${repoPath}*\n  •  Try: *.repo owner/reponame*\n\n  📦 *Bot Repo:* github.com/TOOSII102/TOOSII-XD-ULTRA\n  ⭐ *Star* & 🍴 *Fork*: ${global.repoUrl}/fork\n\n╰─⊷`
     )
 }
 const repoInfo =
-`╭─⊷
-│  📦 *REPOSITORY INFO*\n╰─⊷
+`╭─⊷ 📦 *REPOSITORY INFO*
 
   🏷️  *${data.full_name}*
   📝  _${(data.description || 'No description').slice(0,60)}_
@@ -9552,12 +9493,12 @@ const repoInfo =
 
   🔗 ${data.html_url}
 
-┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+
   💛 *Enjoyed the bot?*
   ⭐ Star & 🍴 Fork — every click counts!
 
   🔑 *Session*  →  ${global.sessionUrl}
-┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+
 _⚡ Powered by Toosii Tech — wa.me/254748340864_`
 reply(repoInfo)
 } catch(e) { reply('❌ Error fetching repo: ' + e.message) }
@@ -9567,8 +9508,7 @@ case 'sc':
 case 'script':
 case 'source': {
     await X.sendMessage(m.chat, { react: { text: '📜', key: m.key } })
-let scText = `╭─⊷
-│  📂 *SOURCE CODE*\n╰─⊷
+let scText = `╭─⊷ 📂 *SOURCE CODE*
 
   🤖 *${global.botname}*
 
@@ -9602,7 +9542,7 @@ await X.sendMessage(m.chat, { document: { url: zipUrl }, mimetype: 'application/
 case 'weather':
 case 'clima': {
     await X.sendMessage(m.chat, { react: { text: '🌤️', key: m.key } })
-    if (!text) return reply(`🌤️ Usage: *${prefix}weather [city]*\nExample: ${prefix}weather Nairobi`)
+    if (!text) return reply(`╭─⊷ 🌤️ *WEATHER*\n\n  •  Usage: *${prefix}weather [city]*\n  •  Example: ${prefix}weather Nairobi`)
     try {
         let r = await fetch(`https://api.giftedtech.co.ke/api/search/weather?apikey=${_giftedKey()}&location=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(15000) })
         let d = await r.json()
@@ -9633,7 +9573,7 @@ case 'tinyurl':
 case 'shorturl':
 case 'shorten': {
     await X.sendMessage(m.chat, { react: { text: '🔗', key: m.key } })
-    if (!text || !text.startsWith('http')) return reply(`🔗 Usage: *${prefix}tinyurl [url]*\nExample: ${prefix}tinyurl https://google.com`)
+    if (!text || !text.startsWith('http')) return reply(`╭─⊷ 🔗 *TINY URL*\n\n  •  Usage: *${prefix}tinyurl [url]*\n  •  Example: ${prefix}tinyurl https://google.com`)
     try {
         let r = await fetch(`https://api.giftedtech.co.ke/api/tools/tinyurl?apikey=${_giftedKey()}&url=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(15000) })
         let d = await r.json()
@@ -9721,7 +9661,7 @@ case 'deepimg':
 case 'genimage':
 case 'aiart': {
     await X.sendMessage(m.chat, { react: { text: '🎨', key: m.key } })
-    if (!text) return reply(`🎨 *AI Image Generator*\n\nUsage: *${prefix}${command} [describe your image]*\n\nExamples:\n• ${prefix}${command} A beautiful sunset over the ocean\n• ${prefix}${command} A futuristic city at night`)
+    if (!text) return reply(`╭─⊷ 🎨 *AI IMAGE GENERATOR*\n\n  •  Usage: *${prefix}${command} [describe your image]*\n  •  Example: ${prefix}${command} A futuristic city at night`)
     try {
         await reply('🎨 _Generating your image with AI, please wait..._')
         let r = await fetch(`https://api.giftedtech.co.ke/api/ai/fluximg?apikey=${_giftedKey()}&prompt=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(60000) })
@@ -9743,7 +9683,7 @@ case 'songgenerator':
 case 'makesong':
 case 'aisong': {
     await X.sendMessage(m.chat, { react: { text: '🎵', key: m.key } })
-    if (!text) return reply(`🎵 *AI Song Generator*\n\nUsage: *${prefix}songgenerator [describe your song]*\n\nExamples:\n• ${prefix}songgenerator A love song about the stars\n• ${prefix}songgenerator Upbeat Afrobeats about success`)
+    if (!text) return reply(`╭─⊷ 🎵 *AI SONG GENERATOR*\n\n  •  Usage: *${prefix}songgenerator [describe your song]*\n  •  Example: ${prefix}songgenerator Upbeat Afrobeats about success`)
     try {
         await reply('🎵 _Composing your song with AI, please wait (this may take a while)..._')
         let r = await fetch(`https://api.giftedtech.co.ke/api/tools/songgenerator?apikey=${_giftedKey()}&prompt=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(120000) })
@@ -10215,7 +10155,7 @@ case 'watchsport':
 case 'streamsport':
 case 'sportsstream': {
     await X.sendMessage(m.chat, { react: { text: '📺', key: m.key } })
-    if (!text) return reply(`📺 *Stream a Sport Match*\n\nUsage: *${prefix}watchsport [match-id]*\n\nGet match IDs from:\n  *${prefix}livesports* — live events\n  *${prefix}allsports* — all events\n  *${prefix}allsports basketball* — filter by sport\n\nExample:\n${prefix}watchsport 4789881499804909776`)
+    if (!text) return reply(`╭─⊷ 📺 *WATCH SPORT*\n\n  •  Usage: *${prefix}watchsport [match-id]*\n  •  Get IDs: *${prefix}livesports* or *${prefix}allsports*\n  •  Example: ${prefix}watchsport 4789881499804909776`)
     try {
         await reply('📺 _Fetching stream link..._')
         let _r = await fetch('https://movieapi.xcasper.space/api/live', { signal: AbortSignal.timeout(20000) })
@@ -10392,10 +10332,7 @@ case 'serverinfo': {
     const _siD = Math.floor(_siUp / 86400), _siH = Math.floor((_siUp % 86400) / 3600)
     const _siMn = Math.floor((_siUp % 3600) / 60), _siS = Math.floor(_siUp % 60)
     reply(
-        `╭─⊷\n` +
-        `│  🖥️  *SYSTEM INFORMATION*
-` +
-        `╰─⊷\n\n` +
+        `╭─⊷ 🖥️ *SYSTEM INFORMATION*\n\n` +
         `  •  💾 *RAM*  →  ${_siUsed} MB / ${_siTotMb} MB\n` +
         `  •  🧠 *Heap*  →  ${(_siMem.heapUsed / 1024 / 1024).toFixed(1)} MB\n` +
         `  •  ⚙️  *CPU*  →  ${_siCpus[0]?.model?.trim() || 'Unknown'}\n` +
@@ -10450,10 +10387,7 @@ case 'cekidch': {
         const _chCode = args[0].split('https://whatsapp.com/channel/')[1]
         const _chRes = await X.newsletterMetadata('invite', _chCode)
         reply(
-            `╭─⊷\n` +
-            `│  📢  *CHANNEL INFO*
-` +
-            `╰─⊷\n\n` +
+            `╭─⊷ 📢 *CHANNEL INFO*\n\n` +
             `  •  🆔 *ID*  →  ${_chRes.id}\n` +
             `  •  📛 *Name*  →  ${_chRes.name}\n` +
             `  •  👥 *Followers*  →  ${_chRes.subscribers?.toLocaleString?.() ?? _chRes.subscribers}\n` +
@@ -10590,7 +10524,7 @@ case 'resetwarn': {
     if (!m.isGroup) return reply(mess.OnlyGrup)
     if (!isAdmins && !isOwner) return reply(mess.admin)
     const _cwUser = (m.mentionedJid && m.mentionedJid[0]) || (m.quoted && m.quoted.sender) || (text && text.replace(/\D/g,'') + '@s.whatsapp.net')
-    if (!_cwUser) return reply(`⚠️ Tag or reply to a user.\nUsage: ${prefix}clearwarn @user`)
+    if (!_cwUser) return reply(`╭─⊷ ✅ *CLEAR WARN*\n\n  •  Usage: *${prefix}clearwarn @user*\n  •  Or reply to their message`)
     const _cwDbPath = path.join(__dirname, 'database', 'warnings.json')
     let _cwDb = {}
     try { _cwDb = JSON.parse(fs.readFileSync(_cwDbPath, 'utf-8')) } catch { _cwDb = {} }
