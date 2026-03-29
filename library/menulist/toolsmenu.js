@@ -15,6 +15,7 @@ const toolsMenu = `
 
   ║ .weather
   ║ .translate
+  ║ .tts
   ║ .tinyurl
   ║ .shorturl
   ║ .removebg
