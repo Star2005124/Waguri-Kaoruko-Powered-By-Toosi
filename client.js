@@ -8548,7 +8548,6 @@ reply(txt.slice(0, 4000))
 } break
 
 case 'ssweb':
-case 'ss':
 case 'ssphone':
 case 'screenshot':
 case 'ss': {
@@ -9136,33 +9135,6 @@ case 'compliment': {
     }
 } break
 
-case 'lyrics': {
-    await X.sendMessage(m.chat, { react: { text: '🎵', key: m.key } })
-    if (!text) return reply(`╌══〔 🎵 LYRICS SEARCH 〕══╌\n║ *Usage:* ${prefix}lyrics [song name]\n║ *Example:* ${prefix}lyrics Bohemian Rhapsody\n╚═══════════════════════╝`)
-    try {
-        await reply('🎵 _Searching for lyrics..._')
-        let lyrData = null
-        // Source 1: Keith API
-        try {
-            const _kr = await _keithFetch(`/fun/lyrics?q=${encodeURIComponent(text)}`)
-            if (_kr?.status && _kr.result) lyrData = { title: _kr.result.title || text, artist: _kr.result.artist || '', lyrics: _kr.result.lyrics }
-        } catch {}
-        // Source 2: lyrics.ovh (free, no key)
-        if (!lyrData?.lyrics) {
-            const _parts = text.trim().split(' ')
-            const _artist = _parts.slice(0, Math.ceil(_parts.length / 2)).join(' ')
-            const _title = _parts.slice(Math.ceil(_parts.length / 2)).join(' ') || _parts.join(' ')
-            try {
-                const _lr = await fetch(`https://lyrics.ovh/v1/${encodeURIComponent(_artist)}/${encodeURIComponent(_title)}`)
-                const _ld = await _lr.json()
-                if (_ld.lyrics) lyrData = { title: _title, artist: _artist, lyrics: _ld.lyrics }
-            } catch {}
-        }
-        if (!lyrData?.lyrics) throw new Error('Lyrics not found')
-        let lyricsTxt = lyrData.lyrics.length > 3500 ? lyrData.lyrics.slice(0, 3500) + '\n...[truncated]' : lyrData.lyrics
-        await reply(`🎵 *${lyrData.title}* ${lyrData.artist ? '— _' + lyrData.artist + '_' : ''}\n\n${lyricsTxt}`)
-    } catch { reply('❌ Lyrics not found. Try: artist + song name (e.g. _Bob Marley One Love_)') }
-} break
 
 case 'advice':
 case 'advise': {
@@ -9344,13 +9316,6 @@ reply(`╔══〔 🎰 SLOT MACHINE 〕══╗\n\n║ [ ${s1} | ${s2} | ${s3
 
 //━━━━━━━━━━━━━━━━━━━━━━━━//
 // Fun & Social Commands
-case 'compliment': {
-    await X.sendMessage(m.chat, { react: { text: '😊', key: m.key } })
-let compliments = ['You are an amazing person!', 'Your smile lights up the room!', 'You are incredibly talented!', 'The world is better with you in it!', 'You have a heart of gold!', 'Your kindness is inspiring!', 'You are a ray of sunshine!', 'You make everything better!', 'You are one of a kind!', 'Your energy is contagious!']
-let target = (m.mentionedJid && m.mentionedJid[0]) ? `@${m.mentionedJid[0].split('@')[0]}` : pushname
-reply(`╔═══〔 💐 COMPLIMENT 〕═══╗\n\n║ 👤 *${target}*\n║ ${compliments[Math.floor(Math.random() * compliments.length)]}\n╚═══════════════════════╝`)
-} break
-
 case 'insult': {
     await X.sendMessage(m.chat, { react: { text: '🗡️', key: m.key } })
     try {
@@ -10899,7 +10864,7 @@ case 'qrread': {
 case 'deepimg':
 case 'genimage':
 case 'aiart':
-case 'img': {
+case 'aiimage': {
     await X.sendMessage(m.chat, { react: { text: '🎨', key: m.key } })
     if (!text) return reply(`╌══〔 🎨 AI IMAGE GEN 〕══╌\n║ *Usage:* ${prefix}imagine [describe image]\n║ Example: ${prefix}imagine a lion at sunset\n║\n║ 💡 Be descriptive for best results!\n╚═══════════════════════╝`)
     try {
