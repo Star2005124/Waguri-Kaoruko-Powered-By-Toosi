@@ -35,7 +35,7 @@ const otherMenu = `
 ║ .arena
 ║ .1917
 ║ .light
-│  all accept → [text]
+║ 💡 All commands accept [text]
 
 ╚═══════════════════════╝
 
@@ -69,7 +69,7 @@ const otherMenu = `
 ║ .oldeng
 ║ .aesthetic
 ║ .cursive
-│  all accept → [text]
+║ 💡 All commands accept [text]
 
 ╚═══════════════════════╝
 `
