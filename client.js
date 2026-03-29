@@ -3378,21 +3378,22 @@ case 'join': {
     await X.sendMessage(m.chat, { react: { text: '🔗', key: m.key } })
 if (!isOwner) return reply(mess.OnlyOwner)
 if (!q) return reply(`╔═══〔 🔗 JOIN GROUP 〕═══╗\n\n║ Usage: *${prefix}join [invite link]*\n║ Example: ${prefix}join https://chat.whatsapp.com/...\n╚═══════════════════════╝`)
-let linkMatch = q.match(/chat\.whatsapp\.com\/([0-9A-Za-z]{20,24})/)
-if (!linkMatch) return reply('Invalid group invite link. Please send a valid WhatsApp group link.')
+let linkMatch = q.match(/chat\.whatsapp\.com\/([A-Za-z0-9]{10,})/)
+if (!linkMatch) return reply(`╔══〔 ❌ INVALID LINK 〕═══╗\n\n║ That doesn't look like a valid WhatsApp\n║ group invite link.\n║\n║ ✅ Format: *https://chat.whatsapp.com/XXX*\n╚═══════════════════════╝`)
 try {
+    await reply('🔗 _Joining group, please wait..._')
     let joinResult = await X.groupAcceptInvite(linkMatch[1])
-    reply(`✅ *Joined group!*\n║ ID: ${joinResult}`)
+    reply(`╔══〔 ✅ GROUP JOINED 〕═══╗\n\n║ 🎉 Bot successfully joined the group!\n║ 🆔 *Group ID*: ${joinResult}\n╚═══════════════════════╝`)
 } catch (e) {
     let errMsg = (e.message || '').toLowerCase()
-    if (errMsg.includes('conflict')) {
-        reply('The bot is already a member of that group.')
-    } else if (errMsg.includes('gone') || errMsg.includes('not-authorized')) {
-        reply('This invite link is invalid or has been revoked.')
-    } else if (errMsg.includes('forbidden')) {
-        reply('The bot has been blocked from joining this group.')
+    if (errMsg.includes('conflict') || errMsg.includes('already')) {
+        reply(`╔══〔 ⚠️ ALREADY JOINED 〕══╗\n\n║ The bot is already a member\n║ of that group.\n╚═══════════════════════╝`)
+    } else if (errMsg.includes('gone') || errMsg.includes('not-authorized') || errMsg.includes('expired')) {
+        reply(`╔══〔 ❌ LINK EXPIRED 〕════╗\n\n║ This invite link is invalid or has\n║ been revoked. Ask for a new one.\n╚═══════════════════════╝`)
+    } else if (errMsg.includes('forbidden') || errMsg.includes('blocked')) {
+        reply(`╔══〔 🚫 JOIN BLOCKED 〕═══╗\n\n║ The bot has been blocked from\n║ joining this group.\n╚═══════════════════════╝`)
     } else {
-        reply(`Failed to join group: ${e.message || 'Unknown error'}`)
+        reply(`╔══〔 ❌ JOIN FAILED 〕════╗\n\n║ ⚠️ ${(e.message || 'Unknown error').slice(0, 120)}\n╚═══════════════════════╝`)
     }
 }
 }
