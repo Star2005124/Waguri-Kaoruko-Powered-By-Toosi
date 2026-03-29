@@ -6027,6 +6027,58 @@ case 'bibleverse': {
 }
 break;
 
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 🎶  HYMN SEARCH (Keith API)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+case 'hymn':
+case 'hymnbook': {
+    await X.sendMessage(m.chat, { react: { text: '🎶', key: m.key } })
+    const _hmq = q?.trim() || text?.trim()
+    try {
+        if (_hmq) {
+            await reply(`🎶 _Searching hymn: ${_hmq}..._`)
+            const _hmd = await _keithFetch(`/hymn?q=${encodeURIComponent(_hmq)}`)
+            const _hmr = _hmd?.result || (Array.isArray(_hmd) ? _hmd[0] : _hmd)
+            if (!_hmr?.title && !_hmr?.lyrics) throw new Error('Not found')
+            let msg = `╌══〔 🎶 HYMN 〕═════════╌\n`
+            if (_hmr.title) msg += `\n🎵 *${_hmr.title}*\n`
+            if (_hmr.number) msg += `📌 *Number:* ${_hmr.number}\n`
+            if (_hmr.lyrics) msg += `\n${_hmr.lyrics.slice(0, 1000)}${_hmr.lyrics.length > 1000 ? '\n...' : ''}\n`
+            msg += `\n╚═══════════════════════╝`
+            await reply(msg)
+        } else {
+            // Random hymn
+            await reply('🎶 _Fetching random hymn..._')
+            const _hrnd = await _keithFetch('/hymn/random')
+            const _hrnr = _hrnd?.result || _hrnd
+            if (!_hrnr?.title) throw new Error('No hymn')
+            let msg = `╌══〔 🎶 HYMN OF THE DAY 〕═╌\n`
+            if (_hrnr.title) msg += `\n🎵 *${_hrnr.title}*\n`
+            if (_hrnr.number) msg += `📌 *Number:* ${_hrnr.number}\n`
+            if (_hrnr.lyrics) msg += `\n${_hrnr.lyrics.slice(0, 1000)}${_hrnr.lyrics.length > 1000 ? '\n...' : ''}\n`
+            msg += `\n╚═══════════════════════╝`
+            await reply(msg)
+        }
+    } catch(e) {
+        reply(`╌══〔 🎶 HYMN 〕═════════╌\n║ *Usage:* ${prefix}hymn [search term]\n║ *Random:* ${prefix}hymn\n║ Example: ${prefix}hymn amazing grace\n╚═══════════════════════╝`)
+    }
+} break
+
+case 'randommeme':
+case 'rmeme': {
+    await X.sendMessage(m.chat, { react: { text: '🤣', key: m.key } })
+    try {
+        const _rmd = await _keithFetch('/fun/meme')
+        const _rmr = _rmd?.result || _rmd
+        const _rmUrl = _rmr?.url || _rmr?.imageUrl
+        const _rmTitle = _rmr?.title || 'Random Meme'
+        const _rmSub = _rmr?.subreddit ? ` (r/${_rmr.subreddit})` : ''
+        if (!_rmUrl) throw new Error('No meme')
+        await safeSendMedia(m.chat, { image: { url: _rmUrl }, caption: `🤣 *${_rmTitle}*${_rmSub}` }, {}, { quoted: m })
+    } catch(e) { reply('❌ Could not fetch a meme right now. Try again!') }
+} break
+
+
 
 case 'quran':
 case 'ayah':
@@ -8380,21 +8432,24 @@ reply(txt.slice(0, 4000))
 case 'ssweb':
 case 'ss':
 case 'ssphone':
-case 'screenshot': {
+case 'screenshot':
+case 'ss': {
     await X.sendMessage(m.chat, { react: { text: '📸', key: m.key } })
-if (!text) return reply(`╔═══〔 📸 SCREENSHOT 〕═══╗\n\n║ Usage: *${prefix}ss [url]*\n║ Example: ${prefix}ss https://google.com\n╚═══════════════════════╝`)
-try {
-    let ssUrl = null
-    // Method 1: GiftedTech ssphone (mobile phone frame)
+    if (!text || !text.startsWith('http')) return reply(`╌══〔 📸 SCREENSHOT 〕════╌\n║ *Usage:* ${prefix}ss [url]\n║ Example: ${prefix}ss https://google.com\n╚═══════════════════════╝`)
     try {
-        let r = await fetch(`https://api.giftedtech.co.ke/api/tools/ssphone?apikey=${_giftedKey()}&url=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(30000) })
-        let d = await r.json()
-        if (d.success && d.result) ssUrl = d.result
-    } catch {}
-    // Method 2: thum.io fallback
-    if (!ssUrl) ssUrl = `https://image.thum.io/get/width/1280/crop/720/noanimate/${text}`
-    await X.sendMessage(m.chat, { image: { url: ssUrl }, caption: `📸 *Screenshot*\n🔗 ${text}` }, { quoted: m })
-} catch(e) { reply('Error: ' + e.message) }
+        await reply(`📸 _Taking screenshot of ${text}..._`)
+        let _ssUrl = null
+        // Keith API first
+        try {
+            const _sskd = await _keithFetch(`/tool/screenshot?url=${encodeURIComponent(text)}`)
+            if (_sskd?.screenshot) _ssUrl = _sskd.screenshot
+            else if (_sskd?.result?.url) _ssUrl = _sskd.result.url
+            else if (_sskd?.url) _ssUrl = _sskd.url
+        } catch {}
+        // Thum.io fallback
+        if (!_ssUrl) _ssUrl = `https://image.thum.io/get/width/1280/crop/800/${encodeURIComponent(text)}`
+        await safeSendMedia(m.chat, { image: { url: _ssUrl }, caption: `📸 *Screenshot*\n🔗 ${text}` }, {}, { quoted: m })
+    } catch(e) { reply('❌ Screenshot failed: ' + e.message) }
 } break
 
 case 'webcopier':
@@ -8415,28 +8470,34 @@ case 'webcopy': {
 } break
 
 case 'trt':
-case 'translate': {
+case 'translate':
+case 'tr': {
     await X.sendMessage(m.chat, { react: { text: '🌐', key: m.key } })
-if (!text) return reply(`╔═══〔 🌐 TRANSLATOR 〕═══╗\n\n║ Usage: *${prefix}translate [lang]|[text]*\n║ Example: ${prefix}translate en|hola mundo\n\n║ Or reply to a message:\n║ *${prefix}translate [lang]*\n\n║ _Common codes: en fr es de ar zh sw pt ru_\n╚═══════════════════════╝`)
-try {
-let targetLang = 'en'
-let inputText = ''
-if (text.includes('|')) {
-let parts = text.split('|')
-targetLang = parts[0].trim()
-inputText = parts.slice(1).join('|').trim()
-} else if (m.quoted) {
-targetLang = text.trim() || 'en'
-inputText = m.quoted.text || ''
-} else {
-inputText = text
-}
-if (!inputText) return reply('╔══〔 ⚠️ TRANSLATE 〕══╗\n\n║ Please provide text to translate.\n╚═══════════════════════╝')
-let res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(inputText)}&langpair=auto|${targetLang}`)
-let data = await res.json()
-let translated = data.responseData?.translatedText || 'Translation failed.'
-reply(`╔══〔 🌐 TRANSLATION 〕═══╗\n\n║ 🔤 *${targetLang.toUpperCase()}*\n\n${translated}\n╚═══════════════════════╝`)
-} catch(e) { reply('Error: ' + e.message) }
+    if (!text) return reply(`╌══〔 🌐 TRANSLATOR 〕═════╌\n║ *Usage:* ${prefix}translate [lang]|[text]\n║ *Reply:* ${prefix}translate [lang]\n║\n║ *Codes:* en fr es de ar zh sw pt ru ja\n╚═══════════════════════╝`)
+    try {
+        let targetLang = 'en', inputText = ''
+        if (text.includes('|')) { const parts = text.split('|'); targetLang = parts[0].trim(); inputText = parts.slice(1).join('|').trim() }
+        else if (m.quoted) { targetLang = text.trim() || 'en'; inputText = m.quoted.text || m.quoted.body || '' }
+        else { inputText = text }
+        if (!inputText) return reply('❌ Please provide text to translate.')
+        await reply(`🌐 _Translating to ${targetLang.toUpperCase()}..._`)
+        let _trResult = null
+        // Keith API first
+        try {
+            const _trkd = await _keithFetch(`/translate?q=${encodeURIComponent(inputText)}&to=${encodeURIComponent(targetLang)}`)
+            if (_trkd?.translated) _trResult = _trkd.translated
+            else if (_trkd?.result?.translated) _trResult = _trkd.result.translated
+            else if (typeof _trkd?.result === 'string') _trResult = _trkd.result
+        } catch {}
+        // MyMemory fallback
+        if (!_trResult) {
+            const _mm = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(inputText)}&langpair=auto|${targetLang}`, { signal: AbortSignal.timeout(12000) })
+            const _mmd = await _mm.json()
+            _trResult = _mmd.responseData?.translatedText || null
+        }
+        if (!_trResult) throw new Error('Translation failed')
+        await reply(`╌══〔 🌐 TRANSLATION 〕════╌\n\n📝 *Original:* _${inputText}_\n\n💬 *${targetLang.toUpperCase()}:*\n${_trResult}\n╚═══════════════════════╝`)
+    } catch(e) { reply('❌ Translation failed: ' + e.message) }
 } break
 
 case 'transcribe': {
@@ -9198,161 +9259,34 @@ case 'jokes': {
 case 'quote':
 case 'motivation': {
     await X.sendMessage(m.chat, { react: { text: '💪', key: m.key } })
-const motivations = [
-// Success & Hard Work
-{ q: "The only way to do great work is to love what you do.", a: "Steve Jobs" },
-{ q: "Success is not final, failure is not fatal: it is the courage to continue that counts.", a: "Winston Churchill" },
-{ q: "Don't watch the clock; do what it does. Keep going.", a: "Sam Levenson" },
-{ q: "The secret of getting ahead is getting started.", a: "Mark Twain" },
-{ q: "It always seems impossible until it's done.", a: "Nelson Mandela" },
-{ q: "Hard work beats talent when talent doesn't work hard.", a: "Tim Notke" },
-{ q: "Success usually comes to those who are too busy to be looking for it.", a: "Henry David Thoreau" },
-{ q: "The difference between ordinary and extraordinary is that little extra.", a: "Jimmy Johnson" },
-{ q: "Opportunities don't happen. You create them.", a: "Chris Grosser" },
-{ q: "Don't be afraid to give up the good to go for the great.", a: "John D. Rockefeller" },
-{ q: "I find that the harder I work, the more luck I seem to have.", a: "Thomas Jefferson" },
-{ q: "There are no shortcuts to any place worth going.", a: "Beverly Sills" },
-{ q: "Success is walking from failure to failure with no loss of enthusiasm.", a: "Winston Churchill" },
-{ q: "The road to success and the road to failure are almost exactly the same.", a: "Colin R. Davis" },
-{ q: "A successful man is one who can lay a firm foundation with the bricks others have thrown at him.", a: "David Brinkley" },
-// Perseverance & Resilience
-{ q: "Fall seven times, stand up eight.", a: "Japanese Proverb" },
-{ q: "The man who moves a mountain begins by carrying away small stones.", a: "Confucius" },
-{ q: "You don't have to be great to start, but you have to start to be great.", a: "Zig Ziglar" },
-{ q: "Our greatest glory is not in never falling, but in rising every time we fall.", a: "Confucius" },
-{ q: "Strength does not come from physical capacity. It comes from an indomitable will.", a: "Mahatma Gandhi" },
-{ q: "Tough times never last, but tough people do.", a: "Robert H. Schuller" },
-{ q: "The darkest hour has only sixty minutes.", a: "Morris Mandel" },
-{ q: "Rock bottom became the solid foundation on which I rebuilt my life.", a: "J.K. Rowling" },
-{ q: "When you reach the end of your rope, tie a knot in it and hang on.", a: "Franklin D. Roosevelt" },
-{ q: "Even the darkest night will end and the sun will rise.", a: "Victor Hugo" },
-{ q: "You may have to fight a battle more than once to win it.", a: "Margaret Thatcher" },
-{ q: "The gem cannot be polished without friction, nor man perfected without trials.", a: "Chinese Proverb" },
-{ q: "Hardships often prepare ordinary people for an extraordinary destiny.", a: "C.S. Lewis" },
-{ q: "Endurance is not just the ability to bear a hard thing, but to turn it into glory.", a: "William Barclay" },
-{ q: "Character cannot be developed in ease and quiet. Only through experience of trial and suffering can the soul be strengthened.", a: "Helen Keller" },
-// Mindset & Growth
-{ q: "Whether you think you can or you think you can't, you're right.", a: "Henry Ford" },
-{ q: "The mind is everything. What you think you become.", a: "Buddha" },
-{ q: "Your life does not get better by chance, it gets better by change.", a: "Jim Rohn" },
-{ q: "The only limit to our realization of tomorrow is our doubts of today.", a: "Franklin D. Roosevelt" },
-{ q: "It is during our darkest moments that we must focus to see the light.", a: "Aristotle" },
-{ q: "Believe you can and you're halfway there.", a: "Theodore Roosevelt" },
-{ q: "You are never too old to set another goal or to dream a new dream.", a: "C.S. Lewis" },
-{ q: "Act as if what you do makes a difference. It does.", a: "William James" },
-{ q: "What we think, we become.", a: "Buddha" },
-{ q: "Keep your face always toward the sunshine, and shadows will fall behind you.", a: "Walt Whitman" },
-{ q: "In the middle of every difficulty lies opportunity.", a: "Albert Einstein" },
-{ q: "We become what we repeatedly do.", a: "Aristotle" },
-{ q: "Change your thoughts and you change your world.", a: "Norman Vincent Peale" },
-{ q: "You have power over your mind, not outside events. Realize this, and you will find strength.", a: "Marcus Aurelius" },
-{ q: "Everything you've ever wanted is on the other side of fear.", a: "George Addair" },
-// Dreams & Vision
-{ q: "The future belongs to those who believe in the beauty of their dreams.", a: "Eleanor Roosevelt" },
-{ q: "Dream big and dare to fail.", a: "Norman Vaughan" },
-{ q: "All our dreams can come true, if we have the courage to pursue them.", a: "Walt Disney" },
-{ q: "The biggest adventure you can take is to live the life of your dreams.", a: "Oprah Winfrey" },
-{ q: "Go confidently in the direction of your dreams. Live the life you have imagined.", a: "Henry David Thoreau" },
-{ q: "A dream doesn't become reality through magic; it takes sweat, determination and hard work.", a: "Colin Powell" },
-{ q: "You are never too old to set another goal or to dream a new dream.", a: "Les Brown" },
-{ q: "Dreams don't work unless you do.", a: "John C. Maxwell" },
-{ q: "The only way to achieve the impossible is to believe it is possible.", a: "Charles Kingsleigh" },
-{ q: "What lies behind us and what lies before us are tiny matters compared to what lies within us.", a: "Ralph Waldo Emerson" },
-// Courage & Action
-{ q: "Courage is not the absence of fear, but action in spite of it.", a: "Mark Twain" },
-{ q: "Do one thing every day that scares you.", a: "Eleanor Roosevelt" },
-{ q: "You miss 100% of the shots you don't take.", a: "Wayne Gretzky" },
-{ q: "The secret to getting ahead is getting started.", a: "Mark Twain" },
-{ q: "Don't count the days, make the days count.", a: "Muhammad Ali" },
-{ q: "Life is short, and it's up to you to make it sweet.", a: "Sarah Louise Delany" },
-{ q: "The way to get started is to quit talking and begin doing.", a: "Walt Disney" },
-{ q: "If you want to live a happy life, tie it to a goal, not to people or things.", a: "Albert Einstein" },
-{ q: "First, think. Then dream. Then dare.", a: "Walt Disney" },
-{ q: "Just do it.", a: "Nike" },
-{ q: "Stop waiting for things to happen. Go out and make them happen.", a: "Unknown" },
-{ q: "You don't need to see the whole staircase, just take the first step.", a: "Martin Luther King Jr." },
-{ q: "Someone is sitting in the shade today because someone planted a tree a long time ago.", a: "Warren Buffett" },
-{ q: "Inaction breeds doubt and fear. Action breeds confidence and courage.", a: "Dale Carnegie" },
-// Purpose & Meaning
-{ q: "He who has a why to live can bear almost any how.", a: "Friedrich Nietzsche" },
-{ q: "The purpose of life is a life of purpose.", a: "Robert Byrne" },
-{ q: "Life is not measured by the number of breaths we take, but by the moments that take our breath away.", a: "Maya Angelou" },
-{ q: "You only live once, but if you do it right, once is enough.", a: "Mae West" },
-{ q: "In the end, it's not the years in your life that count. It's the life in your years.", a: "Abraham Lincoln" },
-{ q: "To live is the rarest thing in the world. Most people exist, that is all.", a: "Oscar Wilde" },
-{ q: "The meaning of life is to find your gift. The purpose of life is to give it away.", a: "Pablo Picasso" },
-{ q: "Don't ask what the world needs. Ask what makes you come alive and go do it.", a: "Howard Thurman" },
-{ q: "Your time is limited, don't waste it living someone else's life.", a: "Steve Jobs" },
-{ q: "Every moment is a fresh beginning.", a: "T.S. Eliot" },
-// Self-Belief
-{ q: "No one can make you feel inferior without your consent.", a: "Eleanor Roosevelt" },
-{ q: "You are enough, a thousand times enough.", a: "Atticus" },
-{ q: "Be yourself; everyone else is already taken.", a: "Oscar Wilde" },
-{ q: "To be yourself in a world that is constantly trying to make you something else is the greatest accomplishment.", a: "Ralph Waldo Emerson" },
-{ q: "You yourself, as much as anybody in the entire universe, deserve your love and affection.", a: "Buddha" },
-{ q: "Knowing yourself is the beginning of all wisdom.", a: "Aristotle" },
-{ q: "The only person you are destined to become is the person you decide to be.", a: "Ralph Waldo Emerson" },
-{ q: "Wherever you go, no matter what the weather, always bring your own sunshine.", a: "Anthony J. D'Angelo" },
-{ q: "With confidence, you have won before you have started.", a: "Marcus Garvey" },
-{ q: "Once you choose hope, anything's possible.", a: "Christopher Reeve" },
-// Leadership & Impact
-{ q: "A leader is one who knows the way, goes the way, and shows the way.", a: "John C. Maxwell" },
-{ q: "Leadership is not about being in charge. It is about taking care of those in your charge.", a: "Simon Sinek" },
-{ q: "The best time to plant a tree was 20 years ago. The second best time is now.", a: "Chinese Proverb" },
-{ q: "Innovation distinguishes between a leader and a follower.", a: "Steve Jobs" },
-{ q: "If your actions inspire others to dream more, learn more, do more and become more, you are a leader.", a: "John Quincy Adams" },
-{ q: "Alone we can do so little; together we can do so much.", a: "Helen Keller" },
-{ q: "The greatest use of a life is to spend it on something that will outlast it.", a: "William James" },
-{ q: "Be the change you wish to see in the world.", a: "Mahatma Gandhi" },
-{ q: "Service to others is the rent you pay for your room here on earth.", a: "Muhammad Ali" },
-// Wisdom & Philosophy  
-{ q: "The unexamined life is not worth living.", a: "Socrates" },
-{ q: "We suffer more in imagination than in reality.", a: "Seneca" },
-{ q: "Waste no more time arguing about what a good man should be. Be one.", a: "Marcus Aurelius" },
-{ q: "You have power over your mind, not outside events.", a: "Marcus Aurelius" },
-{ q: "He who angers you conquers you.", a: "Elizabeth Kenny" },
-{ q: "The quality of a person's life is in direct proportion to their commitment to excellence.", a: "Vince Lombardi" },
-{ q: "Simplicity is the ultimate sophistication.", a: "Leonardo da Vinci" },
-{ q: "The only true wisdom is in knowing you know nothing.", a: "Socrates" },
-{ q: "Patience is bitter, but its fruit is sweet.", a: "Jean-Jacques Rousseau" },
-{ q: "Do not go where the path may lead; go instead where there is no path and leave a trail.", a: "Ralph Waldo Emerson" },
-// Daily Grind
-{ q: "Today's struggle is tomorrow's strength.", a: "Unknown" },
-{ q: "One day or day one. You decide.", a: "Unknown" },
-{ q: "Work hard in silence. Let your success be the noise.", a: "Frank Ocean" },
-{ q: "Stay focused, go after your dreams and keep moving toward your goals.", a: "LL Cool J" },
-{ q: "Push yourself, because no one else is going to do it for you.", a: "Unknown" },
-{ q: "Great things never come from comfort zones.", a: "Unknown" },
-{ q: "Wake up with determination. Go to bed with satisfaction.", a: "Unknown" },
-{ q: "Do something today that your future self will thank you for.", a: "Sean Patrick Flanery" },
-{ q: "Little things make big days.", a: "Unknown" },
-{ q: "It's going to be hard, but hard is not impossible.", a: "Unknown" },
-{ q: "Don't stop when you're tired. Stop when you're done.", a: "Unknown" },
-{ q: "Discipline is choosing between what you want now and what you want most.", a: "Abraham Lincoln" },
-{ q: "Success is the sum of small efforts repeated day in and day out.", a: "Robert Collier" },
-{ q: "Your only limit is your mind.", a: "Unknown" },
-{ q: "Hustle until your haters ask if you're hiring.", a: "Unknown" },
-// Faith & Hope
-{ q: "Faith is taking the first step even when you can't see the whole staircase.", a: "Martin Luther King Jr." },
-{ q: "Hope is the thing with feathers that perches in the soul.", a: "Emily Dickinson" },
-{ q: "God has a plan for your life. Trust the process.", a: "Unknown" },
-{ q: "When nothing goes right, go left.", a: "Unknown" },
-{ q: "Every day may not be good, but there's something good in every day.", a: "Alice Morse Earle" },
-{ q: "You are braver than you believe, stronger than you seem, and smarter than you think.", a: "A.A. Milne" },
-{ q: "The comeback is always stronger than the setback.", a: "Unknown" },
-{ q: "What God has for you, it is for you.", a: "Unknown" },
-{ q: "Storms make trees take deeper roots.", a: "Dolly Parton" },
-{ q: "After every storm, there is a rainbow. If you have eyes to see it.", a: "Paul Walker" }
-]
-let pick = motivations[Math.floor(Math.random() * motivations.length)]
-try {
-let res = await fetch('https://zenquotes.io/api/random', { signal: AbortSignal.timeout(8000) })
-let data = await res.json()
-if (Array.isArray(data) && data[0]?.q && data[0]?.a) {
-pick = { q: data[0].q, a: data[0].a }
-}
-} catch {}
-reply(`╔═══〔 💫 MOTIVATION 〕═══╗\n\n║ ❝ ${pick.q} ❞\n\n║ — *${pick.a}*\n╚═══════════════════════╝`)
+    try {
+        let _qtText = null, _qtAuthor = null
+        // Keith API first
+        const _qtkd = await _keithFetch('/fun/quote')
+        if (_qtkd?.quote) { _qtText = _qtkd.quote; _qtAuthor = _qtkd.author || 'Unknown' }
+        else if (_qtkd?.result?.quote) { _qtText = _qtkd.result.quote; _qtAuthor = _qtkd.result.author || 'Unknown' }
+        else if (typeof _qtkd === 'string') { _qtText = _qtkd; _qtAuthor = 'Unknown' }
+        // Local fallback
+        if (!_qtText) {
+            const _localQts = [
+                { q: 'The secret of getting ahead is getting started.', a: 'Mark Twain' },
+                { q: 'It always seems impossible until it is done.', a: 'Nelson Mandela' },
+                { q: 'The harder you work, the luckier you get.', a: 'Gary Player' },
+                { q: 'Success is not final, failure is not fatal.', a: 'Winston Churchill' },
+                { q: 'Believe you can and you are halfway there.', a: 'Theodore Roosevelt' },
+                { q: 'Your time is limited, don\'t waste it living someone else\'s life.', a: 'Steve Jobs' },
+                { q: 'Do what you can, with what you have, where you are.', a: 'Theodore Roosevelt' },
+                { q: 'Strive not to be a success, but rather to be of value.', a: 'Albert Einstein' },
+                { q: 'The only way to do great work is to love what you do.', a: 'Steve Jobs' },
+                { q: 'In the middle of every difficulty lies opportunity.', a: 'Albert Einstein' },
+            ]
+            const _lq = _localQts[Math.floor(Math.random() * _localQts.length)]
+            _qtText = _lq.q; _qtAuthor = _lq.a
+        }
+        await reply(`╌══〔 💫 QUOTE 〕══════════╌\n\n❝ ${_qtText} ❞\n\n— *${_qtAuthor}*\n╚═══════════════════════╝`)
+    } catch(e) {
+        reply('╌══〔 💫 QUOTE 〕══════════╌\n\n❝ The secret of getting ahead is getting started. ❞\n\n— *Mark Twain*\n╚═══════════════════════╝')
+    }
 } break
 
 case 'fact':
@@ -12438,27 +12372,36 @@ case 'horny': {
 
 case 'wyr': {
   await X.sendMessage(m.chat, { react: { text: '🤔', key: m.key } })
-  if (m.isGroup && global.antiSocialGames && global.antiSocialGames[m.chat]) return reply(`❌ *Social games are disabled in this group.*`)
-  const wyrQs = [
-    ['Be able to fly', 'Be able to turn invisible'],
-    ['Have unlimited money', 'Have unlimited time'],
-    ['Always know when someone is lying', 'Always get away with lying'],
-    ['Live in space', 'Live underwater'],
-    ['Eat your favorite food every day', 'Never eat the same food twice'],
-    ['Be famous for something embarrassing', 'Be unknown for something amazing'],
-    ['Always feel too hot', 'Always feel too cold'],
-    ['Have super strength', 'Have super speed'],
-    ['Give up music forever', 'Give up social media forever'],
-    ['Only communicate by singing', 'Only communicate by dancing'],
-    ['Know how you will die', 'Know when you will die'],
-    ['Have 10 close friends', 'Have 1,000 casual friends'],
-    ['Speak every language fluently', 'Play every instrument perfectly'],
-    ['Go back in time', 'Jump to the future'],
-    ['Be Batman', 'Be Iron Man'],
-    ['Never use WhatsApp again', 'Never watch videos again'],
-  ]
-  let q = wyrQs[Math.floor(Math.random() * wyrQs.length)]
-  reply(`╔══〔 🤔 WOULD YOU RATHER 〕╗\n║ 🅰️ *Option A:*\n║    ${q[0]}\n║\n║ 🅱️ *Option B:*\n║    ${q[1]}\n║\n║ 💬 Reply A or B!\n╚═══════════════════════╝`)
+  if (m.isGroup && global.antiSocialGames && global.antiSocialGames[m.chat]) return reply('❌ *Social games are disabled in this group.*')
+  try {
+      let _wyrTxt = null
+      // Keith API first
+      const _wyrkd = await _keithFetch('/fun/would-you-rather')
+      if (typeof _wyrkd === 'string') _wyrTxt = _wyrkd
+      else if (_wyrkd?.result) _wyrTxt = typeof _wyrkd.result === 'string' ? _wyrkd.result : _wyrkd.result?.question
+      if (_wyrTxt && _wyrTxt.includes(' or ')) {
+          const [optA, optB] = _wyrTxt.split(' or ').map(s => s.trim())
+          await reply(`╌══〔 🤔 WOULD YOU RATHER 〕═╌\n║ 🅰️ *Option A:*\n║    ${optA}\n║\n║ 🅱️ *Option B:*\n║    ${optB}\n║\n║ 💬 Reply A or B!\n╚═══════════════════════╝`)
+      } else {
+          // Local fallback
+          const wyrQs = [
+            ['Be able to fly', 'Be able to turn invisible'],
+            ['Always be late', 'Always be too early'],
+            ['Eat only sweets forever', 'Never eat sweets again'],
+            ['Always have to speak in rhyme', 'Always have to sing when you talk'],
+            ['Know when you will die', 'Know how you will die'],
+            ['Live in the city', 'Live in the countryside'],
+            ['Be the funniest person in the room', 'Be the smartest person in the room'],
+            ['Have unlimited money but no friends', 'Have unlimited friends but no money'],
+          ]
+          const q = wyrQs[Math.floor(Math.random() * wyrQs.length)]
+          await reply(`╌══〔 🤔 WOULD YOU RATHER 〕═╌\n║ 🅰️ *Option A:*\n║    ${q[0]}\n║\n║ 🅱️ *Option B:*\n║    ${q[1]}\n║\n║ 💬 Reply A or B!\n╚═══════════════════════╝`)
+      }
+  } catch(e) {
+      const wyrQs = [['Be able to fly','Be able to turn invisible'],['Always be late','Always be too early']]
+      const q = wyrQs[Math.floor(Math.random()*wyrQs.length)]
+      reply(`╌══〔 🤔 WOULD YOU RATHER 〕═╌\n║ 🅰️ *Option A:* ${q[0]}\n║ 🅱️ *Option B:* ${q[1]}\n║ 💬 Reply A or B!\n╚═══════════════════════╝`)
+  }
 } break
 
 case 'nvhh': {
