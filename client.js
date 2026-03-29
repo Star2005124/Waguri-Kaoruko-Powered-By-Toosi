@@ -1642,16 +1642,22 @@ const textmakerMenu = `
 
   let fullMenu = `${infoBot}\n${menu}`;
 
-  // Resolve thumbnail — honour .menuimage setting, fall back to media/thumb.png
+  // Resolve thumbnail — honour .menuimage setting, persist across restarts
   let _thumbBuf = null
   try {
     const _mt = global.menuThumb
+    const _savedThumb = path.join(__dirname, 'media', 'menu_thumb.jpg')
     if (_mt) {
       if (/^https?:\/\//.test(_mt)) {
         _thumbBuf = await getBuffer(_mt).catch(() => null)
       } else if (fs.existsSync(_mt)) {
         _thumbBuf = fs.readFileSync(_mt)
       }
+    }
+    // Auto-restore saved thumbnail from disk after bot restart
+    if (!_thumbBuf && fs.existsSync(_savedThumb)) {
+      if (!global.menuThumb) global.menuThumb = _savedThumb
+      _thumbBuf = fs.readFileSync(_savedThumb)
     }
     if (!_thumbBuf) _thumbBuf = fs.readFileSync(path.join(__dirname, 'media', 'thumb.png'))
   } catch {}
