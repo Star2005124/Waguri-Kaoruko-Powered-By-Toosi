@@ -5047,6 +5047,7 @@ break
                         }
                         break;
 
+                        case 'listwarn':
                         case 'warnlist':
                         case 'warnings': {
     await X.sendMessage(m.chat, { react: { text: '⚠️', key: m.key } })
