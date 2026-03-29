@@ -1813,6 +1813,118 @@ break
   }
   break
 
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 🕵️  SOCIAL STALKER (Keith API)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  case 'tiktokstalk':
+  case 'tikstalk': {
+      await X.sendMessage(m.chat, { react: { text: '🎵', key: m.key } })
+      const _tksu = q?.trim() || text?.trim()
+      if (!_tksu) return reply(`╌══〔 🎵 TIKTOK STALK 〕══╌\n║ *Usage:* ${prefix}tiktokstalk [@username]\n║ Example: ${prefix}tiktokstalk @charlidamelio\n╚═══════════════════════╝`)
+      try {
+          await reply(`🔍 _Stalking TikTok: ${_tksu}..._`)
+          const _tkd = await _keithFetch(`/stalker/tiktok?user=${encodeURIComponent(_tksu.replace('@',''))}`)
+          const _tkp = _tkd?.profile || _tkd?.result?.profile || _tkd
+          if (!_tkp?.username) throw new Error('User not found')
+          let msg = `╌══〔 🎵 TIKTOK PROFILE 〕═╌\n`
+          msg += `\n👤 *@${_tkp.username}* (_${_tkp.nickname || ''}_ )\n`
+          if (_tkp.bio) msg += `\n💬 *Bio:* ${_tkp.bio}\n`
+          if (_tkp.followers !== undefined) msg += `\n👥 *Followers:* ${_tkp.followers?.toLocaleString() || _tkp.followers}\n`
+          if (_tkp.following !== undefined) msg += `💞 *Following:* ${_tkp.following?.toLocaleString() || _tkp.following}\n`
+          if (_tkp.likes !== undefined) msg += `❤️ *Total Likes:* ${_tkp.likes?.toLocaleString() || _tkp.likes}\n`
+          if (_tkp.videos !== undefined) msg += `🎬 *Videos:* ${_tkp.videos}\n`
+          if (_tkp.verified) msg += `✅ *Verified Account*\n`
+          msg += `\n╚═══════════════════════╝`
+          await reply(msg)
+      } catch(e) { reply(`❌ Could not stalk TikTok user *${_tksu}*. Make sure the username is correct.`) }
+  } break
+
+  case 'igstalk':
+  case 'instastalk': {
+      await X.sendMessage(m.chat, { react: { text: '📷', key: m.key } })
+      const _igsu = q?.trim() || text?.trim()
+      if (!_igsu) return reply(`╌══〔 📷 INSTAGRAM STALK 〕╌\n║ *Usage:* ${prefix}igstalk [@username]\n║ Example: ${prefix}igstalk @cristiano\n╚═══════════════════════╝`)
+      try {
+          await reply(`🔍 _Stalking Instagram: ${_igsu}..._`)
+          const _igd = await _keithFetch(`/stalker/ig?user=${encodeURIComponent(_igsu.replace('@',''))}`)
+          const _igp = _igd?.profile || _igd?.result?.profile || _igd
+          if (!_igp?.username) throw new Error('Not found')
+          let msg = `╌══〔 📷 INSTAGRAM PROFILE 〕╌\n`
+          msg += `\n👤 *@${_igp.username}* (_${_igp.fullName || _igp.name || ''}_ )\n`
+          if (_igp.bio) msg += `\n💬 *Bio:* ${_igp.bio}\n`
+          if (_igp.followers !== undefined) msg += `\n👥 *Followers:* ${_igp.followers?.toLocaleString() || _igp.followers}\n`
+          if (_igp.following !== undefined) msg += `💞 *Following:* ${_igp.following?.toLocaleString() || _igp.following}\n`
+          if (_igp.posts !== undefined) msg += `🖼️ *Posts:* ${_igp.posts}\n`
+          if (_igp.isPrivate) msg += `🔒 *Private Account*\n`
+          if (_igp.isVerified) msg += `✅ *Verified Account*\n`
+          msg += `\n╚═══════════════════════╝`
+          await reply(msg)
+      } catch(e) { reply(`❌ Could not fetch Instagram profile *${_igsu}*.`) }
+  } break
+
+  case 'githubtrends':
+  case 'ghtrend': {
+      await X.sendMessage(m.chat, { react: { text: '💜', key: m.key } })
+      try {
+          await reply('🔍 _Fetching GitHub trending repos..._')
+          const _ghd = await _keithFetch('/stalker/githubtrend')
+          const _gha = Array.isArray(_ghd) ? _ghd : (_ghd?.result || _ghd?.repos || [])
+          if (!_gha.length) throw new Error('No data')
+          let msg = `╌══〔 💜 GITHUB TRENDING 〕═╌\n`
+          for (let r of _gha.slice(0, 10)) { msg += `\n${r.rank || '?'}. *${r.title || r.name}*\n   ✍️ ${r.author || ''}  |  🔗 ${r.url || ''}\n` }
+          msg += `\n╚═══════════════════════╝`
+          await reply(msg)
+      } catch(e) { reply('❌ Could not fetch GitHub trends. Try again later.') }
+  } break
+
+  case 'countryinfo':
+  case 'country': {
+      await X.sendMessage(m.chat, { react: { text: '🌍', key: m.key } })
+      const _ciq = q?.trim() || text?.trim()
+      if (!_ciq) return reply(`╌══〔 🌍 COUNTRY INFO 〕══╌\n║ *Usage:* ${prefix}country [name]\n║ Example: ${prefix}country Kenya\n╚═══════════════════════╝`)
+      try {
+          await reply(`🌍 _Looking up: ${_ciq}..._`)
+          const _cid = await _keithFetch(`/stalker/country?region=${encodeURIComponent(_ciq)}`)
+          const _cir = _cid?.result || (Array.isArray(_cid) ? _cid[0] : _cid)
+          if (!_cir?.name) throw new Error('Not found')
+          let msg = `╌══〔 🌍 ${(_cir.name?.common || _cir.name || _ciq).toUpperCase()} 〕╌\n`
+          const _cin = _cir.name?.common || _cir.name; if (_cin) msg += `\n🏳️ *Name:* ${_cin}\n`
+          if (_cir.capital) msg += `🏢 *Capital:* ${Array.isArray(_cir.capital) ? _cir.capital[0] : _cir.capital}\n`
+          if (_cir.population) msg += `👥 *Population:* ${_cir.population?.toLocaleString()}\n`
+          if (_cir.region) msg += `🗺️ *Region:* ${_cir.region}\n`
+          if (_cir.subregion) msg += `🏷️ *Subregion:* ${_cir.subregion}\n`
+          if (_cir.languages) msg += `🗣️ *Languages:* ${Object.values(_cir.languages).slice(0,3).join(', ')}\n`
+          if (_cir.currencies) msg += `💰 *Currency:* ${Object.values(_cir.currencies).map(c => `${c.name} (${c.symbol || '?'})`).join(', ')}\n`
+          if (_cir.flag || _cir.emoji) msg += `\n${_cir.flag || _cir.emoji}\n`
+          msg += `\n╚═══════════════════════╝`
+          await reply(msg)
+      } catch(e) { reply(`❌ Country *${_ciq}* not found. Try the full name.`) }
+  } break
+
+  case 'npminfo':
+  case 'npm': {
+      await X.sendMessage(m.chat, { react: { text: '📦', key: m.key } })
+      const _npq = q?.trim() || text?.trim()
+      if (!_npq) return reply(`╌══〔 📦 NPM INFO 〕═══════╌\n║ *Usage:* ${prefix}npm [package-name]\n║ Example: ${prefix}npm baileys\n╚═══════════════════════╝`)
+      try {
+          await reply(`📦 _Looking up npm: ${_npq}..._`)
+          const _npd = await _keithFetch(`/stalker/npm?q=${encodeURIComponent(_npq)}`)
+          const _npr = _npd?.result || _npd
+          if (!_npr?.name) throw new Error('Not found')
+          let msg = `╌══〔 📦 NPM: ${_npr.name} 〕══╌\n`
+          if (_npr.description) msg += `\n📝 *Description:* ${_npr.description}\n`
+          if (_npr.version) msg += `📌 *Latest Version:* ${_npr.version}\n`
+          if (_npr.author) msg += `✍️ *Author:* ${typeof _npr.author === 'object' ? _npr.author.name : _npr.author}\n`
+          if (_npr.license) msg += `📄 *License:* ${_npr.license}\n`
+          if (_npr.weeklyDownloads) msg += `📥 *Weekly Downloads:* ${_npr.weeklyDownloads?.toLocaleString()}\n`
+          if (_npr.homepage) msg += `🔗 *Homepage:* ${_npr.homepage}\n`
+          msg += `\n📦 npm install ${_npr.name}\n`
+          msg += `\n╚═══════════════════════╝`
+          await reply(msg)
+      } catch(e) { reply(`❌ Package *${_npq}* not found on npm.`) }
+  } break
+
+
   case 'firelogo':
   case 'flogo': {
       await X.sendMessage(m.chat, { react: { text: '🔥', key: m.key } })
@@ -5930,6 +6042,46 @@ case 'quranverse': {
 }
 break;
 
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 📖  SURAH LOOKUP (Keith API)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+case 'surah':
+case 'surahsearch': {
+    await X.sendMessage(m.chat, { react: { text: '📖', key: m.key } })
+    const _srq = q?.trim() || text?.trim()
+    if (!_srq) return reply(`╌══〔 📖 SURAH SEARCH 〕══╌\n║ *Usage:* ${prefix}surah [number/name]\n║ Example: ${prefix}surah 1\n║ Example: ${prefix}surah al-fatiha\n╚═══════════════════════╝`)
+    try {
+        await reply(`📖 _Fetching Surah ${_srq}..._`)
+        const _srd = await _keithFetch(`/surah?number=${encodeURIComponent(_srq)}`)
+        const _srs = _srd?.surah || _srd?.result || _srd
+        if (!_srs || (!_srs.englishName && !_srs.name)) throw new Error('Not found')
+        let msg = `╌══〔 📖 SURAH ${_srs.number || _srq} 〕══╌\n`
+        if (_srs.englishName) msg += `\n📜 *Name:* ${_srs.englishName} (${_srs.name || ''})\n`
+        if (_srs.englishNameTranslation) msg += `🖼️ *Meaning:* ${_srs.englishNameTranslation}\n`
+        if (_srs.numberOfAyahs) msg += `📊 *Ayahs:* ${_srs.numberOfAyahs}\n`
+        if (_srs.revelationType) msg += `🏙️ *Revealed in:* ${_srs.revelationType}\n`
+        const _sray = Array.isArray(_srs.ayahs) ? _srs.ayahs.slice(0, 3) : []
+        if (_sray.length) { msg += `\n*🔉 First Ayahs:*\n`; for (let a of _sray) { msg += `\n🔹 [${a.numberInSurah}] ${a.text || ''}\n`; if (a.translation) msg += `   _${a.translation}_\n` } }
+        msg += `\n╚═══════════════════════╝`
+        await reply(msg)
+    } catch(e) { reply(`❌ Could not find Surah *${_srq}*. Try a number (1-114) or use .surahlist to see all.`) }
+} break
+
+case 'surahlist': {
+    await X.sendMessage(m.chat, { react: { text: '📋', key: m.key } })
+    try {
+        const _sld = await _keithFetch('/surah')
+        const _sls = Array.isArray(_sld) ? _sld : (_sld?.surahs || _sld?.result)
+        if (!Array.isArray(_sls) || !_sls.length) throw new Error('No list')
+        let msg = `╌══〔 📋 ALL SURAHS (${_sls.length}) 〕╌\n`
+        for (let s of _sls.slice(0, 30)) { msg += `\n${s.number || '?'}. *${s.englishName || s.name}* — ${s.numberOfAyahs || '?'} ayahs` }
+        if (_sls.length > 30) msg += `\n\n_...use ${prefix}surah [number] for full details_`
+        msg += `\n╚═══════════════════════╝`
+        await reply(msg)
+    } catch(e) { reply('❌ Could not fetch surah list. Try again later.') }
+} break
+
+
 
 case 'llama-ai':{
   if (!text) return reply(`╔══〔 🦙 LLAMA AI 〕══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
@@ -7880,6 +8032,57 @@ case 'series': {
     }
 } break
 
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 🎬  DRAMA & MOVIE SEARCH (Keith API)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+case 'dramabox':
+case 'drama': {
+    await X.sendMessage(m.chat, { react: { text: '🇟🇰', key: m.key } })
+    const _dbq = q?.trim() || text?.trim()
+    if (!_dbq) return reply(`╌══〔 🇟🇰 DRAMABOX SEARCH 〕╌\n║ *Usage:* ${prefix}drama [title]\n║ Example: ${prefix}drama crash landing\n╚═══════════════════════╝`)
+    try {
+        await reply(`🔍 _Searching DramaBox for: ${_dbq}..._`)
+        const _dbd = await _keithFetch(`/dramabox?q=${encodeURIComponent(_dbq)}`)
+        const _dbr = Array.isArray(_dbd) ? _dbd : (_dbd?.result || _dbd?.dramas || [])
+        if (!_dbr.length) { reply(`❌ No dramas found for *${_dbq}*`); break }
+        let msg = `╌══〔 🇟🇰 DRAMABOX RESULTS 〕╌\n`
+        for (let d of _dbr.slice(0, 5)) {
+            msg += `\n🎬 *${d.title || d.name}*\n`
+            if (d.year) msg += `   📅 Year: ${d.year}\n`
+            if (d.rating) msg += `   ⭐ Rating: ${d.rating}\n`
+            if (d.episodes) msg += `   📺 Episodes: ${d.episodes}\n`
+            if (d.genre) msg += `   🏷️ Genre: ${Array.isArray(d.genre) ? d.genre.join(', ') : d.genre}\n`
+            if (d.url) msg += `   🔗 ${d.url}\n`
+        }
+        msg += `\n╚═══════════════════════╝`
+        await reply(msg)
+    } catch(e) { reply('❌ Drama search failed. Try again later.') }
+} break
+
+case 'movsearch':
+case 'searchmovie': {
+    await X.sendMessage(m.chat, { react: { text: '🎬', key: m.key } })
+    const _mvsq = q?.trim() || text?.trim()
+    if (!_mvsq) return reply(`╌══〔 🎬 MOVIE SEARCH 〕═══╌\n║ *Usage:* ${prefix}movsearch [title]\n║ Example: ${prefix}movsearch avengers\n╚═══════════════════════╝`)
+    try {
+        await reply(`🔍 _Searching movies: ${_mvsq}..._`)
+        const _mvsd = await _keithFetch(`/moviebox/search?q=${encodeURIComponent(_mvsq)}`)
+        const _mvsr = Array.isArray(_mvsd) ? _mvsd : (_mvsd?.result || _mvsd?.movies || [])
+        if (!_mvsr.length) { reply(`❌ No movies found for *${_mvsq}*`); break }
+        let msg = `╌══〔 🎬 MOVIE RESULTS 〕═══╌\n`
+        for (let mv of _mvsr.slice(0, 5)) {
+            msg += `\n🎬 *${mv.title || mv.name}*\n`
+            if (mv.year) msg += `   📅 Year: ${mv.year}\n`
+            if (mv.rating || mv.imdbRating) msg += `   ⭐ Rating: ${mv.rating || mv.imdbRating}\n`
+            if (mv.genre) msg += `   🏷️ Genre: ${Array.isArray(mv.genre) ? mv.genre.join(', ') : mv.genre}\n`
+            if (mv.description || mv.plot) msg += `   📝 ${(mv.description || mv.plot || '').slice(0, 100)}...\n`
+        }
+        msg += `\n╚═══════════════════════╝`
+        await reply(msg)
+    } catch(e) { reply('❌ Movie search failed. Try again later.') }
+} break
+
+
 // ── Direct stream lookup: .stream [xcasper-id] [movie|tv] [season?] [ep?]
 case 'stream':
 case 'getstream':
@@ -8620,6 +8823,41 @@ if (!_dareQ) _dareQ = dares[Math.floor(Math.random() * dares.length)]
 reply(`╔══〔 🔥 DARE CHALLENGE 〕══╗\n║ 🎯 ${_dareQ}\n╚═══════════════════════╝`)
 } break
 
+  case 'paranoia': {
+      await X.sendMessage(m.chat, { react: { text: '😱', key: m.key } })
+      try {
+          const _pnd = await _keithFetch('/fun/paranoia')
+          const _pntxt = typeof _pnd === 'string' ? _pnd : (_pnd?.result || _pnd?.question)
+          if (!_pntxt) throw new Error('No question')
+          await reply(`╌══〔 😱 PARANOIA 〕══════╌\n\n💬 _Someone just whispered a question about you..._\n\n❓ *${_pntxt}*\n\n🙄 _Only your neighbors know the answer!_\n╚═══════════════════════╝`)
+      } catch(e) { reply('❌ Could not get a paranoia question. Try again!') }
+  } break
+
+  case 'nhie':
+  case 'neverhaveiever': {
+      await X.sendMessage(m.chat, { react: { text: '🙅', key: m.key } })
+      try {
+          const _nhd = await _keithFetch('/fun/never-have-i-ever')
+          const _nhtxt = typeof _nhd === 'string' ? _nhd : (_nhd?.result || _nhd?.statement)
+          if (!_nhtxt) throw new Error('No statement')
+          await reply(`╌══〔 🙅 NEVER HAVE I EVER 〕═╌\n\n✋ _Raise your hand if you have..._\n\n💬 *Never have I ever ${_nhtxt}*\n\n🤫 _Who has done this? React below!_\n╚═══════════════════════╝`)
+      } catch(e) { reply('❌ Could not get a NHIE statement. Try again!') }
+  } break
+
+  case 'trivia':
+  case 'question': {
+      await X.sendMessage(m.chat, { react: { text: '🧩', key: m.key } })
+      try {
+          const _trd = await _keithFetch('/fun/question')
+          const _trq = _trd?.question || _trd?.result?.question
+          const _tca = _trd?.correctAnswer || _trd?.result?.correctAnswer
+          const _tcat = _trd?.category || _trd?.result?.category || 'General'
+          if (!_trq) throw new Error('No question')
+          await reply(`╌══〔 🧩 TRIVIA 〕════════╌\n\n📚 *Category:* ${_tcat}\n\n❓ *${_trq}*\n\n💡 _Reply with your answer! Correct answer will be revealed!_\n🟢 *Answer:* ||${_tca}||\n╚═══════════════════════╝`)
+      } catch(e) { reply('❌ Could not fetch a trivia question. Try again!') }
+  } break
+
+
 case '8ball': {
     await X.sendMessage(m.chat, { react: { text: '🎱', key: m.key } })
 if (!text) return reply(`╔══〔 🎱 MAGIC 8-BALL 〕══╗\n\n║ Usage: *${prefix}8ball [your question]*\n║ Example: ${prefix}8ball Will I pass my exam?\n╚═══════════════════════╝`)
@@ -8676,19 +8914,20 @@ reply(`╔═══〔 💐 COMPLIMENT 〕═══╗\n\n║ 👤 *${target}*\n
 } break
 
 case 'insult': {
-    await X.sendMessage(m.chat, { react: { text: '😤', key: m.key } })
-    let _insultText = null
+    await X.sendMessage(m.chat, { react: { text: '🗡️', key: m.key } })
     try {
-        let _ep = await fetch('https://eliteprotech-apis.zone.id/insult', { signal: AbortSignal.timeout(8000) })
-        let _epd = await _ep.json()
-        if (_epd.success && _epd.insult) _insultText = _epd.insult
-    } catch {}
-    if (!_insultText) {
-        let _localInsults = ['You are the human equivalent of a participation award.', 'If you were a spice, you would be flour.', 'You bring everyone so much joy when you leave.', 'You are like a cloud. When you disappear it is a beautiful day.', 'You are proof that even evolution makes mistakes.', 'Light travels faster than sound, which is why you seemed bright until you spoke.']
-        _insultText = _localInsults[Math.floor(Math.random() * _localInsults.length)]
-    }
-    let _insultTarget = (m.mentionedJid && m.mentionedJid[0]) ? `@${m.mentionedJid[0].split('@')[0]}` : pushname
-    reply(`╔═════〔 🔥 ROAST 〕══════╗\n\n║ 👤 *${_insultTarget}*\n��� ${_insultText}\n╚═══════════════════════╝`)
+        let _inTxt = null
+        const _inkd = await _keithFetch('/fun/insult')
+        if (typeof _inkd === 'string') _inTxt = _inkd; else if (_inkd?.insult) _inTxt = _inkd.insult; else if (_inkd?.result) _inTxt = typeof _inkd.result === 'string' ? _inkd.result : _inkd.result?.insult
+        if (!_inTxt) {
+            let _ingr = await fetch(`https://api.giftedtech.co.ke/api/fun/insult?apikey=${_giftedKey()}`, { signal: AbortSignal.timeout(10000) })
+            let _ingd = await _ingr.json()
+            if (_ingd.success && _ingd.result) _inTxt = _ingd.result
+        }
+        if (!_inTxt) throw new Error('No insult')
+        const _inTarget = m.quoted?.pushName || mentioned[0] && store.contacts[mentioned[0]]?.name || sender.split('@')[0]
+        await reply(`╌══〔 🗡️ INSULT 〕════════╌\n\n@${_inTarget} 👇\n\n_${_inTxt}_\n\n╚═══════════════════════╝`)
+    } catch(e) { reply('❌ Could not generate insult. Try again!') }
 } break
 
   case 'story':
@@ -8800,22 +9039,25 @@ const iqMsg = iqScore > 130 ? 'Genius level! 🧠💡' : iqScore > 110 ? 'Above 
 X.sendMessage(from, { text: `╔════〔 🧠 IQ METER 〕════╗\n\n║ 👤 @${iqTarget.split('@')[0]}\n\n║ ${'🧠'.repeat(Math.min(10,Math.floor(iqScore/15)))}${'⬜'.repeat(10 - Math.min(10,Math.floor(iqScore/15)))} *IQ: ${iqScore}*\n\n║ _${iqMsg}_\n╚═══════════════════════╝`, mentions: [iqTarget] }, { quoted: m })
 } break
 
-case 'joke': {
+case 'joke':
+case 'jokes': {
     await X.sendMessage(m.chat, { react: { text: '😂', key: m.key } })
-try {
-    let jokeText = null
     try {
-        let _gj = await fetch(`https://api.giftedtech.co.ke/api/fun/jokes?apikey=${_giftedKey()}`, { signal: AbortSignal.timeout(10000) })
-        let _gjd = await _gj.json()
-        if (_gjd.success && _gjd.result) jokeText = _gjd.result
-    } catch {}
-    if (!jokeText) {
-        let res = await fetch('https://v2.jokeapi.dev/joke/Any?safe-mode', { signal: AbortSignal.timeout(10000) })
-        let data = await res.json()
-        jokeText = data.type === 'single' ? data.joke : `${data.setup}\n\n║ ${data.delivery}`
-    }
-    reply(`╔══════〔 😂 JOKE 〕══════╗\n\n║ ${jokeText}\n╚═══════════════════════╝`)
-} catch { reply('Could not fetch a joke right now.') }
+        let _jkTxt = null
+        // Keith API first
+        const _jkkd = await _keithFetch('/fun/jokes')
+        if (_jkkd?.setup && _jkkd?.punchline) _jkTxt = `*${_jkkd.setup}*\n\n${_jkkd.punchline}`
+        else if (_jkkd?.result?.setup) _jkTxt = `*${_jkkd.result.setup}*\n\n${_jkkd.result.punchline}`
+        else if (typeof _jkkd === 'string') _jkTxt = _jkkd
+        // GiftedTech fallback
+        if (!_jkTxt) {
+            let _jkgr = await fetch(`https://api.giftedtech.co.ke/api/fun/joke?apikey=${_giftedKey()}`, { signal: AbortSignal.timeout(10000) })
+            let _jkgd = await _jkgr.json()
+            if (_jkgd.success && _jkgd.result) _jkTxt = _jkgd.result
+        }
+        if (!_jkTxt) throw new Error('No joke')
+        await reply(`╌══〔 😂 JOKE OF THE DAY 〕══╌\n\n${_jkTxt}\n\n😄 _Haha!_\n╚═══════════════════════╝`)
+    } catch(e) { reply('❌ Could not fetch a joke. Try again!') }
 } break
 
 case 'quote':
@@ -8978,16 +9220,23 @@ pick = { q: data[0].q, a: data[0].a }
 reply(`╔═══〔 💫 MOTIVATION 〕═══╗\n\n║ ❝ ${pick.q} ❞\n\n║ — *${pick.a}*\n╚═══════════════════════╝`)
 } break
 
-case 'fact': {
-    await X.sendMessage(m.chat, { react: { text: '💡', key: m.key } })
-try {
-let res = await fetch('https://uselessfacts.jsph.pl/api/v2/facts/random')
-let data = await res.json()
-reply(`╔══〔 📚 RANDOM FACT 〕═══╗\n\n║ ${data.text}\n╚═══════════════════════╝`)
-} catch {
-let facts = ['Honey never spoils.', 'Octopuses have three hearts.', 'Bananas are berries but strawberries are not.', 'A group of flamingos is called a flamboyance.', 'The shortest war in history lasted 38 minutes.']
-reply(`╔══〔 📚 RANDOM FACT 〕═══╗\n\n║ ${facts[Math.floor(Math.random() * facts.length)]}\n╚═══════════════════════╝`)
-}
+case 'fact':
+case 'randomfact': {
+    await X.sendMessage(m.chat, { react: { text: '🧠', key: m.key } })
+    try {
+        let _ftTxt = null
+        // Keith API first
+        const _ftkd = await _keithFetch('/fun/fact')
+        if (typeof _ftkd === 'string') _ftTxt = _ftkd; else if (_ftkd?.fact) _ftTxt = _ftkd.fact; else if (_ftkd?.result) _ftTxt = typeof _ftkd.result === 'string' ? _ftkd.result : _ftkd.result.fact
+        // GiftedTech fallback
+        if (!_ftTxt) {
+            let _ftgr = await fetch(`https://api.giftedtech.co.ke/api/fun/fact?apikey=${_giftedKey()}`, { signal: AbortSignal.timeout(10000) })
+            let _ftgd = await _ftgr.json()
+            if (_ftgd.success && _ftgd.result) _ftTxt = _ftgd.result
+        }
+        if (!_ftTxt) throw new Error('No fact')
+        await reply(`╌══〔 🧠 RANDOM FACT 〕════╌\n\n💡 _${_ftTxt}_\n\n╚═══════════════════════╝`)
+    } catch(e) { reply('❌ Could not fetch a random fact. Try again!') }
 } break
 
 //━━━━━━━━━━━━━━━━━━━━━━━━//
@@ -9247,6 +9496,36 @@ case 'stylish': {
         if (_fBuf.trim()) await reply(_fBuf.trimEnd() + _fFooter)
     }
 } break
+
+  case 'ascii':
+  case 'asciiart': {
+      await X.sendMessage(m.chat, { react: { text: '🎨', key: m.key } })
+      const _asq = q?.trim() || text?.trim()
+      if (!_asq) return reply('╌══〔 🎨 ASCII ART 〕═════╌\n║ *Usage:* ${prefix}ascii [word]\n║ Example: ${prefix}ascii dragon\n╚═══════════════════════╝')
+      try {
+          await reply(`🎨 _Generating ASCII art for: ${_asq}..._`)
+          const _asd = await _keithFetch(`/tools/ascii?q=${encodeURIComponent(_asq)}`)
+          const _asr = _asd?.arts || _asd?.result?.arts
+          if (!Array.isArray(_asr) || !_asr.length) throw new Error('No art')
+          const _asArt = _asr[Math.floor(Math.random() * Math.min(_asr.length, 3))]
+          await reply(`🎨 *ASCII: ${_asq.toUpperCase()}*\n```\n${_asArt}\n````)
+      } catch(e) { reply('❌ ASCII art generation failed. Try another word.') }
+  } break
+
+  case 'walink':
+  case 'whatsapplink': {
+      await X.sendMessage(m.chat, { react: { text: '🔗', key: m.key } })
+      const _wlparts = text?.split(' ') || []
+      const _wlnum = _wlparts[0]?.replace(/[^0-9]/g, '')
+      const _wlmsg = _wlparts.slice(1).join(' ')
+      if (!_wlnum) return reply('╌══〔 🔗 WA LINK 〕═══════╌\n║ *Usage:* ${prefix}walink [number] [message]\n║ Example: ${prefix}walink 254712345678 Hello!\n╚═══════════════════════╝')
+      try {
+          const _wld = await _keithFetch(`/tools/walink?q=${encodeURIComponent(_wlmsg || 'Hello')}&number=${_wlnum}`)
+          const _wlurl = _wld?.shortUrl || _wld?.url || `https://wa.me/${_wlnum}${_wlmsg ? '?text=' + encodeURIComponent(_wlmsg) : ''}`
+          await reply(`╌══〔 🔗 WHATSAPP LINK 〕══╌\n\n📞 *Number:* +${_wlnum}\n🔗 *Link:* ${_wlurl}\n╚═══════════════════════╝`)
+      } catch(e) { reply('❌ Failed to create WhatsApp link.') }
+  } break
+
 
 case 'font':
 case 'fonts': {
@@ -10124,14 +10403,23 @@ case 'clima': {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 case 'tinyurl':
 case 'shorturl':
+case 'tinyurl':
 case 'shorten': {
     await X.sendMessage(m.chat, { react: { text: '🔗', key: m.key } })
-    if (!text || !text.startsWith('http')) return reply(`╔════〔 🔗 TINY URL 〕════╗\n\n║ Usage: *${prefix}tinyurl [url]*\n║ Example: ${prefix}tinyurl https://google.com\n╚═══════════════════════╝`)
+    if (!text || !text.startsWith('http')) return reply('╌════〔 🔗 URL SHORTENER 〕══╌\n\n║ *Usage:* ${prefix}tinyurl [url]\n║ Example: ${prefix}tinyurl https://google.com\n╚═══════════════════════╝')
     try {
-        let r = await fetch(`https://api.giftedtech.co.ke/api/tools/tinyurl?apikey=${_giftedKey()}&url=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(15000) })
-        let d = await r.json()
-        if (!d.success || !d.result) throw new Error('Failed')
-        await reply(`╔══〔 🔗 URL SHORTENER 〕══╗\n║ 📎 *Original* : ${text}\n║ ✅ *Short URL* : ${d.result}\n╚═══════════════════════╝`)
+        let _suUrl = null
+        // Keith first
+        const _sukd = await _keithFetch(`/shortener/tinyurl?url=${encodeURIComponent(text)}`)
+        if (_sukd?.shortened) _suUrl = _sukd.shortened
+        // GiftedTech fallback
+        if (!_suUrl) {
+            let _sugr = await fetch(`https://api.giftedtech.co.ke/api/tools/tinyurl?apikey=${_giftedKey()}&url=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(12000) })
+            let _sugd = await _sugr.json()
+            if (_sugd.success && _sugd.result) _suUrl = _sugd.result
+        }
+        if (!_suUrl) throw new Error('Failed')
+        await reply(`╌══〔 🔗 URL SHORTENER 〕══╌\n║ 📎 *Original* : ${text}\n║ ✅ *Short URL* : ${_suUrl}\n╚═══════════════════════╝`)
     } catch(e) { reply('❌ Failed to shorten URL. Make sure it starts with https://') }
 } break
 
@@ -10141,10 +10429,16 @@ case 'shorten': {
 case 'pickupline': {
     await X.sendMessage(m.chat, { react: { text: '💘', key: m.key } })
     try {
-        let r = await fetch(`https://api.giftedtech.co.ke/api/fun/pickupline?apikey=${_giftedKey()}`, { signal: AbortSignal.timeout(15000) })
-        let d = await r.json()
-        if (!d.success || !d.result) throw new Error('No line')
-        await reply(`╔══〔 💘 PICKUP LINE 〕════╗\n║ _"${d.result}"_\n╚═══════════════════════╝`)
+        let _plTxt = null
+        const _plkd = await _keithFetch('/fun/pickuplines')
+        if (typeof _plkd === 'string') _plTxt = _plkd; else if (_plkd?.result) _plTxt = _plkd.result
+        if (!_plTxt) {
+            let _plr = await fetch(`https://api.giftedtech.co.ke/api/fun/pickupline?apikey=${_giftedKey()}`, { signal: AbortSignal.timeout(10000) })
+            let _pld = await _plr.json()
+            if (_pld.success && _pld.result) _plTxt = _pld.result
+        }
+        if (!_plTxt) throw new Error('No pickup line')
+        await reply(`╌══〔 💘 PICKUP LINE 〕════╌\n║ _“${_plTxt}”_\n╚═══════════════════════╝`)
     } catch(e) { reply('❌ Could not fetch a pickup line right now. Try again!') }
 } break
 
@@ -11675,8 +11969,204 @@ case 'news': {
     body += `╚═══════════════════════╝`
     reply(body)
   } catch (e) { reply('❌ News fetch failed: ' + e.message) }
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 📚  EDUCATION — GRAMMAR · POEM · BOOKS · FRUIT INFO (Keith API)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  case 'grammarcheck':
+  case 'grammar': {
+      await X.sendMessage(m.chat, { react: { text: '✍️', key: m.key } })
+      const _gcq = q?.trim() || text?.trim()
+      if (!_gcq) return reply(`╌══〔 ✍️ GRAMMAR CHECK 〕══╌\n║ *Usage:* ${prefix}grammarcheck [text]\n║ Example: ${prefix}grammarcheck She go to school\n╚═══════════════════════╝`)
+      try {
+          await reply('✍️ _Checking grammar..._')
+          const _gcd = await _keithFetch(`/grammarcheck?q=${encodeURIComponent(_gcq)}`)
+          const _gcr = _gcd?.recommendations || _gcd?.result?.recommendations
+          if (!Array.isArray(_gcr) || !_gcr.length) { await reply('✅ *Grammar looks good!*'); break }
+          let msg = '╌══〔 ✍️ GRAMMAR CHECK 〕══╌\n'
+          msg += `\n📝 *Original:* _${_gcq}_\n\n*Suggestions:*\n`
+          for (let s of _gcr.slice(0, 5)) { msg += `\n❗ ${s.adviceText || s.text || ''}\n` }
+          msg += `\n╚═══════════════════════╝`
+          await reply(msg)
+      } catch(e) { reply('❌ Grammar check failed. Try again later.') }
+  } break
+
+  case 'poem':
+  case 'randompoem': {
+      await X.sendMessage(m.chat, { react: { text: '🎭', key: m.key } })
+      try {
+          const _pd = await _keithFetch('/education/randompoem')
+          const _pr = _pd?.poem || _pd
+          if (!_pr?.title) throw new Error('No poem')
+          let msg = `╌══〔 🎭 RANDOM POEM 〕════╌\n\n📜 *${_pr.title}*\n✍️ _by ${_pr.author || 'Unknown'}_\n\n`
+          if (Array.isArray(_pr.lines)) msg += _pr.lines.slice(0, 20).join('\n') + '\n'
+          msg += `\n╚═══════════════════════╝`
+          await reply(msg)
+      } catch(e) { reply('❌ Could not fetch a poem right now.') }
+  } break
+
+  case 'booksearch':
+  case 'findbook': {
+      await X.sendMessage(m.chat, { react: { text: '📖', key: m.key } })
+      const _bsq = q?.trim() || text?.trim()
+      if (!_bsq) return reply(`╌══〔 📖 BOOK SEARCH 〕════╌\n║ *Usage:* ${prefix}booksearch [title]\n║ Example: ${prefix}booksearch Harry Potter\n╚═══════════════════════╝`)
+      try {
+          await reply(`📖 _Searching books for: ${_bsq}..._`)
+          const _bsd = await _keithFetch(`/education/booksearch?q=${encodeURIComponent(_bsq)}`)
+          const _bsr = Array.isArray(_bsd) ? _bsd : (_bsd?.result || [])
+          if (!_bsr.length) { reply(`❌ No books found for *${_bsq}*`); break }
+          let msg = `╌══〔 📖 BOOKS: ${_bsq.toUpperCase()} 〕╌\n`
+          for (let b of _bsr.slice(0, 5)) {
+              const _bt = b.title || b.volumeInfo?.title || 'Unknown'
+              const _ba = b.authors || b.volumeInfo?.authors
+              msg += `\n📚 *${_bt}*\n`
+              if (_ba) msg += `   ✍️ ${Array.isArray(_ba) ? _ba.join(', ') : _ba}\n`
+              const _bde = b.description || b.volumeInfo?.description
+              if (_bde) msg += `   📝 ${_bde.slice(0, 120)}...\n`
+          }
+          msg += `\n╚═══════════════════════╝`
+          await reply(msg)
+      } catch(e) { reply('❌ Book search failed. Try again later.') }
+  } break
+
+  case 'fruit':
+  case 'fruitinfo': {
+      await X.sendMessage(m.chat, { react: { text: '🍎', key: m.key } })
+      const _fiq = q?.trim() || text?.trim()
+      if (!_fiq) return reply(`╌══〔 🍎 FRUIT INFO 〕════╌\n║ *Usage:* ${prefix}fruit [name]\n║ Example: ${prefix}fruit mango\n╚═══════════════════════╝`)
+      try {
+          await reply(`🍎 _Looking up: ${_fiq}..._`)
+          const _fid = await _keithFetch(`/education/fruit?q=${encodeURIComponent(_fiq)}`)
+          const _fir = _fid?.result || _fid
+          if (!_fir?.name) throw new Error('Not found')
+          let msg = `╌══〔 🍎 ${_fir.name.toUpperCase()} 〕╌\n`
+          if (_fir.family) msg += `\n🌿 *Family:* ${_fir.family}\n`
+          if (_fir.order) msg += `📦 *Order:* ${_fir.order}\n`
+          if (_fir.nutritions) { const n = _fir.nutritions; msg += `\n*🔬 Nutrition (per 100g):*\n`; if (n.calories !== undefined) msg += `  🔥 Calories: ${n.calories}\n`; if (n.carbohydrates !== undefined) msg += `  🌾 Carbs: ${n.carbohydrates}g\n`; if (n.protein !== undefined) msg += `  💪 Protein: ${n.protein}g\n`; if (n.fat !== undefined) msg += `  🥑 Fat: ${n.fat}g\n`; if (n.sugar !== undefined) msg += `  🍬 Sugar: ${n.sugar}g\n` }
+          msg += `\n╚═══════════════════════╝`
+          await reply(msg)
+      } catch(e) { reply(`❌ Could not find info for *${_fiq}*. Try: mango, apple, lemon`) }
+  } break
+
 } break
 
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 📰  BBC / TECH / KENYANS NEWS (Keith API)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  case 'bbcnews':
+  case 'bbcheadlines': {
+      await X.sendMessage(m.chat, { react: { text: '📡', key: m.key } })
+      try {
+          await reply('📡 _Fetching BBC headlines..._')
+          const _bd = await _keithFetch('/news/bbc')
+          const _bst = _bd?.topStories || _bd?.articles || _bd
+          if (!Array.isArray(_bst) || !_bst.length) throw new Error('No data')
+          let msg = `╔══〔 📡 BBC NEWS 〕══╗\n`
+          for (let a of _bst.slice(0, 8)) {
+              msg += `\n🔹 *${a.title}*\n`
+              if (a.description) msg += `   ${a.description.slice(0, 100)}...\n`
+          }
+          msg += `\n╚═══════════════════════╝`
+          await reply(msg)
+      } catch(e) { reply('❌ Could not fetch BBC news. Try again later.') }
+  } break
+
+  case 'technews':
+  case 'techheadlines': {
+      await X.sendMessage(m.chat, { react: { text: '💻', key: m.key } })
+      try {
+          await reply('💻 _Fetching tech news..._')
+          const _tnd = await _keithFetch('/news/tech')
+          const _tna = _tnd?.articles || _tnd?.items || (Array.isArray(_tnd) ? _tnd : [])
+          if (!_tna.length) throw new Error('No data')
+          let msg = `╔══〔 💻 TECH NEWS 〕══╗\n`
+          for (let a of _tna.slice(0, 8)) {
+              msg += `\n🔷 *${a.title || a.name}*\n`
+              if (a.description || a.summary) msg += `   ${(a.description || a.summary || '').slice(0, 100)}...\n`
+          }
+          msg += `\n╚═══════════════════════╝`
+          await reply(msg)
+      } catch(e) { reply('❌ Could not fetch tech news. Try again later.') }
+  } break
+
+  case 'kenyans':
+  case 'kenyannews': {
+      await X.sendMessage(m.chat, { react: { text: '🇰🇪', key: m.key } })
+      try {
+          await reply('🇰🇪 _Fetching Kenyans.co.ke news..._')
+          const _knd = await _keithFetch('/news/kenyans')
+          const _kna = Array.isArray(_knd) ? _knd : (_knd?.articles || [])
+          if (!_kna.length) throw new Error('No data')
+          let msg = `╔══〔 🇰🇪 KENYA NEWS 〕══╗\n`
+          for (let a of _kna.slice(0, 8)) {
+              msg += `\n📰 *${a.title}*\n`
+              if (a.url) msg += `   🔗 ${a.url.slice(0, 60)}\n`
+          }
+          msg += `\n╚═══════════════════════╝`
+          await reply(msg)
+      } catch(e) { reply('❌ Could not fetch Kenyan news. Try again later.') }
+  } break
+
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // 📰  BBC / TECH / KENYANS NEWS (Keith API)
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    case 'bbcnews':
+    case 'bbcheadlines': {
+        await X.sendMessage(m.chat, { react: { text: '📡', key: m.key } })
+        try {
+            await reply('📡 _Fetching BBC headlines..._')
+            const _bd = await _keithFetch('/news/bbc')
+            const _bst = _bd?.topStories || _bd?.articles || _bd
+            if (!Array.isArray(_bst) || !_bst.length) throw new Error('No data')
+            let msg = `╔══〔 📡 BBC NEWS 〕══╗\n`
+            for (let a of _bst.slice(0, 8)) {
+                msg += `\n🔹 *${a.title}*\n`
+                if (a.description) msg += `   ${a.description.slice(0, 100)}...\n`
+            }
+            msg += `\n╚═══════════════════════╝`
+            await reply(msg)
+        } catch(e) { reply('❌ Could not fetch BBC news. Try again later.') }
+    } break
+
+    case 'technews':
+    case 'techheadlines': {
+        await X.sendMessage(m.chat, { react: { text: '💻', key: m.key } })
+        try {
+            await reply('💻 _Fetching tech news..._')
+            const _tnd = await _keithFetch('/news/tech')
+            const _tna = _tnd?.articles || _tnd?.items || _tnd
+            if (!Array.isArray(_tna) || !_tna.length) throw new Error('No data')
+            let msg = `╔══〔 💻 TECH NEWS 〕══╗\n`
+            for (let a of _tna.slice(0, 8)) {
+                msg += `\n🔷 *${a.title || a.name}*\n`
+                if (a.description || a.summary) msg += `   ${(a.description || a.summary || '').slice(0, 100)}...\n`
+            }
+            msg += `\n╚═══════════════════════╝`
+            await reply(msg)
+        } catch(e) { reply('❌ Could not fetch tech news. Try again later.') }
+    } break
+
+    case 'kenyans':
+    case 'kenyannews': {
+        await X.sendMessage(m.chat, { react: { text: '🇰🇪', key: m.key } })
+        try {
+            await reply('🇰🇪 _Fetching Kenyans news..._')
+            const _knd = await _keithFetch('/news/kenyans')
+            const _kna = Array.isArray(_knd) ? _knd : _knd?.articles
+            if (!Array.isArray(_kna) || !_kna.length) throw new Error('No data')
+            let msg = `╔══〔 🇰🇪 KENYA NEWS 〕══╗\n`
+            for (let a of _kna.slice(0, 8)) {
+                msg += `\n📰 *${a.title}*\n`
+                if (a.url) msg += `   🔗 ${a.url.slice(0, 60)}...\n`
+            }
+            msg += `\n╚═══════════════════════╝`
+            await reply(msg)
+        } catch(e) { reply('❌ Could not fetch Kenyan news. Try again later.') }
+    } break
+
+  
 case 'manga': {
   await X.sendMessage(m.chat, { react: { text: '📕', key: m.key } })
   if (!text) return reply(`╔══〔 📕 MANGA SEARCH 〕═══╗\n║ *Usage:* ${prefix}manga [title]\n║ Example: ${prefix}manga one piece\n╚═══════════════════════╝`)
