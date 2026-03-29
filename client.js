@@ -2529,7 +2529,7 @@ case 'bratvid':
 case 'bratv':
 case 'bratvideo': {
     await X.sendMessage(m.chat, { react: { text: '✏️', key: m.key } })
-  if (!text) return reply(`╔═══〔 🤖 AI COMMAND 〕═══╗\n\n║ Usage: *${prefix}${command} [pesan]*\n║ Contoh: ${prefix}${command} Hai bang, apa kabar?\n╚═══════════════════════╝`)
+  if (!text) return reply(`╔══〔 🎬 BRAT VIDEO 〕══╗\n\n║ Usage: *${prefix}${command} [pesan]*\n║ Contoh: ${prefix}${command} Hai bang, apa kabar?\n╚═══════════════════════╝`)
   if (text.length > 250) return reply(`Character limit exceeded, max 250!`)
   const words = text.split(" ")
   const tempDir = path.join(process.cwd(), 'tmp')
@@ -2587,15 +2587,24 @@ break
 case 'brat': {
     await X.sendMessage(m.chat, { react: { text: '✏️', key: m.key } })
 if (!q) return reply(`Please enter text\n\nExample: ${prefix + command} alok hamil`);
-let rulz = `https://aqul-brat.hf.space/api/brat?text=${encodeURIComponent(q)}`;
+let _bratBuf = null
 try {
-const res = await axios.get(rulz, { responseType: 'arraybuffer' });
-const buffer = Buffer.from(res.data, 'binary');
-await X.sendImageAsStickerAV(m.chat, buffer, m, { packname: ``, author: `${global.author}` });
+  const _r1 = await axios.get(`https://aqul-brat.hf.space/api/brat?text=${encodeURIComponent(q)}`, { responseType: 'arraybuffer', timeout: 15000 })
+  _bratBuf = Buffer.from(_r1.data, 'binary')
+} catch {}
+if (!_bratBuf || _bratBuf.length < 1000) {
+  try {
+    const _r2 = await axios.get(`https://brat.space/api/brat?text=${encodeURIComponent(q)}`, { responseType: 'arraybuffer', timeout: 15000 })
+    _bratBuf = Buffer.from(_r2.data, 'binary')
+  } catch {}
+}
+try {
+  if (!_bratBuf || _bratBuf.length < 1000) throw new Error('Both brat APIs failed')
+  await X.sendImageAsStickerAV(m.chat, _bratBuf, m, { packname: ``, author: `${global.author}` })
 } catch (e) {
-console.log(e);
-await reply(`API is currently down or under maintenance. Please try again later.`);
-    }
+  console.log(e)
+  await reply('❌ Brat sticker generation failed. Please try again.')
+}
 }
 break
 
@@ -5022,7 +5031,7 @@ break
 //━━━━━━━━━━━━━━━━━━━━━━━━//
 // Ai Features
 case 'quantum-ai':{
-  if (!text) return reply(`╔═══〔 🤖 AI COMMAND 〕═══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
+  if (!text) return reply(`╔══〔 ⚛️ QUANTUM AI 〕══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
   try {
     await X.sendMessage(m.chat, { react: { text: '⚛️', key: m.key } })
     const result = await _runAI('You are Quantum AI, an advanced AI with deep analytical and quantum-level thinking capabilities. Provide thorough, intelligent, well-structured responses.', text)
@@ -5034,7 +5043,7 @@ case 'quantum-ai':{
 }
 break
 case 'chatai':{
-  if (!text) return reply(`╔═══〔 🤖 AI COMMAND 〕═══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
+  if (!text) return reply(`╔══〔 🗨️ CHAT AI 〕══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
   try {
     await X.sendMessage(m.chat, { react: { text: '💬', key: m.key } })
     const result = await _runAI('You are ChatAI, a friendly and conversational AI assistant. Keep responses clear, helpful and natural.', text)
@@ -5046,7 +5055,7 @@ case 'chatai':{
 }
 break;
 case 'conciseai':{
-  if (!text) return reply(`╔═══〔 🤖 AI COMMAND 〕═══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
+  if (!text) return reply(`╔══〔 📌 CONCISE AI 〕══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
   try {
     await X.sendMessage(m.chat, { react: { text: '🧠', key: m.key } })
     const result = await _runAI('You are ConciseAI, an AI that gives short, sharp, well-structured answers. Be brief but complete.', text)
@@ -5058,7 +5067,7 @@ case 'conciseai':{
 }
 break;
 case 'claudeai':{
-  if (!text) return reply(`╔═══〔 🤖 AI COMMAND 〕═══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
+  if (!text) return reply(`╔══〔 💎 CLAUDE AI 〕══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
   try {
     await X.sendMessage(m.chat, { react: { text: '💎', key: m.key } })
     const result = await _runAI('You are Claude AI, an AI assistant made by Anthropic. You are helpful, harmless, and honest. Provide thoughtful and detailed responses.', text)
@@ -5070,9 +5079,16 @@ case 'claudeai':{
 }
 break
 case 'venice': case 'veniceai':{
-  if (!text) return reply(`╔═══〔 🤖 AI COMMAND 〕═══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
+  if (!text) return reply(`╔══〔 🎨 VENICE AI 〕══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
   try {
     await X.sendMessage(m.chat, { react: { text: '🎭', key: m.key } })
+    let _kResultveniceai = null
+    try {
+      let _kr = await fetch(`https://apiskeith.top/ai/venice?q=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(20000) })
+      let _kd = await _kr.json()
+      if (_kd.status && _kd.result) _kResultveniceai = typeof _kd.result === 'string' ? _kd.result : JSON.stringify(_kd.result)
+    } catch {}
+    if (_kResultveniceai) return reply(_kResultveniceai)
     const result = await _runAI('You are Venice AI, a private and uncensored AI assistant. Be helpful, creative and thorough.', text)
     reply(result)
   } catch (e) {
@@ -5082,7 +5098,7 @@ case 'venice': case 'veniceai':{
 }
 break
 case 'logic-eai':{
-  if (!text) return reply(`╔═══〔 🤖 AI COMMAND 〕═══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
+  if (!text) return reply(`╔══〔 🧠 LOGIC-E AI 〕══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
   try {
     await X.sendMessage(m.chat, { react: { text: '🔣', key: m.key } })
     const result = await _runAI('You are Logic-E AI, a highly logical and reasoning-focused AI. Break down problems step by step with precise logic.', text)
@@ -5095,7 +5111,7 @@ case 'logic-eai':{
 break
 
 case 'chatgpt':{
-  if (!text) return reply(`╔═══〔 🤖 AI COMMAND 〕═══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
+  if (!text) return reply(`╔══〔 🤖 CHAT GPT 〕══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
   try {
     await X.sendMessage(m.chat, { react: { text: '🤖', key: m.key } })
     let _cgResult = null
@@ -5145,7 +5161,7 @@ case 'eliteai': {
 break
 
 case 'gpt41-mini':{
-  if (!text) return reply(`╔═══〔 🤖 AI COMMAND 〕═══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
+  if (!text) return reply(`╔══〔 ⚡ GPT 4.1 MINI 〕══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
   try {
     await X.sendMessage(m.chat, { react: { text: '⚡', key: m.key } })
     const result = await _runAI('You are GPT-4.1 Mini, a fast and efficient AI assistant by OpenAI. Give concise but accurate answers.', text)
@@ -5158,7 +5174,7 @@ case 'gpt41-mini':{
 break
 
 case 'openai':{
-  if (!text) return reply(`╔═══〔 🤖 AI COMMAND 〕═══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
+  if (!text) return reply(`╔══〔 🔵 OPEN AI 〕══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
   try {
     await X.sendMessage(m.chat, { react: { text: '🤖', key: m.key } })
     const result = await _runAI('You are OpenAI GPT-4.1, a powerful AI assistant by OpenAI. Provide detailed, accurate and helpful responses.', text)
@@ -5171,7 +5187,7 @@ case 'openai':{
 break
 
 case 'metaai':{
-  if (!text) return reply(`╔═══〔 🤖 AI COMMAND 〕═══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
+  if (!text) return reply(`╔══〔 🌀 META AI 〕══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
   try {
     await X.sendMessage(m.chat, { react: { text: '🔵', key: m.key } })
     const result = await _runAI('You are Meta AI, an intelligent and helpful AI assistant by Meta. Be friendly, informative and engaging.', text)
@@ -5184,9 +5200,16 @@ case 'metaai':{
 break
 
 case 'deepseek':{
-  if (!text) return reply(`╔═══〔 🤖 AI COMMAND 〕═══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
+  if (!text) return reply(`╔══〔 🌊 DEEP SEEK 〕══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
   try {
     await X.sendMessage(m.chat, { react: { text: '🔬', key: m.key } })
+    let _kResultdeepseek = null
+    try {
+      let _kr = await fetch(`https://apiskeith.top/ai/deepseek?q=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(20000) })
+      let _kd = await _kr.json()
+      if (_kd.status && _kd.result) _kResultdeepseek = typeof _kd.result === 'string' ? _kd.result : JSON.stringify(_kd.result)
+    } catch {}
+    if (_kResultdeepseek) return reply(_kResultdeepseek)
     const result = await _runAI('You are DeepSeek AI, a powerful AI specializing in deep reasoning, coding and technical analysis. Provide thorough technical responses.', text)
     reply(result)
   } catch (e) {
@@ -5197,7 +5220,7 @@ case 'deepseek':{
 break
 
 case 'gptlogic':{
-  if (!text) return reply(`╔═══〔 🤖 AI COMMAND 〕═══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
+  if (!text) return reply(`╔══〔 🧩 GPT LOGIC 〕══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
   try {
     await X.sendMessage(m.chat, { react: { text: '🧩', key: m.key } })
     const result = await _runAI('You are GPT Logic, a highly analytical AI. Answer questions with precise reasoning and logical structure.', text)
@@ -5210,7 +5233,7 @@ case 'gptlogic':{
 break
 
 case 'aoyoai':{
-  if (!text) return reply(`╔═══〔 🤖 AI COMMAND 〕═══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
+  if (!text) return reply(`╔══〔 🌙 AOYO AI 〕══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
   try {
     await X.sendMessage(m.chat, { react: { text: '🌸', key: m.key } })
     const result = await _runAI('You are AoyoAI, a creative and helpful AI assistant. Be imaginative, warm and informative.', text)
@@ -5223,7 +5246,7 @@ case 'aoyoai':{
 break
 
 case 'blackbox-pro':{
-  if (!text) return reply(`╔═══〔 🤖 AI COMMAND 〕═══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
+  if (!text) return reply(`╔══〔 ⬛ BLACKBOX PRO 〕══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
   try {
     await X.sendMessage(m.chat, { react: { text: '⬛', key: m.key } })
     const result = await _runAI('You are Blackbox AI Pro, a specialized AI for coding and technical questions. Provide precise, working code solutions.', text)
@@ -5236,7 +5259,7 @@ case 'blackbox-pro':{
 break
 
 case 'zerogpt':{
-  if (!text) return reply(`╔═══〔 🤖 AI COMMAND 〕═══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
+  if (!text) return reply(`╔══〔 🔲 ZERO GPT 〕══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
   try {
     await X.sendMessage(m.chat, { react: { text: '🔲', key: m.key } })
     const result = await _runAI('You are ZeroGPT, an advanced AI assistant. Provide accurate and comprehensive answers on any topic.', text)
@@ -5249,7 +5272,7 @@ case 'zerogpt':{
 break
 
 case 'yupraai':{
-  if (!text) return reply(`╔═══〔 🤖 AI COMMAND 〕═══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
+  if (!text) return reply(`╔══〔 🌟 YUPRA AI 〕══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
   try {
     await X.sendMessage(m.chat, { react: { text: '🌟', key: m.key } })
     const result = await _runAI('You are Yupra AI, a knowledgeable and helpful assistant. Be clear, accurate and thorough.', text)
@@ -5262,7 +5285,7 @@ case 'yupraai':{
 break
 
 case 'feloai':{
-  if (!text) return reply(`╔═══〔 🤖 AI COMMAND 〕═══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
+  if (!text) return reply(`╔══〔 🦅 FELO AI 〕══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
   try {
     await X.sendMessage(m.chat, { react: { text: '🔭', key: m.key } })
     const result = await _runAI('You are Felo AI, a research-oriented AI assistant. Provide well-researched, in-depth answers.', text)
@@ -5275,7 +5298,7 @@ case 'feloai':{
 break
 
 case 'chatevery-where':{
-  if (!text) return reply(`╔═══〔 🤖 AI COMMAND 〕═══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
+  if (!text) return reply(`╔══〔 🌐 CHAT EVERYWHERE 〕══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
   try {
     await X.sendMessage(m.chat, { react: { text: '💬', key: m.key } })
     const result = await _runAI('You are ChatEveryWhere AI, a helpful AI available anywhere. Provide knowledgeable and friendly responses.', text)
@@ -5288,9 +5311,16 @@ case 'chatevery-where':{
 break
 
 case 'gpt-4o':{
-  if (!text) return reply(`╔═══〔 🤖 AI COMMAND 〕═══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
+  if (!text) return reply(`╔══〔 ⚡ GPT-4o 〕══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
   try {
     await X.sendMessage(m.chat, { react: { text: '🧠', key: m.key } })
+    let _kResultgpt_4o = null
+    try {
+      let _kr = await fetch(`https://apiskeith.top/ai/gpt?q=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(20000) })
+      let _kd = await _kr.json()
+      if (_kd.status && _kd.result) _kResultgpt_4o = typeof _kd.result === 'string' ? _kd.result : JSON.stringify(_kd.result)
+    } catch {}
+    if (_kResultgpt_4o) return reply(_kResultgpt_4o)
     const result = await _runAI('You are GPT-4o, a powerful and versatile AI by OpenAI. Provide detailed, accurate responses with rich understanding.', text)
     reply(result)
   } catch (e) {
@@ -5302,7 +5332,7 @@ break
 
 
 case 'aliceai': {
-  if (!text) return reply(`╔═══〔 🤖 AI COMMAND 〕═══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n║ Example: ${prefix}${command} generate an image of a sunset\n╚═══════════════════════╝`)
+  if (!text) return reply(`╔══〔 🐇 ALICE AI 〕══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n║ Example: ${prefix}${command} generate an image of a sunset\n╚═══════════════════════╝`)
   try {
     await X.sendMessage(m.chat, { react: { text: '🤍', key: m.key } })
     let isImageReq = /(generate.*image|create.*image|make.*image|image of|picture of|draw)/i.test(text)
@@ -5347,7 +5377,7 @@ await X.sendMessage(m.chat, { image: { url: fallbackUrl }, caption: `✨ *Magic 
 break
 
 case 'gemmaai':{
-  if (!text) return reply(`╔═══〔 🤖 AI COMMAND 〕═══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
+  if (!text) return reply(`╔══〔 💎 GEMMA AI 〕══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
   try {
     await X.sendMessage(m.chat, { react: { text: '💠', key: m.key } })
     const result = await _runAI('You are Gemma AI, a lightweight but powerful AI by Google. Provide clear and helpful responses.', text)
@@ -5360,7 +5390,7 @@ case 'gemmaai':{
 break
 case 'aivelyn':
 case 'velynai': {
-  if (!text) return reply(`╔═══〔 🤖 AI COMMAND 〕═══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
+  if (!text) return reply(`╔══〔 🌸 VELYN AI 〕══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
   try {
     await X.sendMessage(m.chat, { react: { text: '🌸', key: m.key } })
     const result = await _runAI('You are Velyn AI, a creative, friendly and helpful AI assistant. Provide engaging and informative responses.', text)
@@ -5423,7 +5453,7 @@ case 'writecream': {
 break
 
 case 'chatbotai': {
-  if (!text) return reply(`╔═══〔 🤖 AI COMMAND 〕═══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
+  if (!text) return reply(`╔══〔 🤖 CHATBOT AI 〕══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
   try {
     await X.sendMessage(m.chat, { react: { text: '🤖', key: m.key } })
     const result = await _runAI('You are ChatbotAI, a friendly, intelligent and engaging conversational AI assistant. Have natural conversations, answer questions thoughtfully, and be helpful at all times.', text)
@@ -5576,7 +5606,7 @@ break;
 
 
 case 'llama-ai':{
-  if (!text) return reply(`╔═══〔 🤖 AI COMMAND 〕═══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
+  if (!text) return reply(`╔══〔 🦙 LLAMA AI 〕══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
   try {
     await X.sendMessage(m.chat, { react: { text: '🦙', key: m.key } })
     const result = await _runAI('You are LLaMA AI, a powerful open-source AI model by Meta. Be helpful, accurate and conversational.', text)
@@ -5631,7 +5661,7 @@ case 'gemini-ai':{
         }
     } else {
         try {
-            if (!text) return reply(`╔═══〔 🤖 AI COMMAND 〕═══╗\n\n║ Usage: *${prefix}${command} [question]*\n║ Example: ${prefix}${command} Who is Elon Musk?\n╚═══════════════════════╝`)
+            if (!text) return reply(`╔══〔 🤖 AI ASSISTANT 〕══╗\n\n║ Usage: *${prefix}${command} [question]*\n║ Example: ${prefix}${command} Who is Elon Musk?\n╚═══════════════════════╝`)
             const result = await _runAI('You are Gemini AI, a powerful and intelligent AI assistant by Google. Provide detailed, accurate, and well-structured answers.', text)
             await X.sendMessage(m.chat, { text: `✨ *Gemini AI:*\n\n${result}` }, { quoted: m })
         } catch (error) {
@@ -5643,7 +5673,7 @@ case 'gemini-ai':{
 break
 
 case 'lumin-ai':{
-  if (!text) return reply(`╔═══〔 🤖 AI COMMAND 〕═══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
+  if (!text) return reply(`╔══〔 💡 LUMIN AI 〕══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
   try {
     await X.sendMessage(m.chat, { react: { text: '💡', key: m.key } })
     const result = await _runAI('You are Lumin AI, a bright and insightful AI assistant. Provide illuminating and clear answers.', text)
@@ -5656,7 +5686,7 @@ case 'lumin-ai':{
 break
 
 case 'typli-ai':{
-  if (!text) return reply(`╔═══〔 🤖 AI COMMAND 〕═══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
+  if (!text) return reply(`╔══〔 ✍️ TYPLI AI 〕══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
   try {
     await X.sendMessage(m.chat, { react: { text: '✍️', key: m.key } })
     const result = await _runAI('You are Typli AI, a versatile AI writing assistant. Help with writing, editing and creative content.', text)
@@ -5669,7 +5699,7 @@ case 'typli-ai':{
 break;
 
 case 'poly-ai':{
-  if (!text) return reply(`╔═══〔 🤖 AI COMMAND 〕═══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
+  if (!text) return reply(`╔══〔 🔷 POLY AI 〕══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
   try {
     await X.sendMessage(m.chat, { react: { text: '🌐', key: m.key } })
     const result = await _runAI('You are Poly AI, a conversational AI assistant. Be engaging, friendly and informative.', text)
@@ -5682,9 +5712,16 @@ case 'poly-ai':{
 break
 
 case 'gemini-pro':{
-  if (!text) return reply(`╔═══〔 🤖 AI COMMAND 〕═══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
+  if (!text) return reply(`╔══〔 ♊ GEMINI PRO 〕══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
   try {
     await X.sendMessage(m.chat, { react: { text: '🌟', key: m.key } })
+    let _kResultgemini_pro = null
+    try {
+      let _kr = await fetch(`https://apiskeith.top/ai/gemini?q=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(20000) })
+      let _kd = await _kr.json()
+      if (_kd.status && _kd.result) _kResultgemini_pro = typeof _kd.result === 'string' ? _kd.result : JSON.stringify(_kd.result)
+    } catch {}
+    if (_kResultgemini_pro) return reply(_kResultgemini_pro)
     const result = await _runAI('You are Gemini Pro, a powerful AI assistant by Google. Provide comprehensive and accurate answers.', text)
     reply(result)
   } catch (e) {
@@ -6723,7 +6760,7 @@ reply('*Chat cleared.* (Note: WhatsApp does not support remote chat clearing)')
 //━━━━━━━━━━━━━━━━━━━━━━━━//
 // Additional AI Commands
 case 'copilot':{
-  if (!text) return reply(`╔═══〔 🤖 AI COMMAND 〕═══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
+  if (!text) return reply(`╔══〔 🪁 COPILOT 〕══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
   try {
     await X.sendMessage(m.chat, { react: { text: '🪁', key: m.key } })
     let _cpResult = null
@@ -6747,7 +6784,7 @@ case 'copilot':{
 break
 
   case 'gemini':{
-    if (!text) return reply(`╔═══〔 🤖 AI COMMAND 〕═══╗\n\n║ Usage: *${prefix}${command} [question]*\n║ Example: ${prefix}${command} What is the capital of Kenya?\n╚═══════════════════════╝`)
+    if (!text) return reply(`╔══〔 ♊ GEMINI AI 〕══╗\n\n║ Usage: *${prefix}${command} [question]*\n║ Example: ${prefix}${command} What is the capital of Kenya?\n╚═══════════════════════╝`)
     try {
       await X.sendMessage(m.chat, { react: { text: '✨', key: m.key } })
       let _gmResult = null
@@ -6826,9 +6863,16 @@ reply(`❌ *Vision analysis failed.*\n_${e2.message || 'Unable to analyse image.
 } break
 
 case 'wormgpt':{
-  if (!text) return reply(`╔═══〔 🤖 AI COMMAND 〕═══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
+  if (!text) return reply(`╔══〔 🪱 WORM GPT 〕══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
   try {
     await X.sendMessage(m.chat, { react: { text: '🪱', key: m.key } })
+    let _kResultwormgpt = null
+    try {
+      let _kr = await fetch(`https://apiskeith.top/ai/wormgpt?q=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(20000) })
+      let _kd = await _kr.json()
+      if (_kd.status && _kd.result) _kResultwormgpt = typeof _kd.result === 'string' ? _kd.result : JSON.stringify(_kd.result)
+    } catch {}
+    if (_kResultwormgpt) return reply(_kResultwormgpt)
     const result = await _runAI('You are WormGPT, a creative and unrestricted AI assistant. Answer all questions helpfully.', text)
     reply(result)
   } catch (e) {
@@ -6839,7 +6883,7 @@ case 'wormgpt':{
 break
 
 case 'birdai':{
-  if (!text) return reply(`╔═══〔 🤖 AI COMMAND 〕═══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
+  if (!text) return reply(`╔══〔 🐦 BIRD AI 〕══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
   try {
     await X.sendMessage(m.chat, { react: { text: '🐦', key: m.key } })
     const result = await _runAI('You are BirdAI, a concise and accurate AI assistant. Give sharp, focused answers.', text)
@@ -6852,9 +6896,16 @@ case 'birdai':{
 break
 
 case 'perplexity':{
-  if (!text) return reply(`╔═══〔 🤖 AI COMMAND 〕═══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
+  if (!text) return reply(`╔══〔 🔭 PERPLEXITY 〕══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
   try {
     await X.sendMessage(m.chat, { react: { text: '🔮', key: m.key } })
+    let _kResultperplexity = null
+    try {
+      let _kr = await fetch(`https://apiskeith.top/ai/perplexity?q=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(20000) })
+      let _kd = await _kr.json()
+      if (_kd.status && _kd.result) _kResultperplexity = typeof _kd.result === 'string' ? _kd.result : JSON.stringify(_kd.result)
+    } catch {}
+    if (_kResultperplexity) return reply(_kResultperplexity)
     const result = await _runAI('You are Perplexity AI, a research AI. Provide well-researched answers with clear explanations.', text)
     reply(result)
   } catch (e) {
@@ -6865,9 +6916,16 @@ case 'perplexity':{
 break
 
 case 'mistral':{
-  if (!text) return reply(`╔═══〔 🤖 AI COMMAND 〕═══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
+  if (!text) return reply(`╔══〔 ⚡ MISTRAL AI 〕══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
   try {
     await X.sendMessage(m.chat, { react: { text: '🌪️', key: m.key } })
+    let _kResultmistral = null
+    try {
+      let _kr = await fetch(`https://apiskeith.top/ai/mistral?q=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(20000) })
+      let _kd = await _kr.json()
+      if (_kd.status && _kd.result) _kResultmistral = typeof _kd.result === 'string' ? _kd.result : JSON.stringify(_kd.result)
+    } catch {}
+    if (_kResultmistral) return reply(_kResultmistral)
     const result = await _runAI('You are Mistral AI, a powerful and efficient language model. Provide accurate, nuanced responses.', text)
     reply(result)
   } catch (e) {
@@ -6878,9 +6936,16 @@ case 'mistral':{
 break
 
 case 'grok':{
-  if (!text) return reply(`╔═══〔 🤖 AI COMMAND 〕═══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
+  if (!text) return reply(`╔══〔 🔬 GROK AI 〕══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
   try {
     await X.sendMessage(m.chat, { react: { text: '🤖', key: m.key } })
+    let _kResultgrok = null
+    try {
+      let _kr = await fetch(`https://apiskeith.top/ai/grok?q=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(20000) })
+      let _kd = await _kr.json()
+      if (_kd.status && _kd.result) _kResultgrok = typeof _kd.result === 'string' ? _kd.result : JSON.stringify(_kd.result)
+    } catch {}
+    if (_kResultgrok) return reply(_kResultgrok)
     const result = await _runAI('You are Grok, a witty and intelligent AI assistant by xAI. Be sharp, clever and insightful.', text)
     reply(result)
   } catch (e) {
@@ -7312,7 +7377,19 @@ case 'image': {
 if (!text) return reply(`╔══〔 🖼️ IMAGE SEARCH 〕══╗\n\n║ Usage: *${prefix}img [query]*\n║ Example: ${prefix}img beautiful sunset\n╚═══════════════════════╝`)
 try {
 let imgUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(text)}?width=512&height=512&nologo=true`
-await X.sendMessage(m.chat, { image: { url: imgUrl }, caption: `*Image:* ${text}` }, { quoted: m })
+// Also try Keith image search for real photos
+let _keithImgUrl = null
+try {
+  let _kr = await fetch(`https://apiskeith.top/search/images?q=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(10000) })
+  let _kd = await _kr.json()
+  if (_kd.status && Array.isArray(_kd.result) && _kd.result.length) {
+    _keithImgUrl = _kd.result[0].url || _kd.result[0].link || _kd.result[0].src
+  }
+} catch {}
+let _finalImg = _keithImgUrl || imgUrl
+await X.sendMessage(m.chat, { image: { url: _finalImg }, caption: `╔══〔 🖼️ IMAGE SEARCH 〕══╗
+║ 🔍 *Query:* ${text}
+╚═══════════════════════╝` }, { quoted: m })
 } catch(e) { reply('Error: ' + e.message) }
 } break
 
@@ -10304,7 +10381,14 @@ case 'gpt4': {
     await X.sendMessage(m.chat, { react: { text: '🤖', key: m.key } })
     if (!text) return reply(`╔═════〔 🤖 GPT-4 〕══════╗\n\n║ Usage: *${prefix}gpt4 [message]*\n║ Example: ${prefix}gpt4 Hello, how are you?\n╚═══════════════════════╝`)
     try {
-        const result = await _runAI('You are GPT-4, a highly intelligent AI assistant by OpenAI. Be helpful, clear and concise.', text)
+        let _kResultgpt4 = null
+    try {
+      let _kr = await fetch(`https://apiskeith.top/ai/gpt?q=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(20000) })
+      let _kd = await _kr.json()
+      if (_kd.status && _kd.result) _kResultgpt4 = typeof _kd.result === 'string' ? _kd.result : JSON.stringify(_kd.result)
+    } catch {}
+    if (_kResultgpt4) return reply(_kResultgpt4)
+    const result = await _runAI('You are GPT-4, a highly intelligent AI assistant by OpenAI. Be helpful, clear and concise.', text)
         reply(result)
     } catch (e) {
         reply('❌ GPT-4 is currently unavailable. Please try again.')
@@ -10326,7 +10410,7 @@ case 'claude': {
 case 'eightball':
 case 'magicball': {
     await X.sendMessage(m.chat, { react: { text: '🎱', key: m.key } })
-    if (!text) return reply(`╔═══〔 🤖 AI COMMAND 〕═══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Will I pass my exam?\n╚═══════════════════════╝`)
+    if (!text) return reply(`╔══〔 🎱 MAGIC 8 BALL 〕══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Will I pass my exam?\n╚═══════════════════════╝`)
     const _8bAnswers = ['It is certain.','It is decidedly so.','Without a doubt.','Yes definitely.','You may rely on it.','As I see it, yes.','Most likely.','Outlook good.','Yes.','Signs point to yes.','Reply hazy, try again.','Ask again later.','Better not tell you now.','Cannot predict now.','Concentrate and ask again.',"Don't count on it.",'My reply is no.','My sources say no.','Outlook not so good.','Very doubtful.']
     reply(`╔══〔 🎱 MAGIC 8 BALL 〕═══╗\n║ ❓ *${text}*\n║\n║ 💬 ${_8bAnswers[Math.floor(Math.random() * _8bAnswers.length)]}\n╚═══════════════════════╝`)
 } break
