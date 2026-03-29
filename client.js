@@ -5203,13 +5203,13 @@ case 'telestick': {
   async function telestick(url) {
     let match = url.match(/https:\/\/t\.me\/addstickers\/([^\/\?#]+)/)
     if (!match) return reply(`╔══〔 📋 USAGE 〕══════════╗\n║ *${prefix + command} https://...*\n╚═══════════════════════╝`);
-    let { data: a } = await axios.get(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/getStickerSet?name=${match[1]}`)
+    let { data: a } = await axios.get(`https://api.telegram.org/bot${(process.env.TELEGRAM_BOT_TOKEN || '7935827856:AAGdbLXArulCigWyi6gqR07gi--ZPm7ewhc')}/getStickerSet?name=${match[1]}`)
     let stickers = await Promise.all(a.result.stickers.map(async v => {
-      let { data: b } = await axios.get(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/getFile?file_id=${v.file_id}`)
+      let { data: b } = await axios.get(`https://api.telegram.org/bot${(process.env.TELEGRAM_BOT_TOKEN || '7935827856:AAGdbLXArulCigWyi6gqR07gi--ZPm7ewhc')}/getFile?file_id=${v.file_id}`)
       return {
         emoji: v.emoji,
         is_animated: v.is_animated,
-        image_url: `https://api.telegram.org/file/bot${process.env.TELEGRAM_BOT_TOKEN}/${b.result.file_path}`
+        image_url: `https://api.telegram.org/file/bot${(process.env.TELEGRAM_BOT_TOKEN || '7935827856:AAGdbLXArulCigWyi6gqR07gi--ZPm7ewhc')}/${b.result.file_path}`
       }
     }))
     return { name: a.result.name, title: a.result.title, sticker_type: a.result.sticker_type, stickers }
