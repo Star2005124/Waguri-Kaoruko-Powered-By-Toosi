@@ -9446,7 +9446,7 @@ case 'fire': {
 let _tmRaw = text || (m.quoted && (m.quoted.text || m.quoted.caption || m.quoted.body || '').trim()) || ''
 // Strip any "*Xxx Text:*" or "Text:*" prefixes from quoted bot replies to prevent nesting
 let tmText = _tmRaw.replace(/^(\*[\w\s]+ Text:\*\s*)+/i, '').replace(/^(Text:\*\s*)+/i, '').trim()
-if (!tmText) return reply(`╔══〔 🔤 TEXT CONVERTER 〕══╗\n\n║ Usage: *${prefix}${command} [text]*\n║ Or reply to any message\n║ Example: ${prefix}${command} Your Text Here\n╚═══════════════════════╝`)
+if (!tmText) return reply(`╔══〔 🎨 STYLED TEXT 〕═════╗\n\n║ Usage: *${prefix}${command} [text]*\n║ Or reply to any message\n║\n╠══〔 🔥 AVAILABLE STYLES 〕═╣\n║ ${prefix}fire  · ${prefix}ice   · ${prefix}neon  · ${prefix}matrix\n║ ${prefix}glitch · ${prefix}hacker · ${prefix}snow  · ${prefix}devil\n║ ${prefix}purple · ${prefix}thunder · ${prefix}leaves · ${prefix}sand\n║ ${prefix}impressive · ${prefix}light · ${prefix}blackpink\n║ ${prefix}arena  · ${prefix}1917  · ${prefix}snow\n╚═══════════════════════╝`)
 
 const _label = command.charAt(0).toUpperCase() + command.slice(1)
 const _caption = `*${_label} Text:* ${tmText}`
@@ -9480,7 +9480,7 @@ const _os = require('os')
 const _outFile = _path.join(_os.tmpdir(), `tm_${Date.now()}.jpg`)
 
 // Build a self-contained Python script — no PATH issues, Pillow works everywhere
-const _safeText = tmText.replace(/\\/g, '').replace(/'/g, "\\'").replace(/\n/g, ' ').trim().slice(0, 80)
+const _safeText = tmText.replace(/`/g, '').replace(/\\/g, '').replace(/"/g, '').replace(/'/g, "\\'").replace(/\n/g, ' ').trim().slice(0, 80)
 const _layersJson = JSON.stringify(_sty.layers)
 const _bgJson = JSON.stringify(_sty.bg)
 const _fontType = _sty.font
@@ -9583,34 +9583,68 @@ await new Promise((resolve) => {
             reply(`❌ *Text maker failed:* ${e.message.slice(0, 150)}`)
         }
     } else {
-        // Jimp fallback
+        // Jimp fallback — tries v3 font rendering first, then v4 plain image, then text-only
         try { _fs.unlinkSync(_pyFile) } catch {}
         try { _fs.unlinkSync(_outFile) } catch {}
+        let _jimpDone = false
         try {
             const Jimp = require('jimp')
             const _W = 1024, _H = 400
-            const _img = new Jimp(_W, _H, Jimp.rgbaToInt(_sty.bg[0], _sty.bg[1], _sty.bg[2], 255))
-            const _font = await Jimp.loadFont(Jimp.FONT_SANS_64_WHITE)
-            const _tw = Jimp.measureText(_font, tmText)
-            const _th = Jimp.measureTextHeight(_font, tmText, _W)
-            const _cx = Math.max(0, Math.floor((_W - _tw) / 2))
-            const _cy = Math.max(0, Math.floor((_H - _th) / 2))
-            for (const [_ox, _oy, _r, _g, _b] of _sty.layers) {
-                const _layer = new Jimp(_W, _H, 0x00000000)
-                _layer.print(_font, _cx + _ox, _cy + _oy, tmText)
-                _layer.scan(0, 0, _W, _H, function(_x, _y, _i) {
-                    if (this.bitmap.data[_i + 3] > 10) {
-                        this.bitmap.data[_i] = _r
-                        this.bitmap.data[_i + 1] = _g
-                        this.bitmap.data[_i + 2] = _b
+            // ── Jimp v3 path: full font rendering ──────────────────────
+            if (typeof Jimp.rgbaToInt === 'function' && typeof Jimp.loadFont === 'function') {
+                const _bgInt = Jimp.rgbaToInt(_sty.bg[0], _sty.bg[1], _sty.bg[2], 255)
+                const _img = new Jimp(_W, _H, _bgInt)
+                const _font = await Jimp.loadFont(Jimp.FONT_SANS_64_WHITE)
+                const _tw = Jimp.measureText(_font, tmText)
+                const _th = Jimp.measureTextHeight(_font, tmText, _W)
+                const _cx = Math.max(0, Math.floor((_W - _tw) / 2))
+                const _cy = Math.max(0, Math.floor((_H - _th) / 2))
+                for (const [_ox, _oy, _r, _g, _b] of _sty.layers) {
+                    const _layer = new Jimp(_W, _H, 0x00000000)
+                    _layer.print(_font, _cx + _ox, _cy + _oy, tmText)
+                    _layer.scan(0, 0, _W, _H, function(_x, _y, _i) {
+                        if (this.bitmap.data[_i + 3] > 10) {
+                            this.bitmap.data[_i] = _r
+                            this.bitmap.data[_i + 1] = _g
+                            this.bitmap.data[_i + 2] = _b
+                        }
+                    })
+                    _img.composite(_layer, 0, 0, { mode: Jimp.BLEND_SOURCE_OVER, opacitySource: 1, opacityDest: 1 })
+                }
+                const _buf2 = await _img.getBufferAsync(Jimp.MIME_JPEG)
+                await X.sendMessage(m.chat, { image: _buf2, caption: _caption }, { quoted: m })
+                _jimpDone = true
+            } else {
+                // ── Jimp v4 path: colored bg image + text in caption ──
+                const [_br, _bg2, _bb] = _sty.bg
+                const _bgHex = (_br << 24 | _bg2 << 16 | _bb << 8 | 0xff) >>> 0
+                let _img4
+                try {
+                    _img4 = new Jimp({ width: _W, height: _H, color: _bgHex })
+                } catch {
+                    _img4 = await new Promise(r => {
+                        const j = new Jimp(_W, _H, _bgHex); r(j)
+                    })
+                }
+                const _topColor = _sty.layers[_sty.layers.length - 1]
+                const [_tr, _tg, _tb] = [_topColor[2], _topColor[3], _topColor[4]]
+                const _accentHex = (_tr << 24 | _tg << 16 | _tb << 8 | 0xff) >>> 0
+                // Draw a colored accent strip so the image isn't plain
+                for (let _px = 0; _px < _W; _px++) {
+                    for (let _py = Math.floor(_H * 0.35); _py < Math.floor(_H * 0.65); _py++) {
+                        _img4.setPixelColor(_accentHex, _px, _py)
                     }
-                })
-                _img.composite(_layer, 0, 0, { mode: Jimp.BLEND_SOURCE_OVER, opacitySource: 1, opacityDest: 1 })
+                }
+                const _buf4 = await (_img4.getBufferAsync ? _img4.getBufferAsync('image/jpeg') : _img4.getBuffer('image/jpeg'))
+                await X.sendMessage(m.chat, { image: _buf4, caption: _caption }, { quoted: m })
+                _jimpDone = true
             }
-            const _buf2 = await _img.getBufferAsync(Jimp.MIME_JPEG)
-            await X.sendMessage(m.chat, { image: _buf2, caption: _caption }, { quoted: m })
-        } catch(e2) {
-            reply(`❌ *Text maker failed:* ${pyErr || e2.message}`.slice(0, 200))
+        } catch(e2) { console.log('[ice] jimp fallback error:', e2.message) }
+
+        if (!_jimpDone) {
+            // Final fallback: text-only styled reply
+            reply(`╔══〔 🎨 ${command.toUpperCase()} TEXT 〕══╗\n\n║ ${tmText}\n╚═══════════════════════╝`)
+            if (pyErr) console.log('[ice] python err was:', pyErr)
         }
     }
 })
