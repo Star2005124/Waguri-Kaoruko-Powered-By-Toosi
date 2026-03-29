@@ -2106,6 +2106,7 @@ break
   } break
 
   case 'tt':  
+case 'tt':
 case 'tiktok': {
     await X.sendMessage(m.chat, { react: { text: '🎵', key: m.key } })
 if (!text) return reply(`╔══〔 🎵 TIKTOK DOWNLOADER 〕══╗\n\n║ Usage:  *${prefix}tt [tiktok url]*\n║ Example: ${prefix}tt https://vm.tiktok.com/xxx\n╚═══════════════════════╝`)
@@ -7886,6 +7887,10 @@ case 'flux': {
 
 //━━━━━━━━━━━━━━━━━━━━━━━━//
 // Downloader Commands
+case 'ytmp4':
+case 'ytvideo':
+case 'ytdl':
+case 'yt':
 case 'video':
 case 'ytv': {
     await X.sendMessage(m.chat, { react: { text: '📺', key: m.key } })
