@@ -4496,7 +4496,7 @@ await reply(`✅ Plugin replaced at *${filePath}*`)
 return
 }
 }
-await reply(`Plugin with command '${mypler}' not found`)
+await reply(`╔══〔 ❌ NOT FOUND 〕══════╗\n║ Plugin *${mypler}* not found.\n╚═══════════════════════╝`)
 }
 break
 case 'rmplugin': case 'rmplug':{
@@ -4512,7 +4512,7 @@ await reply(`✅ Plugin removed: *${filePath}*`)
 return
 }
 }
-await reply(`Plugin with command '${q}' not found.`)
+await reply(`╔══〔 ❌ NOT FOUND 〕══════╗\n║ Plugin *${q}* not found.\n╚═══════════════════════╝`)
 }
 break
 case 'getplugin': case 'getplug':{
@@ -8565,7 +8565,7 @@ case 'coinflip':
 case 'flip': {
     await X.sendMessage(m.chat, { react: { text: '🪙', key: m.key } })
 let coin = Math.random() < 0.5 ? 'Heads' : 'Tails'
-reply(`🪙 *Coin Flip* : *${coin}!*`)
+reply(`╔══〔 🪙 COIN FLIP 〕══════╗\n║ Result: *${coin}!*\n╚═══════════════════════╝`)
 } break
 
 case 'dice':
@@ -8573,7 +8573,7 @@ case 'roll': {
     await X.sendMessage(m.chat, { react: { text: '🎲', key: m.key } })
 let sides = parseInt(args[0]) || 6
 let result = Math.floor(Math.random() * sides) + 1
-reply(`🎲 *Dice Roll (d${sides})* : *${result}*`)
+reply(`╔══〔 🎲 DICE ROLL 〕══════╗\n║ 🎲 d${sides} → *${result}*\n╚═══════════════════════╝`)
 } break
 
 case 'rps': {
