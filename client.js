@@ -8963,22 +8963,39 @@ case 'upscale': {
     try {
         await reply('🔭 _Enhancing image to HD... Please wait..._')
         const _hdBuf = await X.downloadMediaMessage(_hdMsg)
-        const _hdB64 = _hdBuf.toString('base64')
-        const _hdRes = await fetch('https://apiskeith.top/images/hd', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ image: _hdB64 }),
-            signal: AbortSignal.timeout(40000)
-        })
-        const _hdData = await _hdRes.json()
-        const _hdUrl = _hdData?.result?.url || _hdData?.url || _hdData?.imageUrl
-        if (!_hdUrl) throw new Error('No HD image returned')
-        await safeSendMedia(m.chat, { image: { url: _hdUrl }, caption: '✅ *Image enhanced to HD quality!*' }, {}, { quoted: m })
+        let _hdOutUrl = null
+        // Source 1: DeepAI waifu2x (free upscaler)
+        try {
+            const _hdForm = new FormData()
+            _hdForm.append('image', new Blob([_hdBuf], { type: 'image/jpeg' }), 'image.jpg')
+            const _hdRes = await fetch('https://api.deepai.org/api/waifu2x', {
+                method: 'POST',
+                headers: { 'api-key': 'quickstart-QUdJIGlzIGF3ZXNvbWU=' },
+                body: _hdForm,
+                signal: AbortSignal.timeout(45000)
+            })
+            const _hdData = await _hdRes.json()
+            if (_hdData?.output_url) _hdOutUrl = _hdData.output_url
+        } catch {}
+        // Source 2: DeepAI image enhancer fallback
+        if (!_hdOutUrl) {
+            try {
+                const _hdForm2 = new FormData()
+                _hdForm2.append('image', new Blob([_hdBuf], { type: 'image/jpeg' }), 'image.jpg')
+                const _hdRes2 = await fetch('https://api.deepai.org/api/torch-srgan', {
+                    method: 'POST',
+                    headers: { 'api-key': 'quickstart-QUdJIGlzIGF3ZXNvbWU=' },
+                    body: _hdForm2,
+                    signal: AbortSignal.timeout(45000)
+                })
+                const _hdData2 = await _hdRes2.json()
+                if (_hdData2?.output_url) _hdOutUrl = _hdData2.output_url
+            } catch {}
+        }
+        if (!_hdOutUrl) throw new Error('HD upscale service unavailable')
+        await safeSendMedia(m.chat, { image: { url: _hdOutUrl }, caption: '✅ *Image enhanced to HD quality!*' }, {}, { quoted: m })
     } catch(e) { reply(`❌ HD upscale failed: ${e.message}`) }
 } break
-
-case 'imageedit':
-case 'imgfilter': {
     await X.sendMessage(m.chat, { react: { text: '🎨', key: m.key } })
     const _ieMsg = m.quoted || m
     const _ieMime = _ieMsg?.message?.imageMessage?.mimetype || ''
