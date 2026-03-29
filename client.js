@@ -1377,6 +1377,24 @@ if (m.key.fromMe && global.ownerFontMode && global.ownerFontMode !== 'off' && bu
 }
 //━━━━━━━━━━━━━━━━━━━━━━━━//
 // jangan di apa apain
+// Media download with retry — handles WhatsApp CDN socket hang up
+const _dlWithRetry = async (quotedMsg, maxTries = 3) => {
+  let lastErr
+  for (let _t = 0; _t < maxTries; _t++) {
+    try {
+      const _b = await Promise.race([
+        quotedMsg.download(),
+        new Promise((_,rej) => setTimeout(() => rej(new Error('Download timeout')), 20000))
+      ])
+      if (_b && _b.length > 100) return _b
+      throw new Error('Empty buffer received')
+    } catch (_e) {
+      lastErr = _e
+      if (_t < maxTries - 1) await new Promise(r => setTimeout(r, 1200 * (_t + 1)))
+    }
+  }
+  throw lastErr
+}
 switch(command) {
 // awas error
 //━━━━━━━━━━━━━━━━━━━━━━━━//
@@ -11446,24 +11464,6 @@ case 'setgpic': {
 //━━━━━━━━━━━━━━━━━━━━━━━━//
 // IMAGE EFFECT COMMANDS (jimp)
 
-// Retry download helper for image filters (handles socket hang up)
-const _dlWithRetry = async (quotedMsg, tries = 3) => {
-  let lastErr
-  for (let i = 0; i < tries; i++) {
-    try {
-      const buf = await Promise.race([
-        quotedMsg.download(),
-        new Promise((_,rej) => setTimeout(() => rej(new Error('Download timeout')), 20000))
-      ])
-      if (!buf || buf.length < 100) throw new Error('Empty buffer')
-      return buf
-    } catch (e) {
-      lastErr = e
-      if (i < tries - 1) await new Promise(r => setTimeout(r, 1200 * (i + 1)))
-    }
-  }
-  throw lastErr
-}
 case 'blur': {
   await X.sendMessage(m.chat, { react: { text: '🌫️', key: m.key } })
   const _blurMime = (m.quoted && (m.quoted.msg || m.quoted).mimetype) || ''
