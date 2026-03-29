@@ -6292,21 +6292,50 @@ reply(`✅ *${files.length} temp files* cleared.`)
 } break
 
 case 'sudo': {
-    await X.sendMessage(m.chat, { react: { text: '👑', key: m.key } })
-if (!isOwner) return reply(mess.OnlyOwner)
-let sudoNum = (args[0] || '').replace(/[^0-9]/g, '')
-if (!sudoNum) return reply(`╔══〔 🛡️ SUDO USERS 〕═══╗\n\n║ Current: ${global.owner.join(', ')}\n║ ${prefix}sudo add [number]\n║ ${prefix}sudo remove [number]\n╚═══════════════════════╝`)
-let sudoAction = args[0]?.toLowerCase()
-if (sudoAction === 'add' && args[1]) {
-let num = args[1].replace(/[^0-9]/g, '')
-if (!global.owner.includes(num)) { global.owner.push(num); reply(`✅ *${num}* added as sudo user.`) }
-else reply('Already a sudo user.')
-} else if (sudoAction === 'remove' || sudoAction === 'del') {
-let num = (args[1] || '').replace(/[^0-9]/g, '')
-if (num === global._protectedOwner) return reply('Cannot remove the primary owner.')
-global.owner = global.owner.filter(o => o !== num)
-reply(`✅ *${num}* removed from sudo users.`)
-} else reply(`Usage: ${prefix}sudo add/remove [number]`)
+    await X.sendMessage(m.chat, { react: { text: '🛡️', key: m.key } })
+    if (!isOwner) return reply(mess.OnlyOwner)
+    const _sdPath = require('path').join(__dirname, 'database', 'sudoUsers.json')
+    const _sdRead = () => { try { return JSON.parse(fs.readFileSync(_sdPath, 'utf-8')) } catch { return [] } }
+    const _sdWrite = d => { fs.mkdirSync(require('path').join(__dirname, 'database'), { recursive: true }); fs.writeFileSync(_sdPath, JSON.stringify(d, null, 2)) }
+    const _sdAction = (args[0] || '').toLowerCase()
+
+    // .sudo list / .sudo (no args)
+    if (!_sdAction || _sdAction === 'list') {
+        let _sdList = _sdRead()
+        if (!_sdList.length) return reply(`╔══〔 🛡️ SUDO USERS 〕════╗\n\n║ _No sudo users added yet._\n║ ${prefix}sudo add @user\n╚═══════════════════════╝`)
+        await X.sendMessage(m.chat, {
+            text: `╔══〔 🛡️ SUDO USERS 〕════╗\n\n${_sdList.map((u,i) => `  ${i+1}. @${u.split('@')[0]}`).join('\n')}\n\n║ _Total: ${_sdList.length} user(s)_\n╚═══════════════════════╝`,
+            mentions: _sdList
+        }, { quoted: m })
+
+    // .sudo add @user / .sudo add 254xxx
+    } else if (_sdAction === 'add') {
+        let _sdTarget = (m.mentionedJid && m.mentionedJid[0])
+            || (m.quoted && m.quoted.sender)
+            || (args[1] && args[1].replace(/\D/g,'') + '@s.whatsapp.net')
+        if (!_sdTarget || _sdTarget === '@s.whatsapp.net') return reply(`╔══〔 🛡️ ADD SUDO 〕══════╗\n\n║ Usage: *${prefix}sudo add @user*\n║ Or: *${prefix}sudo add 254xxxxxxx*\n║ Or reply to a message\n╚═══════════════════════╝`)
+        let _sdList = _sdRead()
+        if (_sdList.includes(_sdTarget)) return reply(`⚠️ @${_sdTarget.split('@')[0]} is already a sudo user.`)
+        _sdList.push(_sdTarget)
+        _sdWrite(_sdList)
+        await X.sendMessage(m.chat, { text: `╔══〔 ✅ SUDO ADDED 〕════╗\n\n║ 🛡️ @${_sdTarget.split('@')[0]} is now a *sudo user*!\n║ Total sudo users: ${_sdList.length}\n╚═══════════════════════╝`, mentions: [_sdTarget] }, { quoted: m })
+
+    // .sudo remove / .sudo del @user
+    } else if (_sdAction === 'remove' || _sdAction === 'del') {
+        let _sdTarget = (m.mentionedJid && m.mentionedJid[0])
+            || (m.quoted && m.quoted.sender)
+            || (args[1] && args[1].replace(/\D/g,'') + '@s.whatsapp.net')
+        if (!_sdTarget || _sdTarget === '@s.whatsapp.net') return reply(`╔══〔 🔓 REMOVE SUDO 〕═══╗\n\n║ Usage: *${prefix}sudo remove @user*\n║ Or: *${prefix}sudo remove 254xxxxxxx*\n║ Or reply to a message\n╚═══════════════════════╝`)
+        let _sdList = _sdRead()
+        const _sdIdx = _sdList.indexOf(_sdTarget)
+        if (_sdIdx === -1) return reply(`⚠️ @${_sdTarget.split('@')[0]} is not a sudo user.`)
+        _sdList.splice(_sdIdx, 1)
+        _sdWrite(_sdList)
+        await X.sendMessage(m.chat, { text: `╔══〔 🔓 SUDO REMOVED 〕══╗\n\n║ @${_sdTarget.split('@')[0]} removed from *sudo*!\n║ Total sudo users: ${_sdList.length}\n╚═══════════════════════╝`, mentions: [_sdTarget] }, { quoted: m })
+
+    } else {
+        reply(`╔══〔 🛡️ SUDO MANAGER 〕══╗\n\n║ ${prefix}sudo           — list all sudo users\n║ ${prefix}sudo add @user  — grant sudo access\n║ ${prefix}sudo remove @user — revoke sudo access\n╠══〔 💡 TIPS 〕═══════════╣\n║ You can @mention, reply to a\n║ message, or use the number directly.\n╚═══════════════════════╝`)
+    }
 } break
 
 case 'setowner': {
