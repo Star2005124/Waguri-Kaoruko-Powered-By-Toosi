@@ -3848,6 +3848,8 @@ reply(`✅ *Sticker author updated* : *${newAuthor}*`)
 }
 break
 
+case 'setwm':
+case 'setwatermark':
 case 'setpackname':
 case 'packname': {
     await X.sendMessage(m.chat, { react: { text: '✏️', key: m.key } })
@@ -4080,7 +4082,19 @@ if (!cbArg) {
 }
 break
 
-case 'autobio':
+case 'setbio':
+  case 'changebio':
+  case 'setstatus': {
+      await X.sendMessage(m.chat, { react: { text: '📝', key: m.key } })
+      if (!isOwner) return reply(mess.OnlyOwner)
+      if (!text) return reply(`╔══〔 📝 SET BIO 〕════╗\n\n║ Usage: *${prefix}setbio <text>*\n║ Sets the bot's WhatsApp status/bio\n╚═══════════════════════╝`)
+      try {
+          await X.updateProfileStatus(text)
+          reply(`✅ *Bio updated!*\n📝 ${text}`)
+      } catch(e) { reply('❌ Failed to update bio: ' + e.message) }
+  } break
+
+  case 'autobio':
 case 'setautobio': {
     await X.sendMessage(m.chat, { react: { text: '📝', key: m.key } })
     if (!isOwner) return reply(mess.OnlyOwner)
@@ -11961,6 +11975,7 @@ case 'listmods': {
     }, { quoted: m })
 } break
 
+case 'setname':
 case 'setbotname': {
     await X.sendMessage(m.chat, { react: { text: '✏️', key: m.key } })
     if (!isOwner) return reply(mess.OnlyOwner)
