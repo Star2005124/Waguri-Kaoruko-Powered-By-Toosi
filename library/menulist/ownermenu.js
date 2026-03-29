@@ -1,80 +1,77 @@
 const ownerMenu = `
-╔══〔 👑 OWNER CONTROLS 〕══╗
+  ╔══〔 👑 OWNER CONTROLS 〕══╗
 
-╠══〔 ⚙️ BOT SETTINGS 〕══╣
-║ .setbotname
-║ .author
-║ .packname
-║ .timezone
-║ .setprefix
-║ .botpic
-║ .boturl
-║ .setowner
-║ .pp
-║ .setpp
-║ .menuimage
-║ .addplugin
-║ .rmplugin
-║ .cgplugin
-║ .getplugin
-║ .botsettings
+  ╠══〔 ⚙️ BOT SETTINGS 〕══╣
+  ║ .setbotname
+  ║ .author
+  ║ .packname
+  ║ .timezone
+  ║ .setprefix
+  ║ .botpic
+  ║ .boturl
+  ║ .setowner
+  ║ .pp
+  ║ .setpp
+  ║ .menuimage
+  ║ .addplugin
+  ║ .rmplugin
+  ║ .cgplugin
+  ║ .getplugin
+  ║ .botsettings
 
-╠═════〔 🔧 SYSTEM 〕═════╣
-║ .> / .$ / .=>
-║ .self
-║ .public
-║ .onlygroup
-║ .onlypc
-║ .unavailable
-║ .restart
-║ .join
-║ .leave
-║ .broadcast
-║ .sysinfo
-║ .cleartmp
+  ╠═════〔 🔧 SYSTEM 〕═════╣
+  ║ .> / .$ / .=>
+  ║ .self
+  ║ .public
+  ║ .onlygroup
+  ║ .onlypc
+  ║ .unavailable
+  ║ .restart
+  ║ .join
+  ║ .leave
+  ║ .broadcast
+  ║ .sysinfo
+  ║ .cleartmp
 
-╠══〔 🛡️ SUDO MANAGEMENT 〕══╣
-║ .addsudo
-║ .delsudo
-║ .sudolist
+  ╠══〔 🛡️ SUDO MANAGEMENT 〕══╣
+  ║ .addsudo
+  ║ .delsudo
+  ║ .sudolist
 
-╠══〔 👻 PRESENCE & PRIVACY 〕══╣
-║ .alwaysonline
-║ .lastseen
-║ .idch
-║ .autotyping
-║ .autorecording
-║ .autoonline
+  ╠══〔 👻 PRESENCE & PRIVACY 〕══╣
+  ║ .alwaysonline
+  ║ .lastseen
+  ║ .idch
+  ║ .autotyping
+  ║ .autorecording
+  ║ .autoonline
 
-╠═══〔 🚫 PROTECTION 〕═══╣
-║ .anticall
-║ .antilink
-║ .antidelete
-║ .antistatusmention
-║ .pmblocker
-║ .block
-║ .unblock
-║ .listblock
+  ╠═══〔 🚫 PROTECTION 〕═══╣
+  ║ .anticall
+  ║ .pmblocker
+  ║ .block
+  ║ .unblock
+  ║ .listblock
 
-╠═══〔 🔄 AUTOMATION 〕═══╣
-║ .autoread
-║ .chatbot
-║ .autobio
-║ .autoreact
-║ .autoreplystatus
-║ .autoviewstatus
-║ .autolikestatus
-║ .muslimprayer
-║ .christianprayer
+  ╠═══〔 🔄 AUTOMATION 〕═══╣
+  ║ .autoread
+  ║ .chatbot
+  ║ .autobio
+  ║ .autoreact
+  ║ .autoreplystatus
+  ║ .autoviewstatus
+  ║ .autolikestatus
+  ║ .muslimprayer
+  ║ .christianprayer
 
-╠══〔 🤖 AI CHATBOT MODES 〕══╣
-║ .setaimode status
-║ .setaimode global
-║ .setaimode dm
-║ .setaimode group
-║ .setaimode reset
+  ╠══〔 🤖 AI CHATBOT MODES 〕══╣
+  ║ .setaimode status
+  ║ .setaimode global
+  ║ .setaimode dm
+  ║ .setaimode group
+  ║ .setaimode reset
 
-╚═══════════════════════╝
-`
+  ╚═══════════════════════╝
+  `
 
-module.exports = ownerMenu
+  module.exports = ownerMenu
