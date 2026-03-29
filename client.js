@@ -12630,6 +12630,57 @@ case 'news': {
       } catch(e) { reply(`❌ Could not find info for *${_fiq}*. Try: mango, apple, lemon`) }
   } break
 
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // 🍽️  RECIPE / FOOD LOOKUP
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  case 'recipe':
+  case 'food':
+  case 'meal':
+  case 'cooking': {
+      await X.sendMessage(m.chat, { react: { text: '🍽️', key: m.key } })
+      const _rcQ = text?.trim() || q?.trim()
+      if (!_rcQ) return reply(`╌══〔 🍽️ RECIPE FINDER 〕════╌\n║ *Usage:* *${prefix}recipe [food name]*\n║ *Example:* ${prefix}recipe jollof rice\n║\n║ Powered by TheMealDB & Keith API\n╚═══════════════════════╝`)
+      try {
+          await reply('🍽️ _Searching for recipe..._')
+          let _rcResult = null
+          // Method 1: TheMealDB free API
+          try {
+              const _mdb = await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(_rcQ)}`, { signal: AbortSignal.timeout(15000) })
+              const _mdd = await _mdb.json()
+              if (_mdd.meals && _mdd.meals.length) {
+                  const m1 = _mdd.meals[0]
+                  // Build ingredient list (TheMealDB stores up to 20 ingredients)
+                  let _ing = ''
+                  for (let i = 1; i <= 20; i++) {
+                      const ingr = m1[`strIngredient${i}`]?.trim()
+                      const meas = m1[`strMeasure${i}`]?.trim()
+                      if (ingr) _ing += `\n║ • ${meas ? meas + ' ' : ''}${ingr}`
+                  }
+                  const _instr = (m1.strInstructions || '').slice(0, 500).replace(/\r\n/g, '\n').trim()
+                  _rcResult = `╔══〔 🍽️ RECIPE: ${m1.strMeal} 〕══╗\n║ 🌍 *Origin:* ${m1.strArea || 'Unknown'}\n║ 🏷️  *Category:* ${m1.strCategory || 'Food'}\n║\n║ 🛒 *Ingredients:*${_ing}\n║\n║ 📖 *Instructions:*\n║ ${_instr}${_instr.length >= 500 ? '...' : ''}\n╚═══════════════════════╝`
+                  if (m1.strMealThumb) {
+                      await X.sendMessage(m.chat, { image: { url: m1.strMealThumb }, caption: _rcResult }, { quoted: m })
+                  } else {
+                      await reply(_rcResult)
+                  }
+              }
+          } catch {}
+          // Method 2: Keith API fallback
+          if (!_rcResult) {
+              try {
+                  const _krc = await _keithFetch(`/recipe?q=${encodeURIComponent(_rcQ)}`, 20000)
+                  if (_krc?.title || _krc?.name || _krc?.result) {
+                      const _r = _krc.result || _krc
+                      _rcResult = `╔══〔 🍽️ RECIPE FOUND 〕════╗\n║ 🍴 *${_r.title || _r.name || _rcQ}*\n║ ${(_r.description || _r.instructions || JSON.stringify(_r)).slice(0,500)}\n╚═══════════════════════╝`
+                      await reply(_rcResult)
+                  }
+              } catch {}
+          }
+          if (!_rcResult) return reply(`❌ No recipe found for *${_rcQ}*. Try: chicken, rice, pasta, soup`)
+      } catch(e) { reply(`❌ Recipe lookup failed: ${e.message}`) }
+  } break
+  
+
 
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
