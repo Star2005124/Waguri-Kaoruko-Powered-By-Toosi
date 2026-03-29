@@ -3689,7 +3689,7 @@ case 'antismention': {
         reply(`╔══〔 🛡️  ANTI STATUS MENTION 〕══╗\n\n║ ❌ *Disabled for this group*\n║ Group tagging in statuses no longer actioned.\n╚═══════════════════════╝`)
     } else if (asmArg === 'warn') {
         _save(true, 'warn')
-        reply(`╔══〔 🛡️  ANTI STATUS MENTION 〕══╗\n\n║ ⚠️ *WARN MODE — Enabled*\n║ 📍 This group only\n║ 3 warnings → automatic kick\n\n║ _Bot must be admin in the group._\n╚═══════════════════════╝`)
+        reply(`╔══〔 🛡️  ANTI STATUS MENTION 〕══╗\n\n║ ⚠️ *WARN MODE — Enabled*\n║ 📍 This group only\n║ 3 warnings : automatic kick\n\n║ _Bot must be admin in the group._\n╚═══════════════════════╝`)
     } else if (asmArg === 'delete' || asmArg === 'del') {
         _save(true, 'delete')
         reply(`╔══〔 🛡️  ANTI STATUS MENTION 〕══╗\n\n║ 🗑️ *DELETE MODE — Enabled*\n║ 📍 This group only\n║ Group notified + sender DM'd\n\n║ _Bot must be admin in the group._\n╚═══════════════════════╝`)
@@ -3780,13 +3780,13 @@ case 'antidelete':
               return reply(`❌ *Anti-Delete GROUPS: OFF*`)
           } else if (['private','prvt','priv'].includes(_sub)) {
               _ad.gc.enabled = true; _ad.gc.mode = 'private'; _syncLegacy()
-              return reply(`🔒 *Anti-Delete GROUPS: PRIVATE*\nDeleted messages → Your DM only.`)
+              return reply(`🔒 *Anti-Delete GROUPS: PRIVATE*\nDeleted messages : Your DM only.`)
           } else if (['chat','cht'].includes(_sub)) {
               _ad.gc.enabled = true; _ad.gc.mode = 'chat'; _syncLegacy()
-              return reply(`💬 *Anti-Delete GROUPS: CHAT*\nDeleted messages → Same group chat.`)
+              return reply(`💬 *Anti-Delete GROUPS: CHAT*\nDeleted messages : Same group chat.`)
           } else if (['both','all'].includes(_sub)) {
               _ad.gc.enabled = true; _ad.gc.mode = 'both'; _syncLegacy()
-              return reply(`📢 *Anti-Delete GROUPS: BOTH*\nDeleted messages → Your DM + Group.`)
+              return reply(`📢 *Anti-Delete GROUPS: BOTH*\nDeleted messages : Your DM + Group.`)
           } else {
               return reply(`╔══〔 🛡 ANTI DELETE — GROUPS 〕══╗\n\n║ ${prefix}antidelete gc on/off\n║ ${prefix}antidelete gc private/chat/both\n╚═══════════════════════╝`)
           }
@@ -3802,13 +3802,13 @@ case 'antidelete':
               return reply(`❌ *Anti-Delete PMs: OFF*`)
           } else if (['private','prvt','priv'].includes(_sub)) {
               _ad.pm.enabled = true; _ad.pm.mode = 'private'; _syncLegacy()
-              return reply(`🔒 *Anti-Delete PMs: PRIVATE*\nDeleted PMs → Your DM only.`)
+              return reply(`🔒 *Anti-Delete PMs: PRIVATE*\nDeleted PMs : Your DM only.`)
           } else if (['chat','cht'].includes(_sub)) {
               _ad.pm.enabled = true; _ad.pm.mode = 'chat'; _syncLegacy()
-              return reply(`💬 *Anti-Delete PMs: CHAT*\nDeleted PMs → Same chat.`)
+              return reply(`💬 *Anti-Delete PMs: CHAT*\nDeleted PMs : Same chat.`)
           } else if (['both','all'].includes(_sub)) {
               _ad.pm.enabled = true; _ad.pm.mode = 'both'; _syncLegacy()
-              return reply(`📢 *Anti-Delete PMs: BOTH*\nDeleted PMs → Your DM + Same chat.`)
+              return reply(`📢 *Anti-Delete PMs: BOTH*\nDeleted PMs : Your DM + Same chat.`)
           } else {
               return reply(`╔══〔 🛡 ANTI DELETE — PMS 〕══╗\n\n║ ${prefix}antidelete pm on/off\n║ ${prefix}antidelete pm private/chat/both\n╚═══════════════════════╝`)
           }
@@ -3828,17 +3828,17 @@ case 'antidelete':
       if (['private','prvt','priv'].includes(_arg)) {
           _ad.gc.enabled = true; _ad.gc.mode = 'private'
           _ad.pm.enabled = true; _ad.pm.mode = 'private'; _syncLegacy()
-          return reply(`🔒 *Anti-Delete: PRIVATE*\nAll deleted messages → Your DM only.`)
+          return reply(`🔒 *Anti-Delete: PRIVATE*\nAll deleted messages : Your DM only.`)
       }
       if (['chat','cht'].includes(_arg)) {
           _ad.gc.enabled = true; _ad.gc.mode = 'chat'
           _ad.pm.enabled = true; _ad.pm.mode = 'chat'; _syncLegacy()
-          return reply(`💬 *Anti-Delete: CHAT*\nAll deleted messages → Same chat.`)
+          return reply(`💬 *Anti-Delete: CHAT*\nAll deleted messages : Same chat.`)
       }
       if (['both','all'].includes(_arg)) {
           _ad.gc.enabled = true; _ad.gc.mode = 'both'
           _ad.pm.enabled = true; _ad.pm.mode = 'both'; _syncLegacy()
-          return reply(`📢 *Anti-Delete: BOTH*\nAll deleted messages → DM + Original chat.`)
+          return reply(`📢 *Anti-Delete: BOTH*\nAll deleted messages : DM + Original chat.`)
       }
 
       // ── stats ──────────────────────────────────────────────────────────
@@ -4008,7 +4008,7 @@ let settingsText = `╔══〔 ⚙️  BOT SETTINGS 〕══╗
 ║ ✍️  *Author* : ${global.author}
 
 
-  🤖 *Auto Features*
+║ 🤖 *Auto Features*
 ║ 👁️  Auto Read : ${global.autoRead ? on : off}
 ║ 📝 Auto Bio : ${global.autoBio ? on : off}
 ║ 💬 ChatBot : ${global.chatBot ? on : off}
@@ -4136,7 +4136,7 @@ try {
     await reply(`╔═══〔 ✅ BOT UPDATED 〕═══╗
 
 ║ 🌿 *Branch* : ${branch}
-║ 🔖 *Commits* : ${localHash} → ${newHash}
+║ 🔖 *Commits* : ${localHash} : ${newHash}
 ║ 📋 *Changes* : ${changeCount} commit(s)
   │  ${changeLines.slice(0, 300)}
 ║ 🔄 Restarting now...
@@ -7737,7 +7737,7 @@ try {
     if (_tcText) {
         reply(`╔══〔 🎙️ TRANSCRIPTION 〕══╗\n\n${_tcText}\n╚═══════════════════════╝`)
     } else {
-        reply(`╔══〔 🎙️ TRANSCRIPTION 〕══╗\n\n║ ⚠️ _Could not auto-transcribe this audio._\n\n║ Try these alternatives:\n║ *${prefix}shazam* → identify music\n║ *${prefix}ai* [describe what you heard]\n╚═══════════════════════╝`)
+        reply(`╔══〔 🎙️ TRANSCRIPTION 〕══╗\n\n║ ⚠️ _Could not auto-transcribe this audio._\n\n║ Try these alternatives:\n║ *${prefix}shazam* : identify music\n║ *${prefix}ai* [describe what you heard]\n╚═══════════════════════╝`)
     }
 } catch (e) { reply('❌ Transcription failed: ' + e.message) }
 } break
@@ -9412,7 +9412,7 @@ X.sendMessage(from, { text: `╔══〔 🚔 POLICE ALERT! 〕══╗\n\n║
 case 'namecard': {
     await X.sendMessage(m.chat, { react: { text: '🪪', key: m.key } })
 let ncName = text || pushname
-reply(`╔═══〔 🪪 ${ncName} 〕════╗\n\n║ Bot → ${global.botname}\n╚═══════════════════════╝`)
+reply(`╔═══〔 🪪 ${ncName} 〕════╗\n\n║ Bot : ${global.botname}\n╚═══════════════════════╝`)
 } break
 
 case 'tweet': {
@@ -10727,7 +10727,7 @@ case 'upswgc': {
         }
         if (!_swPicked) {
             const _swRawText = _swCaption || (() => { const u = _swUnwrap(m.message); return u?.extendedTextMessage?.text || u?.conversation || '' })()
-            if (!_swRawText) return reply(`❌ *NO CONTENT!*\n\n📋 *How to Use:*\n1️⃣ Image/Video: Send/reply media → .swgc\n2️⃣ Text: .swgc Hello everyone!\n3️⃣ Link: .swgc https://youtu.be/xxx`)
+            if (!_swRawText) return reply(`❌ *NO CONTENT!*\n\n📋 *How to Use:*\n1️⃣ Image/Video: Send/reply media : .swgc\n2️⃣ Text: .swgc Hello everyone!\n3️⃣ Link: .swgc https://youtu.be/xxx`)
             _swPicked = { node: _swRawText, type: 'text' }
             _swCaption = ''
         }
