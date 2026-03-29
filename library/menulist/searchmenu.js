@@ -26,6 +26,8 @@ const searchMenu = `
   ║ .news
   ║ .wiki
   ║ .urban
+  ║ .recipe
+  ║ .food
 
   ╚═══════════════════════╝
 
