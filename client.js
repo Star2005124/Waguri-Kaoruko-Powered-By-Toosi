@@ -8951,6 +8951,112 @@ reply(qText)
 } catch(e) { reply('Error: ' + e.message) }
 } break
 
+case 'bored':
+case 'activity': {
+    await X.sendMessage(m.chat, { react: { text: '🎲', key: m.key } })
+    try {
+        // Bored API — completely free
+        let _br = await fetch('https://bored-api.appbrewery.com/random')
+        let _brd = await _br.json()
+        let _act = _brd?.activity || _brd?.activity?.activity
+        if (!_act) throw new Error('No activity')
+        let typeIcon = { education: '📚', recreational: '🎮', social: '👥', diy: '🔨', charity: '💝', cooking: '🍳', relaxation: '🛌', music: '🎵', busywork: '💻' }
+        let icon = typeIcon[_brd.type] || '🎲'
+        let msg = `╬══〔 ${icon} ACTIVITY SUGGESTION 〕══╬\n\n║ 📍 *Activity:* ${_act}\n║ 🏷️ *Type:* ${_brd.type || 'Fun'}\n║ 👥 *Participants:* ${_brd.participants || 1}\n║ 💰 *Price:* ${(_brd.price === 0 ? 'Free' : '$' + _brd.price) || 'Free'}\n║ 📊 *Accessibility:* ${Math.round((1 - (_brd.accessibility || 0)) * 100)}% easy\n╚═══════════════════════╝`
+        await reply(msg)
+    } catch { reply('❌ Could not find an activity right now. Try again!') }
+} break
+
+case 'dadjoke':
+case 'dj': {
+    await X.sendMessage(m.chat, { react: { text: '🤣', key: m.key } })
+    try {
+        // icanhazdadjoke — free, no key
+        let _dj = await fetch('https://icanhazdadjoke.com/', { headers: { 'Accept': 'application/json' } })
+        let _djd = await _dj.json()
+        if (!_djd.joke) throw new Error('No joke')
+        await reply(`🤭 *Dad Joke of the Day*\n\n_${_djd.joke}_\n\n🤣 hehe`)
+    } catch {
+        const _djs = ['Why don\'t scientists trust atoms? Because they make up everything!', 'I\'m reading a book about anti-gravity. It\'s impossible to put down!', 'Why did the math book look so sad? Because it had too many problems.', 'What do you call cheese that isn\'t yours? Nacho cheese!', 'Why can\'t you give Elsa a balloon? Because she\'ll let it go!']
+        await reply(`🤭 *Dad Joke*\n\n_${_djs[Math.floor(Math.random() * _djs.length)]}_\n\n🤣 hehe`)
+    }
+} break
+
+case 'compliment': {
+    await X.sendMessage(m.chat, { react: { text: '💜', key: m.key } })
+    try {
+        // complimentr — free, no key
+        let _cr = await fetch('https://complimentr.com/api')
+        let _crd = await _cr.json()
+        let _cmpl = _crd.compliment
+        if (!_cmpl) throw new Error('No compliment')
+        let _mention = (m.mentionedJid && m.mentionedJid[0]) ? `@${m.mentionedJid[0].split('@')[0]}` : 'you'
+        await reply(`💜 *Compliment for ${_mention}:*\n\n_${_cmpl}_\n\n✨ Have a wonderful day!`, m.mentionedJid || [])
+    } catch {
+        const _cmpls = ['You have an incredible heart.', 'Your smile lights up the room.', 'You make everything better just by being here.', 'You are stronger than you think.', 'The world is better with you in it.']
+        let _mention = (m.mentionedJid && m.mentionedJid[0]) ? `@${m.mentionedJid[0].split('@')[0]}` : 'you'
+        await reply(`💜 *Compliment for ${_mention}:*\n\n_${_cmpls[Math.floor(Math.random() * _cmpls.length)]}_\n\n✨ Have a wonderful day!`, m.mentionedJid || [])
+    }
+} break
+
+case 'lyrics': {
+    await X.sendMessage(m.chat, { react: { text: '🎵', key: m.key } })
+    if (!text) return reply(`╌══〔 🎵 LYRICS SEARCH 〕══╌\n║ *Usage:* ${prefix}lyrics [song name]\n║ *Example:* ${prefix}lyrics Bohemian Rhapsody\n╚═══════════════════════╝`)
+    try {
+        await reply('🎵 _Searching for lyrics..._')
+        let lyrData = null
+        // Source 1: Keith API
+        try {
+            const _kr = await _keithFetch(`/fun/lyrics?q=${encodeURIComponent(text)}`)
+            if (_kr?.status && _kr.result) lyrData = { title: _kr.result.title || text, artist: _kr.result.artist || '', lyrics: _kr.result.lyrics }
+        } catch {}
+        // Source 2: lyrics.ovh (free, no key)
+        if (!lyrData?.lyrics) {
+            const _parts = text.trim().split(' ')
+            const _artist = _parts.slice(0, Math.ceil(_parts.length / 2)).join(' ')
+            const _title = _parts.slice(Math.ceil(_parts.length / 2)).join(' ') || _parts.join(' ')
+            try {
+                const _lr = await fetch(`https://lyrics.ovh/v1/${encodeURIComponent(_artist)}/${encodeURIComponent(_title)}`)
+                const _ld = await _lr.json()
+                if (_ld.lyrics) lyrData = { title: _title, artist: _artist, lyrics: _ld.lyrics }
+            } catch {}
+        }
+        if (!lyrData?.lyrics) throw new Error('Lyrics not found')
+        let lyricsTxt = lyrData.lyrics.length > 3500 ? lyrData.lyrics.slice(0, 3500) + '\n...[truncated]' : lyrData.lyrics
+        await reply(`🎵 *${lyrData.title}* ${lyrData.artist ? '— _' + lyrData.artist + '_' : ''}\n\n${lyricsTxt}`)
+    } catch { reply('❌ Lyrics not found. Try: artist + song name (e.g. _Bob Marley One Love_)') }
+} break
+
+case 'advice':
+case 'advise': {
+    await X.sendMessage(m.chat, { react: { text: '💡', key: m.key } })
+    try {
+        // adviceslip.com — free, no key
+        let _ar = await fetch('https://api.adviceslip.com/advice')
+        let _ad = await _ar.json()
+        let _advice = _ad?.slip?.advice
+        if (!_advice) throw new Error('No advice')
+        await reply(`💡 *Daily Advice*\n\n_“${_advice}”_\n\n✨ Hope that helps!`)
+    } catch {
+        const _advs = ['“Do small things with great love.”', '“Persistence is the key to success.”', '“Kindness is free — sprinkle it everywhere.”', '“Be the change you wish to see in the world.”', '“Every day is a new opportunity to grow.”']
+        await reply(`💡 *Advice*\n\n_${_advs[Math.floor(Math.random() * _advs.length)]}_\n\n✨ Hope that helps!`)
+    }
+} break
+
+case 'numberfact':
+case 'numfact': {
+    await X.sendMessage(m.chat, { react: { text: '🔢', key: m.key } })
+    let _num = parseInt(text) || Math.floor(Math.random() * 1000)
+    try {
+        // numbersapi.com — free, no key
+        let _nr = await fetch(`http://numbersapi.com/${_num}/trivia?json`)
+        let _nd = await _nr.json()
+        let _nf = _nd.text
+        if (!_nf) throw new Error('No fact')
+        await reply(`🔢 *Fact about ${_num}*\n\n_${_nf}_`)
+    } catch { reply(`🔢 *Fact about ${_num}*\n\n_${_num} is ${_num % 2 === 0 ? 'an even' : 'an odd'} number with ${_num.toString().length} digit(s)._`) }
+} break
+
 case 'answer': {
     await X.sendMessage(m.chat, { react: { text: '✅', key: m.key } })
 let userAnswer = text?.toLowerCase().trim()
@@ -9312,38 +9418,56 @@ case 'randomfact': {
 // Anime Commands
 case 'neko': {
     await X.sendMessage(m.chat, { react: { text: '🐱', key: m.key } })
-try {
-    let nekoUrl = null
     try {
-        let _gn = await fetch(`https://api.giftedtech.co.ke/api/anime/neko?apikey=${_giftedKey()}`, { signal: AbortSignal.timeout(10000) })
-        let _gnd = await _gn.json()
-        if (_gnd.success && _gnd.result) nekoUrl = _gnd.result
-    } catch {}
-    if (!nekoUrl) {
-        let res = await fetch('https://nekos.life/api/v2/img/neko', { signal: AbortSignal.timeout(10000) })
-        let data = await res.json()
-        nekoUrl = data.url
-    }
-    await X.sendMessage(m.chat, { image: { url: nekoUrl }, caption: '*Neko!* 🐱' }, { quoted: m })
-} catch { reply('Failed to fetch neko image.') }
+        let nekoUrl = null
+        // Source 1: nekos.best (free, no key)
+        try {
+            const _nb = await fetch('https://nekos.best/api/v2/neko', { signal: AbortSignal.timeout(8000) })
+            const _nbd = await _nb.json()
+            if (_nbd.results?.[0]?.url) nekoUrl = _nbd.results[0].url
+        } catch {}
+        // Source 2: waifu.pics
+        if (!nekoUrl) {
+            const _wp = await fetch('https://api.waifu.pics/sfw/neko', { signal: AbortSignal.timeout(8000) })
+            const _wpd = await _wp.json()
+            if (_wpd.url) nekoUrl = _wpd.url
+        }
+        // Source 3: GiftedTech
+        if (!nekoUrl) {
+            const _gn = await fetch(`https://api.giftedtech.co.ke/api/anime/neko?apikey=${_giftedKey()}`, { signal: AbortSignal.timeout(10000) })
+            const _gnd = await _gn.json()
+            if (_gnd.success && _gnd.result) nekoUrl = _gnd.result
+        }
+        if (!nekoUrl) throw new Error('No neko image')
+        await safeSendMedia(m.chat, { image: { url: nekoUrl }, caption: '*Neko!* 🐱' }, {}, { quoted: m })
+    } catch { reply('❌ Failed to fetch neko image. Try again!') }
 } break
 
 case 'waifu': {
-    await X.sendMessage(m.chat, { react: { text: '💕', key: m.key } })
-try {
-    let waifuUrl = null
+    await X.sendMessage(m.chat, { react: { text: '👩', key: m.key } })
     try {
-        let _gw = await fetch(`https://api.giftedtech.co.ke/api/anime/waifu?apikey=${_giftedKey()}`, { signal: AbortSignal.timeout(10000) })
-        let _gwd = await _gw.json()
-        if (_gwd.success && _gwd.result) waifuUrl = _gwd.result
-    } catch {}
-    if (!waifuUrl) {
-        let res = await fetch('https://api.waifu.pics/sfw/waifu', { signal: AbortSignal.timeout(10000) })
-        let data = await res.json()
-        waifuUrl = data.url
-    }
-    await X.sendMessage(m.chat, { image: { url: waifuUrl }, caption: '*Waifu!* 💕' }, { quoted: m })
-} catch { reply('Failed to fetch waifu image.') }
+        let waifuUrl = null
+        // Source 1: waifu.pics (free, no key)
+        try {
+            const _wp = await fetch('https://api.waifu.pics/sfw/waifu', { signal: AbortSignal.timeout(8000) })
+            const _wpd = await _wp.json()
+            if (_wpd.url) waifuUrl = _wpd.url
+        } catch {}
+        // Source 2: waifu.im (free, no key)
+        if (!waifuUrl) {
+            const _wi = await fetch('https://api.waifu.im/search?included_tags=waifu&is_nsfw=false', { signal: AbortSignal.timeout(8000) })
+            const _wid = await _wi.json()
+            if (_wid.images?.[0]?.url) waifuUrl = _wid.images[0].url
+        }
+        // Source 3: GiftedTech
+        if (!waifuUrl) {
+            const _gw = await fetch(`https://api.giftedtech.co.ke/api/anime/waifu?apikey=${_giftedKey()}`, { signal: AbortSignal.timeout(10000) })
+            const _gwd = await _gw.json()
+            if (_gwd.success && _gwd.result) waifuUrl = _gwd.result
+        }
+        if (!waifuUrl) throw new Error('No waifu image')
+        await safeSendMedia(m.chat, { image: { url: waifuUrl }, caption: '*Waifu!* 👩‍🎤' }, {}, { quoted: m })
+    } catch { reply('❌ Failed to fetch waifu image. Try again!') }
 } break
 
 case 'loli': {
@@ -9411,6 +9535,37 @@ let data = await res.json()
 let hugTarget = (m.mentionedJid && m.mentionedJid[0]) ? `@${m.mentionedJid[0].split('@')[0]}` : 'someone'
 await X.sendMessage(m.chat, { image: { url: data.url }, caption: `*${pushname} hugs ${hugTarget}!* 🤗`, mentions: m.mentionedJid || [] }, { quoted: m })
 } catch { reply('Failed to fetch image.') }
+} break
+
+case 'slap':
+case 'smack': {
+    await X.sendMessage(m.chat, { react: { text: '👋', key: m.key } })
+    try {
+        let _wp = await fetch('https://api.waifu.pics/sfw/slap')
+        let _wpd = await _wp.json()
+        let _tgt = (m.mentionedJid && m.mentionedJid[0]) ? `@${m.mentionedJid[0].split('@')[0]}` : 'someone'
+        await safeSendMedia(m.chat, { image: { url: _wpd.url }, caption: `*${pushname} slaps ${_tgt}!* 👋` }, { mentions: m.mentionedJid || [] }, { quoted: m })
+    } catch { reply('❌ Failed to fetch image.') }
+} break
+
+case 'cuddle': {
+    await X.sendMessage(m.chat, { react: { text: '🤗', key: m.key } })
+    try {
+        let _wp = await fetch('https://api.waifu.pics/sfw/cuddle')
+        let _wpd = await _wp.json()
+        let _tgt = (m.mentionedJid && m.mentionedJid[0]) ? `@${m.mentionedJid[0].split('@')[0]}` : 'someone'
+        await safeSendMedia(m.chat, { image: { url: _wpd.url }, caption: `*${pushname} cuddles ${_tgt}!* 🤗` }, { mentions: m.mentionedJid || [] }, { quoted: m })
+    } catch { reply('❌ Failed to fetch image.') }
+} break
+
+case 'wave': {
+    await X.sendMessage(m.chat, { react: { text: '👋', key: m.key } })
+    try {
+        let _wp = await fetch('https://api.waifu.pics/sfw/wave')
+        let _wpd = await _wp.json()
+        let _tgt = (m.mentionedJid && m.mentionedJid[0]) ? `@${m.mentionedJid[0].split('@')[0]}` : 'someone'
+        await safeSendMedia(m.chat, { image: { url: _wpd.url }, caption: `*${pushname} waves at ${_tgt}!* 👋` }, { mentions: m.mentionedJid || [] }, { quoted: m })
+    } catch { reply('❌ Failed to fetch image.') }
 } break
 
 case 'wink': {
@@ -10561,23 +10716,33 @@ case 'scanqr':
 case 'qrread': {
     await X.sendMessage(m.chat, { react: { text: '📷', key: m.key } })
     if (!m.quoted || !/image/.test(m.quoted.mimetype || m.quoted.msg?.mimetype || '')) {
-        return reply(`╔══〔 📷 READ QR CODE 〕═══╗\n║ Reply to a QR image with *${prefix}readqr*\n╚═══════════════════════╝`)
+        return reply(`╌══〔 📷 READ QR CODE 〕══╌\n║ Reply to a QR image with *${prefix}readqr*\n║ Works with any standard QR code\n╚═══════════════════════╝`)
     }
     try {
         await reply('📷 _Scanning QR code..._')
         let _buf = await m.quoted.download()
         if (!_buf || _buf.length < 100) throw new Error('Image download failed')
-        let _tmp = require("path").join(__dirname, "tmp", `qr_${Date.now()}.png`)
+        let _tmp = require('path').join(__dirname, 'tmp', `qr_${Date.now()}.png`)
         fs.writeFileSync(_tmp, _buf)
         let _url = await CatBox(_tmp)
         try { fs.unlinkSync(_tmp) } catch {}
         if (!_url) throw new Error('Upload failed')
-        let r = await fetch(`https://api.giftedtech.co.ke/api/tools/readqr?apikey=${_giftedKey()}&url=${encodeURIComponent(_url)}`, { signal: AbortSignal.timeout(25000) })
-        let d = await r.json()
-        if (!d.success || !d.result) throw new Error('Could not read QR')
-        let qrData = d.result?.qrcode_data || d.result
-        await reply(`╔══〔 📷 QR CODE RESULT 〕══╗\n║ ${qrData}\n╚═══════════════════════╝`)
-    } catch(e) { reply(`❌ Could not read the QR code. Make sure the image is clear and contains a valid QR code.`) }
+        let qrData = null
+        // Source 1: api.qrserver.com (free, no key)
+        try {
+            const _qsR = await fetch(`https://api.qrserver.com/v1/read-qr-code/?fileurl=${encodeURIComponent(_url)}`, { signal: AbortSignal.timeout(15000) })
+            const _qsD = await _qsR.json()
+            if (_qsD?.[0]?.symbol?.[0]?.data) qrData = _qsD[0].symbol[0].data
+        } catch {}
+        // Source 2: GiftedTech
+        if (!qrData) {
+            const _gtR = await fetch(`https://api.giftedtech.co.ke/api/tools/readqr?apikey=${_giftedKey()}&url=${encodeURIComponent(_url)}`, { signal: AbortSignal.timeout(25000) })
+            const _gtD = await _gtR.json()
+            if (_gtD.success && _gtD.result) qrData = _gtD.result?.qrcode_data || _gtD.result
+        }
+        if (!qrData) throw new Error('Could not read QR')
+        await reply(`╌══〔 📷 QR CODE RESULT 〕══╌\n║ ${qrData}\n╚═══════════════════════╝`)
+    } catch(e) { reply('❌ Could not read the QR code. Make sure the image is clear and contains a valid QR code.') }
 } break
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -10585,21 +10750,34 @@ case 'qrread': {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 case 'deepimg':
 case 'genimage':
-case 'aiart': {
+case 'aiart':
+case 'imagine':
+case 'img': {
     await X.sendMessage(m.chat, { react: { text: '🎨', key: m.key } })
-    if (!text) return reply(`╔══〔 🎨 AI IMAGE GENERATOR 〕══╗\n\n║ Usage: *${prefix}${command} [describe your image]*\n║ Example: ${prefix}${command} A futuristic city at night\n╚═════════════���═════════╝`)
+    if (!text) return reply(`╌══〔 🎨 AI IMAGE GEN 〕══╌\n║ *Usage:* ${prefix}imagine [describe image]\n║ Example: ${prefix}imagine a lion at sunset\n║\n║ 💡 Be descriptive for best results!\n╚═══════════════════════╝`)
     try {
-        await reply('🎨 _Generating your image with AI, please wait..._')
-        let r = await fetch(`https://api.giftedtech.co.ke/api/ai/fluximg?apikey=${_giftedKey()}&prompt=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(60000) })
-        let d = await r.json()
-        let _imgUrl = d?.result?.url || d?.result
-        if (!d.success || !_imgUrl) {
-            // MagicStudio returns raw JPEG — send the URL directly without JSON parsing
-            _imgUrl = `https://api.giftedtech.co.ke/api/ai/magicstudio?apikey=${_giftedKey()}&prompt=${encodeURIComponent(text)}`
+        await reply('🎨 _Generating your image with AI... please wait ⏳_')
+        let _aiImgUrl = null
+        // Source 1: Pollinations.ai (free, no key)
+        try {
+            const _polUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(text)}?width=1024&height=1024&nologo=true&model=flux`
+            const _polR = await fetch(_polUrl, { signal: AbortSignal.timeout(45000) })
+            if (_polR.ok && _polR.headers.get('content-type')?.startsWith('image/')) {
+                _aiImgUrl = _polUrl
+            }
+        } catch {}
+        // Source 2: GiftedTech fluximg
+        if (!_aiImgUrl) {
+            try {
+                const _gtR = await fetch(`https://api.giftedtech.co.ke/api/ai/fluximg?apikey=${_giftedKey()}&prompt=${encodeURIComponent(text)}`, { signal: AbortSignal.timeout(60000) })
+                const _gtD = await _gtR.json()
+                if (_gtD.success && (_gtD.result?.url || _gtD.result)) _aiImgUrl = _gtD.result?.url || _gtD.result
+            } catch {}
         }
-        if (!_imgUrl) throw new Error('Image generation failed')
-        await X.sendMessage(m.chat, { image: { url: _imgUrl }, caption: `🎨 *AI Generated Image*\n📝 _${text}_` }, { quoted: m })
-    } catch(e) { reply(`❌ Image generation failed. Try a different prompt.`) }
+        // Source 3: MagicStudio (direct image)
+        if (!_aiImgUrl) _aiImgUrl = `https://api.giftedtech.co.ke/api/ai/magicstudio?apikey=${_giftedKey()}&prompt=${encodeURIComponent(text)}`
+        await safeSendMedia(m.chat, { image: { url: _aiImgUrl }, caption: `🎨 *AI Generated Image*\n📝 _${text}_` }, {}, { quoted: m })
+    } catch(e) { reply('❌ Image generation failed. Try a shorter or different prompt.') }
 } break
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
