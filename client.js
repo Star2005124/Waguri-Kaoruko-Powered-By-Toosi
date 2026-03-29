@@ -7034,17 +7034,20 @@ reply('*Menu Categories:*\nai, tools, owner, group, downloader, search, sticker,
 
 case 'menuimage': {
     await X.sendMessage(m.chat, { react: { text: '🖼️', key: m.key } })
-if (!isOwner) return reply(mess.OnlyOwner)
-if (m.quoted && /image/.test(m.quoted.mimetype || '')) {
-try {
-let media = await X.downloadAndSaveMediaMessage(m.quoted, 'menu_thumb')
-global.menuThumb = media
-reply('*Menu image updated!*')
-} catch(e) { reply('Error: ' + e.message) }
-} else if (args[0]) {
-global.menuThumb = args[0]
-reply(`✅ *Menu image URL set.*`)
-} else reply(`Reply to an image or provide URL: ${prefix}menuimage [url]`)
+    if (!isOwner) return reply(mess.OnlyOwner)
+    if (m.quoted && /image/.test(mime)) {
+        try {
+            const _miBuf = await quoted.download()
+            if (!_miBuf || _miBuf.length < 100) throw new Error('Failed to download image')
+            const _miPath = path.join(__dirname, 'media', 'menu_thumb.jpg')
+            fs.writeFileSync(_miPath, _miBuf)
+            global.menuThumb = _miPath
+            reply('✅ *Menu image updated!* It will now show in .menu')
+        } catch(e) { reply('❌ Error: ' + e.message) }
+    } else if (args[0]) {
+        global.menuThumb = args[0]
+        reply(`✅ *Menu image URL set.*`)
+    } else reply(`Reply to an image or provide URL: ${prefix}menuimage [url]`)
 } break
 
 case 'configimage': {
