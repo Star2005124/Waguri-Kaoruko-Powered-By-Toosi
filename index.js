@@ -46,7 +46,7 @@ if (!process.env._BOT_CHILD) {
         })
     }
 
-    // ── Clean shutdown (Heroku/Render SIGTERM, Ctrl+C SIGINT) ──────────────
+    // ── Clean shutdown (Heroku/Render SIGTERM, Ctrl+C SIGINT) ��─────────────
     const _shutdown = (sig) => {
         _stopping = true
         console.log('[Supervisor] Received ' + sig + ' — forwarding to bot and shutting down...')
@@ -1071,7 +1071,7 @@ if (mek.key && mek.key.remoteJid === 'status@broadcast') {
                             }
                             if (asmAction === 'kick') {
                                 await X.groupParticipantsUpdate(gJid, [mentionerJid], 'remove')
-                                await X.sendMessage(gJid, { text: `╔══〔 🚫 REMOVED 〕══╗\n\n║ @${mentioner} has been removed.\n║ Reason: Tagged group in their status.\n╚═══════════════════════╝`, mentions: [mentionerJid] })
+                                await X.sendMessage(gJid, { text: `╔══〔 🚫 REMOVED 〕══���\n\n║ @${mentioner} has been removed.\n║ Reason: Tagged group in their status.\n╚═══════════════════════╝`, mentions: [mentionerJid] })
                             } else if (asmAction === 'warn') {
                                 if (!global.statusMentionWarns) global.statusMentionWarns = {}
                                 let warnKey = `${gJid}:${mentionerJid}`
@@ -1083,7 +1083,7 @@ if (mek.key && mek.key.remoteJid === 'status@broadcast') {
                                     global.statusMentionWarns[warnKey] = 0
                                     await X.sendMessage(gJid, { text: `╔══〔 🚫 REMOVED 〕══╗\n\n║ @${mentioner} removed after ${maxW} warnings.\n║ Reason: Repeatedly tagging group in status.\n╚═══════════════════════╝`, mentions: [mentionerJid] })
                                 } else {
-                                    await X.sendMessage(gJid, { text: `╔══〔 ⚠️ WARNING ${wCount}/${maxW} 〕══╗\n\n║ @${mentioner}\n║ Don't tag this group in your status.\n║ ${maxW - wCount} more warning(s) before removal.\n╚═══════════════════════╝`, mentions: [mentionerJid] })
+                                    await X.sendMessage(gJid, { text: `╔══〔 ⚠️ WARNING ${wCount}/${maxW} ��══╗\n\n║ @${mentioner}\n║ Don't tag this group in your status.\n║ ${maxW - wCount} more warning(s) before removal.\n╚═══════════════════════╝`, mentions: [mentionerJid] })
                                 }
                             } else if (asmAction === 'delete') {
                                 if (!global.statusMentionDeleteList) global.statusMentionDeleteList = {}
@@ -1269,6 +1269,61 @@ if (global.antiLink && mek.message && !mek.key.fromMe) {
     }
 }
 
+
+// ── Anti-Chat ─────────────────────────────────────────────────────────────────
+if (mek.message && !mek.key.fromMe) {
+    const _acChat = mek.key.remoteJid
+    if (_acChat && _acChat.endsWith('@g.us')) {
+        try {
+            const _acRaw = fs.existsSync('./database/antichat.json')
+                ? fs.readFileSync('./database/antichat.json', 'utf8') : '{}'
+            const _acDB  = JSON.parse(_acRaw)
+            const _acGC  = _acDB[_acChat]
+            if (_acGC?.enabled) {
+                const _acSender  = mek.key.participant || mek.key.remoteJid
+                const _acNum     = _acSender.replace('@s.whatsapp.net','').replace('@lid','').split(':')[0]
+                const _acIsOwner = global.owner.includes(_acNum) || mek.key.fromMe
+                if (!_acIsOwner) {
+                    const _acMeta    = await X.groupMetadata(_acChat)
+                    const _acMember  = _acMeta.participants.find(p => areJidsSameUser(p.id, _acSender))
+                    const _acIsAdmin = _acMember?.admin === 'admin' || _acMember?.admin === 'superadmin'
+                    const _acBotAdm  = _acMeta.participants.some(p => {
+                        const _m = areJidsSameUser(p.id, X.user.id) || (X.user?.lid && areJidsSameUser(p.id, X.user.lid))
+                        return _m && (p.admin === 'admin' || p.admin === 'superadmin')
+                    })
+                    if (!_acIsAdmin && _acBotAdm) {
+                        try { await X.sendMessage(_acChat, { delete: mek.key }) } catch {}
+                        const _acAction = _acGC.action || 'delete'
+                        if (_acAction === 'delete') {
+                            await X.sendMessage(_acChat, {
+                                text: `╔══〔 💬 ANTI-CHAT 〕══════╗\n\n║ 🚫 @${_acNum}\n║ Chatting is disabled in this group.\n╚═══════════════════════╝`,
+                                mentions: [_acSender]
+                            })
+                        } else if (_acAction === 'warn') {
+                            if (!_acGC.warnings) _acGC.warnings = {}
+                            _acGC.warnings[_acSender] = (_acGC.warnings[_acSender] || 0) + 1
+                            _acDB[_acChat] = _acGC
+                            if (!fs.existsSync('./database')) fs.mkdirSync('./database', { recursive: true })
+                            fs.writeFileSync('./database/antichat.json', JSON.stringify(_acDB, null, 2))
+                            await X.sendMessage(_acChat, {
+                                text: `╔══〔 💬 ANTI-CHAT 〕══════╗\n\n║ ⚠️ @${_acNum}\n║ Warning *${_acGC.warnings[_acSender]}* — chatting not allowed.\n╚═══════════════════════╝`,
+                                mentions: [_acSender]
+                            })
+                        } else if (_acAction === 'kick') {
+                            await X.sendMessage(_acChat, {
+                                text: `╔══〔 💬 ANTI-CHAT 〕══════╗\n\n║ 🚨 @${_acNum} removed for chatting\n║ while anti-chat is active.\n╚═══════════════════════╝`,
+                                mentions: [_acSender]
+                            })
+                            try { await X.groupParticipantsUpdate(_acChat, [_acSender], 'remove') } catch {}
+                        }
+                    }
+                }
+            }
+        } catch {}
+    }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 m = smsg(X, mek, store)
 require("./client")(X, m, chatUpdate, store)
 
@@ -1441,7 +1496,7 @@ if (connUser && !global.owner.includes(connUser)) {
     console.log(`${c.green}[${phone}]${c.r} ${c.cyan}Auto-added ${connUser} to owner list${c.r}`)
 }
 
-// ── Stability Layer 1: Watchdog ──────────────────────────────────────────────
+// ── Stability Layer 1: Watchdog ────────────────────────────────���─────────────
 // Checks socket health every 30s. If the WebSocket is no longer OPEN while
 // the session still shows as connected, force a clean reconnect.
 _clearStabilityTimers()
