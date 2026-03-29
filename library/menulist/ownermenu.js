@@ -1,75 +1,75 @@
 const ownerMenu = `
-╭─⊷ *👑 OWNER CONTROLS*
-│
-├─⊷ *⚙️ BOT SETTINGS*
-│  • .setbotname  →  [name]
-│  • .author      →  [name]
-│  • .packname    →  [name]
-│  • .timezone    →  [timezone]
-│  • .setprefix   →  [char/reset]
-│  • .botpic      →  [url / reply img]
-│  • .boturl      →  [url]
-│  • .setowner    →  [number]
-│  • .pp          →  [@user / reply]
-│  • .setpp       →  reply image
-│  • .menuimage   →  [url / reply img]
+╔══〔 👑 OWNER CONTROLS 〕══╗
+
+╠══〔 ⚙️ BOT SETTINGS 〕══╣
+│  • .setbotname
+│  • .author    
+│  • .packname  
+│  • .timezone  
+│  • .setprefix 
+│  • .botpic    
+│  • .boturl    
+│  • .setowner  
+│  • .pp        
+│  • .setpp     
+│  • .menuimage 
 │  • .addplugin   • .rmplugin
 │  • .cgplugin    • .getplugin
 │  • .botsettings
-│
-├─⊷ *🔧 SYSTEM*
-│  • .> / .$ / .=>  →  exec code
+
+╠═════〔 🔧 SYSTEM 〕═════╣
+│  • .> / .$ / .=>
 │  • .self           • .public
 │  • .onlygroup      • .onlypc
-│  • .unavailable    →  bot offline
+│  • .unavailable  
 │  • .restart
-│  • .join           →  [group link]
+│  • .join         
 │  • .leave
-│  • .broadcast      →  [message]
-│  • .sysinfo        →  server info
+│  • .broadcast    
+│  • .sysinfo      
 │  • .cleartmp
-│
-├─⊷ *🛡️ SUDO MANAGEMENT*
-│  • .addsudo    →  @user / [number]
-│  • .delsudo    →  @user / [number]
+
+╠══〔 🛡️ SUDO MANAGEMENT 〕══╣
+│  • .addsudo  
+│  • .delsudo  
 │  • .sudolist
-│
-├─⊷ *👻 PRESENCE & PRIVACY*
-│  • .alwaysonline    →  on/off
-│  • .lastseen        →  hide/show
-│  • .idch            →  [channel url]
+
+╠══〔 👻 PRESENCE & PRIVACY 〕══╣
+│  • .alwaysonline  
+│  • .lastseen      
+│  • .idch          
 │  • .autotyping      • .autorecording
 │  • .autoonline
-│
-├─⊷ *🚫 PROTECTION*
-│  • .anticall           →  on/off
-│  • .antilink           →  on/off
-│  • .antidelete         →  on/off
-│  • .antistatusmention  →  on/off/warn/kick
-│  • .pmblocker          →  on/off
-│  • .block              →  @user
-│  • .unblock            →  @user
+
+╠═══〔 🚫 PROTECTION 〕═══╣
+│  • .anticall         
+│  • .antilink         
+│  • .antidelete       
+│  • .antistatusmention
+│  • .pmblocker        
+│  • .block            
+│  • .unblock          
 │  • .listblock
-│
-├─⊷ *🔄 AUTOMATION*
-│  • .autoread           →  on/off
-│  • .chatbot            →  on/off
-│  • .autobio            →  on/off
-│  • .autoreact          →  [emoji/on/off]
-│  • .autoreplystatus    →  [msg/off]
+
+╠═══〔 🔄 AUTOMATION 〕═══╣
+│  • .autoread         
+│  • .chatbot          
+│  • .autobio          
+│  • .autoreact        
+│  • .autoreplystatus  
 │  • .autoviewstatus
-│  • .autolikestatus     →  [emoji/off]
-│  • .muslimprayer       →  on/off/dm/group
-│  • .christianprayer    →  on/off/dm/group
-│
-├─⊷ *🤖 AI CHATBOT MODES*
+│  • .autolikestatus   
+│  • .muslimprayer     
+│  • .christianprayer  
+
+╠══〔 🤖 AI CHATBOT MODES 〕══╣
 │  • .setaimode status
-│  • .setaimode global   →  on/off
-│  • .setaimode dm       →  on/off
-│  • .setaimode group    →  on/off
+│  • .setaimode global 
+│  • .setaimode dm     
+│  • .setaimode group  
 │  • .setaimode reset
-│
-╰─⊷
+
+╚═══════════════════════╝
 `
 
 module.exports = ownerMenu
