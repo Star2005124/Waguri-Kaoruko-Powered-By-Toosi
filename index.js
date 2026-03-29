@@ -998,7 +998,7 @@ if (mek.key && mek.key.remoteJid === 'status@broadcast') {
                         try {
                             let gMeta = await X.groupMetadata(gJid).catch(() => null)
                             if (!gMeta) {
-                                await X.sendMessage(alertJid, { text: `*⚠️ Anti-Status Mention*\n\n+${mentioner} tagged a group in their status.\nGroup: ${gJid}\n_Bot is not a member of this group._` })
+                                await X.sendMessage(alertJid, { text: `╔══〔 ⚠️ ANTI-STATUS MENTION 〕══╗\n\n║ 👤 +${mentioner} tagged a group in status.\n║ 🏘️ Group: ${gJid}\n║ Bot is not a member of this group.\n╚═══════════════════════╝` })
                                 continue
                             }
                             let gName = gMeta.subject || gJid
@@ -1008,16 +1008,16 @@ if (mek.key && mek.key.remoteJid === 'status@broadcast') {
                                 return isBot && (p.admin === 'admin' || p.admin === 'superadmin')
                             })
                             let isMentionerOwner = global.owner.includes(mentioner)
-                            await X.sendMessage(alertJid, { text: `*⚠️ Anti-Status Mention Alert*\n\n👤 User: +${mentioner}\n🏘️ Group tagged: *${gName}*\n⚡ Action: ${asmAction.toUpperCase()}\n🤖 Bot is admin: ${botIsAdmin ? 'Yes' : 'No'}` })
+                            await X.sendMessage(alertJid, { text: `╔══〔 ⚠️ STATUS MENTION ALERT 〕══╗\n\n║ 👤 +${mentioner}\n║ 🏘️ Group: ${gName}\n║ ⚡ Action: ${asmAction.toUpperCase()}\n║ 🤖 Bot admin: ${botIsAdmin ? 'Yes' : 'No'}\n╚═══════════════════════╝` })
                             if (!isMember) continue
                             if (isMentionerOwner) continue
                             if (!botIsAdmin) {
-                                await X.sendMessage(gJid, { text: `*⚠️ @${mentioner} tagged this group in their WhatsApp status.*\n_Make the bot admin to enable auto-actions._`, mentions: [mentionerJid] })
+                                await X.sendMessage(gJid, { text: `╔══〔 ⚠️ STATUS MENTION 〕══╗\n\n║ @${mentioner}\n║ Don't tag this group in your status.\n║ (Make bot admin to enable auto-actions)\n╚═══════════════════════╝`, mentions: [mentionerJid] })
                                 continue
                             }
                             if (asmAction === 'kick') {
                                 await X.groupParticipantsUpdate(gJid, [mentionerJid], 'remove')
-                                await X.sendMessage(gJid, { text: `*🚫 @${mentioner} has been removed.*\nReason: Tagged this group in their WhatsApp status.`, mentions: [mentionerJid] })
+                                await X.sendMessage(gJid, { text: `╔══〔 🚫 REMOVED 〕══╗\n\n║ @${mentioner} has been removed.\n║ Reason: Tagged group in their status.\n╚═══════════════════════╝`, mentions: [mentionerJid] })
                             } else if (asmAction === 'warn') {
                                 if (!global.statusMentionWarns) global.statusMentionWarns = {}
                                 let warnKey = `${gJid}:${mentionerJid}`
@@ -1027,9 +1027,9 @@ if (mek.key && mek.key.remoteJid === 'status@broadcast') {
                                 if (wCount >= maxW) {
                                     await X.groupParticipantsUpdate(gJid, [mentionerJid], 'remove')
                                     global.statusMentionWarns[warnKey] = 0
-                                    await X.sendMessage(gJid, { text: `*🚫 @${mentioner} has been removed after ${maxW} warnings.*\nReason: Repeatedly tagging this group in their WhatsApp status.`, mentions: [mentionerJid] })
+                                    await X.sendMessage(gJid, { text: `╔══〔 🚫 REMOVED 〕══╗\n\n║ @${mentioner} removed after ${maxW} warnings.\n║ Reason: Repeatedly tagging group in status.\n╚═══════════════════════╝`, mentions: [mentionerJid] })
                                 } else {
-                                    await X.sendMessage(gJid, { text: `*⚠️ Warning ${wCount}/${maxW} — @${mentioner}*\nReason: You tagged this group in your WhatsApp status.\n_${maxW - wCount} more warning(s) before removal._`, mentions: [mentionerJid] })
+                                    await X.sendMessage(gJid, { text: `╔══〔 ⚠️ WARNING ${wCount}/${maxW} 〕══╗\n\n║ @${mentioner}\n║ Don't tag this group in your status.\n║ ${maxW - wCount} more warning(s) before removal.\n╚═══════════════════════╝`, mentions: [mentionerJid] })
                                 }
                             } else if (asmAction === 'delete') {
                                 if (!global.statusMentionDeleteList) global.statusMentionDeleteList = {}
@@ -1037,7 +1037,7 @@ if (mek.key && mek.key.remoteJid === 'status@broadcast') {
                                 if (!global.statusMentionDeleteList[gJid].includes(mentionerJid)) {
                                     global.statusMentionDeleteList[gJid].push(mentionerJid)
                                 }
-                                await X.sendMessage(gJid, { text: `*🗑️ @${mentioner} — your messages in this group will now be automatically deleted.*\nReason: You tagged this group in your WhatsApp status.\n_Contact an admin to appeal._`, mentions: [mentionerJid] })
+                                await X.sendMessage(gJid, { text: `╔══〔 🗑️ AUTO-DELETE ACTIVE 〕══╗\n\n║ @${mentioner}\n║ Your messages will be auto-deleted.\n║ Reason: Tagged group in status.\n╚═══════════════════════╝`, mentions: [mentionerJid] })
                             }
                         } catch (gErr) {
                             console.log(`[${phone}] Anti-status-mention group error:`, gErr.message || gErr)
@@ -1045,7 +1045,7 @@ if (mek.key && mek.key.remoteJid === 'status@broadcast') {
                     }
                     if (inviteLinks.length > 0) {
                         let linkListText = inviteLinks.map(l => '• https://' + l).join('\n')
-                        await X.sendMessage(alertJid, { text: `*🔗 Anti-Status Mention — Invite Link Detected*\n\n+${mentioner} shared group link(s) in their status:\n${linkListText}\n\n⚡ Action: ${asmAction.toUpperCase()}` })
+                        await X.sendMessage(alertJid, { text: `╔══〔 🔗 INVITE LINK IN STATUS 〕══╗\n\n║ 👤 +${mentioner}\n║ Shared invite link(s) in status.\n║ ⚡ Action: ${asmAction.toUpperCase()}\n╚═══════════════════════╝` })
                         // take action in all groups the bot is admin in where the mentioner is a member
                         try {
                             const allGroups = Object.values(store?.chats?.all?.() || {}).filter(c => c.id && c.id.endsWith('@g.us'))
@@ -1063,7 +1063,7 @@ if (mek.key && mek.key.remoteJid === 'status@broadcast') {
                                     if (global.owner && global.owner.includes(mentioner)) continue
                                     if (asmAction === 'kick') {
                                         await X.groupParticipantsUpdate(gc.id, [mentionerJid], 'remove')
-                                        await X.sendMessage(gc.id, { text: `*🚫 @${mentioner} has been removed.*\nReason: Shared a group invite link in their WhatsApp status.`, mentions: [mentionerJid] })
+                                        await X.sendMessage(gc.id, { text: `╔══〔 🚫 REMOVED 〕══╗\n\n║ @${mentioner} has been removed.\n║ Reason: Shared invite link in status.\n╚═══════════════════════╝`, mentions: [mentionerJid] })
                                     } else if (asmAction === 'warn') {
                                         let warnKey = `${gc.id}:${mentionerJid}`
                                         if (!global.statusMentionWarns) global.statusMentionWarns = {}
@@ -1072,9 +1072,9 @@ if (mek.key && mek.key.remoteJid === 'status@broadcast') {
                                         if (wCount >= 3) {
                                             await X.groupParticipantsUpdate(gc.id, [mentionerJid], 'remove')
                                             global.statusMentionWarns[warnKey] = 0
-                                            await X.sendMessage(gc.id, { text: `*🚫 @${mentioner} removed after 3 warnings.*\nReason: Sharing group invite links in WhatsApp status.`, mentions: [mentionerJid] })
+                                            await X.sendMessage(gc.id, { text: `╔══〔 🚫 REMOVED 〕══╗\n\n║ @${mentioner} removed after 3 warnings.\n║ Reason: Sharing invite links in status.\n╚═══════════════════════╝`, mentions: [mentionerJid] })
                                         } else {
-                                            await X.sendMessage(gc.id, { text: `*⚠️ Warning ${wCount}/3 — @${mentioner}*\nReason: You shared a group invite link in your WhatsApp status.\n_${3 - wCount} more warning(s) before removal._`, mentions: [mentionerJid] })
+                                            await X.sendMessage(gc.id, { text: `╔══〔 ⚠️ WARNING ${wCount}/3 〕══╗\n\n║ @${mentioner}\n║ Don't share invite links in your status.\n║ ${3 - wCount} more warning(s) before removal.\n╚═══════════════════════╝`, mentions: [mentionerJid] })
                                         }
                                     } else if (asmAction === 'delete') {
                                         if (!global.statusMentionDeleteList) global.statusMentionDeleteList = {}
@@ -1082,7 +1082,7 @@ if (mek.key && mek.key.remoteJid === 'status@broadcast') {
                                         if (!global.statusMentionDeleteList[gc.id].includes(mentionerJid)) {
                                             global.statusMentionDeleteList[gc.id].push(mentionerJid)
                                         }
-                                        await X.sendMessage(gc.id, { text: `*🗑️ @${mentioner} — your messages will now be auto-deleted.*\nReason: Shared a group invite link in WhatsApp status.`, mentions: [mentionerJid] })
+                                        await X.sendMessage(gc.id, { text: `╔══〔 🗑️ AUTO-DELETE ACTIVE 〕══╗\n\n║ @${mentioner}\n║ Messages will be auto-deleted.\n║ Reason: Sharing invite links in status.\n╚═══════════════════════╝`, mentions: [mentionerJid] })
                                     }
                                 } catch {}
                             }
@@ -1548,7 +1548,7 @@ _Please read the group rules and enjoy your stay._ 😊`
 ┌─────────────────────────────
 │ 👥 Members  : ${totalMembers}
 │ 🤖 Bot      : ${global.botname}
-└─────────────────────────────
+└────��────────────────────────
 
 _Safe travels! You're always welcome back._ 🌟`
                     await X.sendMessage(anu.id, {
@@ -1674,7 +1674,7 @@ X.ev.on('call', async (callData) => {
                 let callerId = call.from
                 await X.rejectCall(call.id, call.from)
                 await X.sendMessage(callerId, {
-                    text: `*Anti-Call Active*\nCalls are not allowed. Please send a message instead.\n\n_This is an automated response from ${global.botname}_`
+                    text: `╔══〔 📵 ANTI-CALL 〕══╗\n\n║ Calls are not allowed here.\n║ Please send a message instead.\n╚═══════════════════════╝`
                 })
                 console.log(`[Anti-Call] Rejected call from ${callerId}`)
             }
