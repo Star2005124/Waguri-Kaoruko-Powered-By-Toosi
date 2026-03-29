@@ -1,33 +1,27 @@
 const stickerMenu = `
-╔══〔 🖼️ STICKER MAKER 〕══╗
+  ╔══〔 🖼️ STICKER MAKER 〕══╗
 
-║ .sticker
-║ .stickercrop
-║ .scrop
-║ .take
-║ .steal
-║ .qc
-║ .brat
-║ .bratv
-║ .emojimix
-║ .telestick
-║ .stikerly
-║ .meme
-║ .smeme
+  ║ .sticker
+  ║ .stickercrop
+  ║ .scrop
+  ║ .take
+  ║ .steal
+  ║ .qc
+  ║ .brat
+  ║ .bratv
+  ║ .emojimix
+  ║ .telestick
+  ║ .stikerly
+  ║ .smeme
 
-╚═══════════════════════╝
+  ╚═══════════════════════╝
 
-╔══〔 🔄 MEDIA CONVERTER 〕══╗
+  ╔══〔 🔄 MEDIA CONVERTER 〕══╗
 
-║ .toimage
-║ .totext
-║ .toaudio
-║ .tomp3
-║ .toppt
-║ .tourl
-║ .removebg
+  ║ .toimage
+  ║ .tourl
 
-╚═══════════════════════╝
-`
+  ╚═══════════════════════╝
+  `
 
-module.exports = stickerMenu
+  module.exports = stickerMenu
