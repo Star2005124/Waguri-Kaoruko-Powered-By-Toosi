@@ -8957,12 +8957,12 @@ print('ok')
 case 'hd':
 case 'upscale': {
     await X.sendMessage(m.chat, { react: { text: '🔭', key: m.key } })
-    const _hdMsg = m.quoted || m
-    const _hdMime = _hdMsg?.message?.imageMessage?.mimetype || ''
-    if (!_hdMime.startsWith('image/')) return reply('❌ *Reply to an image* to upscale/enhance it to HD quality.')
+    if (!m.quoted) return reply('❌ *Reply to an image* to upscale/enhance it to HD quality.')
+    if (!/image/.test(mime)) return reply('❌ *Reply to an image* to upscale/enhance it to HD quality.')
     try {
         await reply('🔭 _Enhancing image to HD... Please wait..._')
-        const _hdBuf = await X.downloadMediaMessage(_hdMsg)
+        const _hdBuf = await quoted.download()
+        if (!_hdBuf || _hdBuf.length < 100) throw new Error('Failed to download image')
         let _hdOutUrl = null
         // Source 1: DeepAI waifu2x (free upscaler)
         try {
@@ -8977,7 +8977,7 @@ case 'upscale': {
             const _hdData = await _hdRes.json()
             if (_hdData?.output_url) _hdOutUrl = _hdData.output_url
         } catch {}
-        // Source 2: DeepAI image enhancer fallback
+        // Source 2: DeepAI torch-srgan fallback
         if (!_hdOutUrl) {
             try {
                 const _hdForm2 = new FormData()
