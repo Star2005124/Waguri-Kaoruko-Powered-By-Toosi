@@ -51,8 +51,8 @@ const footballMenu = `
 ║ .allsports  [cat]
 ║ .watchsport [id]
 
-│  Categories: football, basketball, tennis,
-│  cricket, rugby, hockey, volleyball, boxing
+║ 📋 football · basketball · tennis · cricket
+║    rugby · hockey · volleyball · boxing
 
 ╚═══════════════════════╝
 `
