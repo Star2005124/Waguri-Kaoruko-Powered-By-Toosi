@@ -10696,7 +10696,6 @@ case 'clima': {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 case 'tinyurl':
 case 'shorturl':
-case 'tinyurl':
 case 'shorten': {
     await X.sendMessage(m.chat, { react: { text: '🔗', key: m.key } })
     if (!text || !text.startsWith('http')) return reply(`╌════〔 🔗 URL SHORTENER 〕══╌\n\n║ *Usage:* ${prefix}tinyurl [url]\n║ Example: ${prefix}tinyurl https://google.com\n╚═══════════════════════╝`)
@@ -10808,7 +10807,6 @@ case 'qrread': {
 case 'deepimg':
 case 'genimage':
 case 'aiart':
-case 'imagine':
 case 'img': {
     await X.sendMessage(m.chat, { react: { text: '🎨', key: m.key } })
     if (!text) return reply(`╌══〔 🎨 AI IMAGE GEN 〕══╌\n║ *Usage:* ${prefix}imagine [describe image]\n║ Example: ${prefix}imagine a lion at sunset\n║\n║ 💡 Be descriptive for best results!\n╚═══════════════════════╝`)
@@ -12425,63 +12423,6 @@ case 'news': {
       } catch(e) { reply('❌ Could not fetch Kenyan news. Try again later.') }
   } break
 
-
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // 📰  BBC / TECH / KENYANS NEWS (Keith API)
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    case 'bbcnews':
-    case 'bbcheadlines': {
-        await X.sendMessage(m.chat, { react: { text: '📡', key: m.key } })
-        try {
-            await reply('📡 _Fetching BBC headlines..._')
-            const _bd = await _keithFetch('/news/bbc')
-            const _bst = _bd?.topStories || _bd?.articles || _bd
-            if (!Array.isArray(_bst) || !_bst.length) throw new Error('No data')
-            let msg = `╔══〔 📡 BBC NEWS 〕══╗\n`
-            for (let a of _bst.slice(0, 8)) {
-                msg += `\n🔹 *${a.title}*\n`
-                if (a.description) msg += `   ${a.description.slice(0, 100)}...\n`
-            }
-            msg += `\n╚═══════════════════════╝`
-            await reply(msg)
-        } catch(e) { reply('❌ Could not fetch BBC news. Try again later.') }
-    } break
-
-    case 'technews':
-    case 'techheadlines': {
-        await X.sendMessage(m.chat, { react: { text: '💻', key: m.key } })
-        try {
-            await reply('💻 _Fetching tech news..._')
-            const _tnd = await _keithFetch('/news/tech')
-            const _tna = _tnd?.articles || _tnd?.items || _tnd
-            if (!Array.isArray(_tna) || !_tna.length) throw new Error('No data')
-            let msg = `╔══〔 💻 TECH NEWS 〕══╗\n`
-            for (let a of _tna.slice(0, 8)) {
-                msg += `\n🔷 *${a.title || a.name}*\n`
-                if (a.description || a.summary) msg += `   ${(a.description || a.summary || '').slice(0, 100)}...\n`
-            }
-            msg += `\n╚═══════════════════════╝`
-            await reply(msg)
-        } catch(e) { reply('❌ Could not fetch tech news. Try again later.') }
-    } break
-
-    case 'kenyans':
-    case 'kenyannews': {
-        await X.sendMessage(m.chat, { react: { text: '🇰🇪', key: m.key } })
-        try {
-            await reply('🇰🇪 _Fetching Kenyans news..._')
-            const _knd = await _keithFetch('/news/kenyans')
-            const _kna = Array.isArray(_knd) ? _knd : _knd?.articles
-            if (!Array.isArray(_kna) || !_kna.length) throw new Error('No data')
-            let msg = `╔══〔 🇰🇪 KENYA NEWS 〕══╗\n`
-            for (let a of _kna.slice(0, 8)) {
-                msg += `\n📰 *${a.title}*\n`
-                if (a.url) msg += `   🔗 ${a.url.slice(0, 60)}...\n`
-            }
-            msg += `\n╚═══════════════════════╝`
-            await reply(msg)
-        } catch(e) { reply('❌ Could not fetch Kenyan news. Try again later.') }
-    } break
 
   
 case 'manga': {
