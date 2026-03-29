@@ -1381,27 +1381,27 @@ case 'help': {
 const helpText = `╭─⊷
 │  📋  *QUICK HELP GUIDE*\n╰─⊷
 
-  •  \`.menu\`  →  all commands
-  •  \`.menu ai\`  →  AI & chat
-  •  \`.menu tools\`  →  utilities
-  •  \`.menu owner\`  →  bot settings
-  •  \`.menu group\`  →  group mgmt
-  •  \`.menu downloader\`  →  downloads
-  •  \`.menu search\`  →  search
-  •  \`.menu sticker\`  →  stickers
-  •  \`.menu games\`  →  games & fun
-  •  \`.menu other\`  →  effects & fonts
-  •  \`.menu football\`  →  sports & scores
+  •  .menu  →  all commands
+  •  .menu ai  →  AI & chat
+  •  .menu tools  →  utilities
+  •  .menu owner  →  bot settings
+  •  .menu group  →  group mgmt
+  •  .menu downloader  →  downloads
+  •  .menu search  →  search
+  •  .menu sticker  →  stickers
+  •  .menu games  →  games & fun
+  •  .menu other  →  effects & fonts
+  •  .menu football  →  sports & scores
 
 ╭─⊷
 │  ⚡  *POPULAR COMMANDS*\n╰─⊷
-  •  \`.ai\`  →  [question]
-  •  \`.sticker\`  →  reply media
-  •  \`.play\`  →  [song name]
-  •  \`.ig\`  →  [instagram url]
-  •  \`.tt\`  →  [tiktok url]
-  •  \`.toimage\`  →  sticker → image
-  •  \`.save\`  →  reply any message
+  •  .ai  →  [question]
+  •  .sticker  →  reply media
+  •  .play  →  [song name]
+  •  .ig  →  [instagram url]
+  •  .tt  →  [tiktok url]
+  •  .toimage  →  sticker → image
+  •  .save  →  reply any message
 
 ╭─⊷
 │  📞  *CONTACT*\n╰─⊷
@@ -1433,32 +1433,32 @@ const footballMenu = require('./library/menulist/footballmenu');
 const textmakerMenu = `
 ╭─⊷
 │  ✨  *TEXT EFFECTS*\n╰─⊷
-  •  \`.metallic\`  •  \`.ice\`
-  •  \`.snow\`      •  \`.neon\`
-  •  \`.fire\`      •  \`.glitch\`
-  •  \`.thunder\`   •  \`.matrix\`
-  •  \`.hacker\`    •  \`.devil\`
-  •  \`.purple\`    •  \`.blackpink\`
-  •  \`.sand\`      •  \`.arena\`
-  •  \`.1917\`      •  \`.light\`
-  •  \`.impressive\`   •  \`.leaves\`
+  •  .metallic  •  .ice
+  •  .snow      •  .neon
+  •  .fire      •  .glitch
+  •  .thunder   •  .matrix
+  •  .hacker    •  .devil
+  •  .purple    •  .blackpink
+  •  .sand      •  .arena
+  •  .1917      •  .light
+  •  .impressive   •  .leaves
   •  all accept → [text]
 
 ╭─⊷
 │  🔤  *FONT CONVERTER*\n╰─⊷
-  •  \`.fonts\`  →  show all styles
-  •  \`.allfonts\`  →  [text]
-  •  \`.bold\`         •  \`.italic\`
-  •  \`.bolditalic\`   •  \`.mono\`
-  •  \`.serif\`        •  \`.serifbold\`
-  •  \`.serifitalic\`  •  \`.scriptfont\`
-  •  \`.scriptbold\`   •  \`.fraktur\`
-  •  \`.frakturbold\`  •  \`.doublestruck\`
-  •  \`.smallcaps\`    •  \`.bubble\`
-  •  \`.bubblebold\`   •  \`.square\`
-  •  \`.squarebold\`   •  \`.wide\`
-  •  \`.upsidedown\`   •  \`.strikethrough\`
-  •  \`.underline\`  →  all accept [text]`
+  •  .fonts  →  show all styles
+  •  .allfonts  →  [text]
+  •  .bold         •  .italic
+  •  .bolditalic   •  .mono
+  •  .serif        •  .serifbold
+  •  .serifitalic  •  .scriptfont
+  •  .scriptbold   •  .fraktur
+  •  .frakturbold  •  .doublestruck
+  •  .smallcaps    •  .bubble
+  •  .bubblebold   •  .square
+  •  .squarebold   •  .wide
+  •  .upsidedown   •  .strikethrough
+  •  .underline  →  all accept [text]`
 
   let subcmd = args[0] ? args[0].toLowerCase() : '';
 
@@ -1479,17 +1479,17 @@ const textmakerMenu = `
 
 ╭─⊷
 │  📂  *BROWSE BY CATEGORY*\n╰─⊷
-  •  \`.menu ai\`  →  AI & Chat
-  •  \`.menu tools\`  →  Utilities
-  •  \`.menu owner\`  →  Bot Settings
-  •  \`.menu group\`  →  Group Mgmt
-  •  \`.menu downloader\`  →  Downloads
-  •  \`.menu search\`  →  Search
-  •  \`.menu sticker\`  →  Stickers
-  •  \`.menu games\`  →  Games & Fun
-  •  \`.menu other\`  →  Effects & Fonts
-  •  \`.menu football\`  →  Sports & Scores
-  •  \`.menu textmaker\`  →  Text Effects
+  •  .menu ai  →  AI & Chat
+  •  .menu tools  →  Utilities
+  •  .menu owner  →  Bot Settings
+  •  .menu group  →  Group Mgmt
+  •  .menu downloader  →  Downloads
+  •  .menu search  →  Search
+  •  .menu sticker  →  Stickers
+  •  .menu games  →  Games & Fun
+  •  .menu other  →  Effects & Fonts
+  •  .menu football  →  Sports & Scores
+  •  .menu textmaker  →  Text Effects
 
 ╭─⊷
 │  📜  *FULL COMMAND LIST*\n╰─⊷`.trim();
@@ -1770,7 +1770,7 @@ break
               const _te = await fetch('https://eliteprotech-apis.zone.id/tempemail', { signal: AbortSignal.timeout(15000) })
               const _ted = await _te.json()
               if (_ted.success && _ted.email) {
-                  reply(`╭─⊷ 📧 *TEMP EMAIL GENERATOR*\n\n  ✅ *Your Temporary Email:*\n\n  📨  \`${_ted.email}\`\n\n  •  Use it for sign-ups & verifications\n  •  To check received messages:\n     *${prefix}tempemail ${_ted.email}*\n\n  _Inbox refreshes on each check._`)
+                  reply(`╭─⊷ 📧 *TEMP EMAIL GENERATOR*\n\n  ✅ *Your Temporary Email:*\n\n  📨  ${_ted.email}\n\n  •  Use it for sign-ups & verifications\n  •  To check received messages:\n     *${prefix}tempemail ${_ted.email}*\n\n  _Inbox refreshes on each check._`)
               } else reply('❌ Failed to generate email. Try again.')
           } catch(e) { reply('❌ Error: ' + e.message) }
       }
@@ -2491,7 +2491,7 @@ case 'botinfo': {
   •  🔑 *Session*  →  ${global.sessionUrl}
 
 ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-_⚡ Powered by Toosii Tech — wa.me/254748340864_\``
+_⚡ Powered by Toosii Tech — wa.me/254748340864_`
   reply(botInfo)
 }
 break
@@ -4060,7 +4060,7 @@ case 'update': {
     await X.sendMessage(m.chat, { react: { text: '⬆️', key: m.key } })
 if (!isOwner) return reply(mess.OnlyOwner)
 const repoUrl = global.repoUrl || ''
-if (!repoUrl) return reply(`❌ *No repo URL set!*\n\nAdd this to *setting.js*:\n\`global.repoUrl = "https://github.com/TOOSII102/TOOSII-XD-ULTRA"\``)
+if (!repoUrl) return reply(`❌ *No repo URL set!*\n\nAdd this to *setting.js*:\nglobal.repoUrl = "https://github.com/TOOSII102/TOOSII-XD-ULTRA"`)
 
 // Helper: run a shell command and return { ok, stdout, stderr }
 const run = (cmd, cwd) => new Promise(resolve => {
@@ -4128,7 +4128,7 @@ try {
     const pullResult = await run(`git pull origin ${branch} --force`)
     if (!pullResult.ok) {
         const resetResult = await run(`git reset --hard origin/${branch}`)
-        if (!resetResult.ok) return reply(`❌ *Update failed.*\n\`\`\`${(pullResult.stderr || resetResult.stderr).slice(0, 300)}\`\`\``)
+        if (!resetResult.ok) return reply(`❌ *Update failed.*\n${(pullResult.stderr || resetResult.stderr).slice(0, 300)}`)
     }
 
     // ── Step 8: Install deps ──────────────────────────────────────────
@@ -4141,15 +4141,15 @@ try {
 │  ✅ *BOT UPDATED*\n╰─⊷
 
   •  🌿 *Branch*  →  ${branch}
-  •  🔖 *Commits*  →  \`${localHash}\` → \`${newHash}\`
+  •  🔖 *Commits*  →  ${localHash} → ${newHash}
   •  📋 *Changes*  →  ${changeCount} commit(s)
-  │  \`\`\`${changeLines.slice(0, 300)}\`\`\`
+  │  ${changeLines.slice(0, 300)}
   •  🔄 Restarting now...`)
     await sleep(3000)
     process.exit(0)
 
 } catch (e) {
-    reply(`❌ *Update error:*\n\`\`\`${(e.message || e).slice(0, 300)}\`\`\``)
+    reply(`❌ *Update error:*\n${(e.message || e).slice(0, 300)}`)
 }
 } break
 
@@ -5858,7 +5858,7 @@ case 'getcmd': {
     const _src = fs.readFileSync(__filename, 'utf8')
     const _lines = _src.split('\n')
     // Find the case line — matches  case 'cmd':  or  case "cmd":
-    const _caseRe = new RegExp(`^\\s*case\\s+['"\`]${_q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}['"\`]\\s*[:{]?`)
+    const _caseRe = new RegExp(`^\\s*case\\s+['"]${_q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}['"]\\s*[:{]?`)
     let _startLine = -1
     for (let _i = 0; _i < _lines.length; _i++) {
       if (_caseRe.test(_lines[_i])) { _startLine = _i; break }
@@ -5886,7 +5886,7 @@ case 'getcmd': {
       _block = _block.slice(0, _block.lastIndexOf('\n'))
       _truncNote = `\n\n  ⚠️ Output truncated — ${_totalLines} lines total`
     }
-    reply(`\`\`\`\n${_block}\n\`\`\`${_truncNote}`)
+    reply(`\n${_block}\n${_truncNote}`)
   } catch (_gcErr) {
     reply(`❌ Could not read source: ${_gcErr.message}`)
   }
@@ -6312,7 +6312,7 @@ case 'antisgames': {
     const _asgArg = (args[0] || '').toLowerCase()
     if (!_asgArg || _asgArg === 'status') {
         const _on = global.antiSocialGames[m.chat] ? '✅ ON' : '❌ OFF'
-        return reply(`╭─⊷ 🎭 *ANTI SOCIAL GAMES*\n\n  •  📊 *Status*  →  *${_on}*\n\n  _When ON, blocks:_\n  •  \`.vibe\`  •  \`.rizz\`   •  \`.iq\n\`  •  \`.ship\`  •  \`.simp\`   •  \`.wasted\n\`  •  \`.truth\`   •  \`.dare\`   •  \`.lolice\n\n  _Removed offensive aliases:_\n\`  •  \`.gay   (now .vibe)\n\`  •  \`.horny (now .rizz)\n\n\`  •  ${prefix}antisocialgames on\n  •  ${prefix}antisocialgames off`)
+        return reply(`╭─⊷ 🎭 *ANTI SOCIAL GAMES*\n\n  •  📊 *Status*  →  *${_on}*\n\n  _When ON, blocks:_\n  •  .vibe  •  .rizz   •  .iq\n  •  .ship  •  .simp   •  .wasted\n  •  .truth   •  .dare   •  .lolice\n\n  _Removed offensive aliases:_\n  •  .gay   (now .vibe)\n  •  .horny (now .rizz)\n\n  •  ${prefix}antisocialgames on\n  •  ${prefix}antisocialgames off`)
     }
     if (_asgArg === 'on') {
         global.antiSocialGames[m.chat] = true
@@ -8048,7 +8048,7 @@ if (!global.tttGames) global.tttGames = {}
 let gameId = m.chat
 if (global.tttGames[gameId]) return reply('A game is already in progress in this chat. Use .tttend to end it.')
 global.tttGames[gameId] = { board: [' ',' ',' ',' ',' ',' ',' ',' ',' '], players: { X: sender, O: tttUser }, turn: 'X' }
-let boardDisplay = (b) => `\`\`\`\n ${b[0]} | ${b[1]} | ${b[2]}\n---+---+---\n ${b[3]} | ${b[4]} | ${b[5]}\n---+---+---\n ${b[6]} | ${b[7]} | ${b[8]}\n\`\`\``
+let boardDisplay = (b) => `\n ${b[0]} | ${b[1]} | ${b[2]}\n---+---+---\n ${b[3]} | ${b[4]} | ${b[5]}\n---+---+---\n ${b[6]} | ${b[7]} | ${b[8]}\n`
 X.sendMessage(from, { text: `*Tic Tac Toe*\n\n@${sender.split('@')[0]} (X) vs @${tttUser.split('@')[0]} (O)\n\n${boardDisplay(global.tttGames[gameId].board)}\n\n@${sender.split('@')[0]}'s turn (X)\nReply with a number (1-9) to place your mark.`, mentions: [sender, tttUser] }, { quoted: m })
 } break
 
@@ -10172,7 +10172,7 @@ case 'sportslive': {
             let _entry = `\n${_icon} *${_ev.team1?.name || '?'} ${_sc1} - ${_sc2} ${_ev.team2?.name || '?'}*\n`
             if (_ev.league) _entry += `   🏆 ${_ev.league}\n`
             if (_ev.timeDesc) _entry += `   ⏱️ ${_ev.timeDesc}\n`
-            _entry += `   🆔 \`${_ev.id}\`\n`
+            _entry += `   🆔 ${_ev.id}\n`
             _lines.push(_entry)
         }
         _lines.push(`\n_Use ${prefix}watchsport [match-id] to get the stream link_`)
@@ -10203,7 +10203,7 @@ case 'sportsall': {
             let _entry = `\n${_icon} *${_ev.team1?.name || '?'} ${_sc1} - ${_sc2} ${_ev.team2?.name || '?'}*\n`
             if (_ev.league) _entry += `   🏆 ${_ev.league}\n`
             if (_stLabel) _entry += `   📊 ${_stLabel}\n`
-            _entry += `   🆔 \`${_ev.id}\`\n`
+            _entry += `   🆔 ${_ev.id}\n`
             _lines.push(_entry)
         }
         _lines.push(`\n_Use ${prefix}watchsport [match-id] to get the stream link_`)
