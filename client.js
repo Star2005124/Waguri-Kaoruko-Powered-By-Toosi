@@ -8210,6 +8210,8 @@ reply(`╔══〔 🎬 YOUTUBE SEARCH 〕══╗\n\n║ 🔍 *${text}*\n\n${
 } break
 
 case 'img':
+case 'imgfind':
+case 'gimage':
 case 'image': {
     await X.sendMessage(m.chat, { react: { text: '🖼️', key: m.key } })
 if (!text) return reply(`╔══〔 🖼️ IMAGE SEARCH 〕══╗\n\n║ Usage: *${prefix}img [query]*\n║ Example: ${prefix}img beautiful sunset\n╚═══════════════════════╝`)
@@ -8231,6 +8233,8 @@ await X.sendMessage(m.chat, { image: { url: _finalImg }, caption: `╔══〔 
 } catch(e) { reply('Error: ' + e.message) }
 } break
 
+case 'imdb':
+case 'tmdb':
 case 'movie':
 case 'film':
 case 'series': {
@@ -9876,6 +9880,8 @@ await X.sendMessage(m.chat, { image: { url: data.url }, caption: `*${pushname} f
 } catch { reply('Failed to fetch image.') }
 } break
 
+case 'mal':
+case 'myanimelist':
 case 'anime': {
     await X.sendMessage(m.chat, { react: { text: '🎌', key: m.key } })
 if (!text) return reply(`╔══〔 🎌 ANIME SEARCH 〕══╗\n\n║ Usage: *${prefix}anime [title]*\n║ Example: ${prefix}anime Naruto\n╚═══════════════════════╝`)
@@ -10897,6 +10903,7 @@ await X.sendMessage(m.chat, { document: { url: zipUrl }, mimetype: 'application/
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // 🌤️  WEATHER
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+case 'wttr':
 case 'weather':
 case 'clima': {
     await X.sendMessage(m.chat, { react: { text: '🌤️', key: m.key } })
@@ -12416,6 +12423,7 @@ case 'upswgc': {
 //━━━━━━━━━━━━━━━━━━━━━━━━//
 // SEARCH COMMANDS
 
+case 'gsearch':
 case 'google': {
   await X.sendMessage(m.chat, { react: { text: '🔍', key: m.key } })
   if (!text) return reply(`╔══〔 🔍 GOOGLE SEARCH 〕══╗\n║ *Usage:* ${prefix}google [query]\n║ Example: ${prefix}google kenya news\n╚═══════════════════════╝`)
@@ -12434,6 +12442,7 @@ case 'google': {
   } catch (e) { reply('❌ Google search failed: ' + e.message) }
 } break
 
+case 'wikipedia':
 case 'wiki': {
   await X.sendMessage(m.chat, { react: { text: '📖', key: m.key } })
   if (!text) return reply(`╔══〔 📖 WIKIPEDIA 〕══════╗\n║ *Usage:* ${prefix}wiki [topic]\n║ Example: ${prefix}wiki Nairobi\n╚═══════════════════════╝`)
@@ -12452,6 +12461,7 @@ case 'wiki': {
   } catch (e) { reply('❌ Wikipedia lookup failed: ' + e.message) }
 } break
 
+case 'dict':
 case 'define':
 case 'dictionary': {
   await X.sendMessage(m.chat, { react: { text: '📚', key: m.key } })
@@ -12498,6 +12508,7 @@ case 'urban': {
   } catch (e2) { reply('❌ Urban Dictionary failed: ' + e2.message) }
 } break
 
+case 'gnews':
 case 'news': {
   await X.sendMessage(m.chat, { react: { text: '📰', key: m.key } })
   let topic = text || 'Kenya'
