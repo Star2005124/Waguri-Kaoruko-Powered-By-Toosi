@@ -975,7 +975,7 @@ if (
 
     clearTimeout(game.timeout);
     delete global.tebakGame[m.sender];
-    return reply('✅ Correct! Your answer is right!\n\nType .tebakld to view the leaderboard.');
+    return reply(`╔══〔 ✅ CORRECT ANSWER! 〕═╗\n\n║ 🎉 Well done! Your answer is right!\n║ Use *${prefix}tebakld* to view leaderboard.\n╚═══════════════════════╝`);
   } else if (teksUser) {
     return reply(`❌ Wrong. Try again!\n💡 Hint: ${petunjuk}\n\nType *giveup* if you want to give up.`);
   }
@@ -1634,7 +1634,7 @@ break
 case 'ig':
   case 'instagram': {
       await X.sendMessage(m.chat, { react: { text: '📸', key: m.key } })
-      if (!text) return reply("Please provide the Instagram link");
+      if (!text) return reply(`╔══〔 📸 INSTAGRAM DL 〕═══╗\n\n║ Usage: *${prefix}ig [link]*\n║ Example: ${prefix}ig https://www.instagram.com/p/...\n╚═══════════════════════╝`);
       let _igUrl = null
 
       // Source 1: igdl library (btch-downloader)
@@ -1889,7 +1889,7 @@ break
 case 'fb':
 case 'fbdl':
 case 'facebook' : {
-if (!text) return reply('Please provide the Facebook URL')
+if (!text) return reply(`╔══〔 📘 FACEBOOK DL 〕════╗\n\n║ Usage: *${prefix}fb [link]*\n║ Example: ${prefix}fb https://www.facebook.com/...\n╚═══════════════════════╝`)
     try {
         await X.sendMessage(m.chat, { react: { text: '📥', key: m.key } })
         let _fbUrl = null, _fbTitle = null, _fbDuration = null
@@ -1995,7 +1995,7 @@ break
           if (_vrd.success !== false && (_vrd.instrumental || _vrd.result || _vrd.url || _vrd.download)) {
               let _instrUrl = _vrd.instrumental || _vrd.result || _vrd.url || _vrd.download
               await X.sendMessage(m.chat, { audio: { url: _instrUrl }, mimetype: 'audio/mpeg', fileName: 'instrumental.mp3' }, { quoted: m })
-              await reply('✅ *Vocals removed!* Instrumental track sent above.')
+              await reply('╔══〔 🎵 VOCAL REMOVER 〕══╗\n\n║ ✅ Vocals removed!\n║ Instrumental track sent above.\n╚═══════════════════════╝')
           } else {
               reply('❌ Could not process this audio. Make sure it is a valid, accessible audio URL.\n_Details: ' + (JSON.stringify(_vrd).slice(0, 120)) + '_')
           }
@@ -2007,11 +2007,11 @@ case 'song':
 case 'music':
 case 'ytplay': {
     await X.sendMessage(m.chat, { react: { text: '🎵', key: m.key } })
-    if (!text) return reply('What song do you want to search for?\n\nExample: .play Juice WRLD Lucid Dreams')
+    if (!text) return reply(`╔══〔 🎵 YTPLAY 〕═════════╗\n\n║ Usage: *${prefix}ytplay [song name]*\n║ Example: ${prefix}ytplay Juice WRLD Lucid Dreams\n╚═══════════════════════╝`)
     let _tmpFile = null
     try {
         let search = await yts(text)
-        if (!search || !search.all || !search.all.length) return reply('No results found.')
+        if (!search || !search.all || !search.all.length) return reply('❌ No results found for that song. Try different keywords.')
         let firstVideo = search.all.find(v => v.type === 'video') || search.all[0]
         let videoTitle  = firstVideo.title || 'Unknown Title'
         let videoAuthor = firstVideo.author?.name || firstVideo.author || 'Unknown Artist'
@@ -2643,7 +2643,7 @@ break
 
 case 'brat': {
     await X.sendMessage(m.chat, { react: { text: '✏️', key: m.key } })
-if (!q) return reply(`Please enter text\n\nExample: ${prefix + command} alok hamil`);
+if (!q) return reply(`╔══〔 ✏️ BRAT TEXT 〕══════╗\n\n║ Usage: *${prefix}brat [text]*\n║ Example: ${prefix}brat alok hamil\n╚═══════════════════════╝`);
 let _bratBuf = null
 try {
   const _r1 = await axios.get(`https://aqul-brat.hf.space/api/brat?text=${encodeURIComponent(q)}`, { responseType: 'arraybuffer', timeout: 15000 })
@@ -2687,10 +2687,10 @@ case 'qc': {
     } else if (m.quoted && m.quoted.text) {
         text = m.quoted.text;
     } else {
-        return reply("Enter text or reply to a message to make a quote!");
+        return reply(`╔══〔 💬 QUOTE CARD 〕═════╗\n\n║ Usage: *${prefix}qc [text]*\n║ Or reply to any message.\n╚═══════════════════════╝`);
     }
-    if (!text) return reply('Please enter text');
-    if (text.length > 200) return reply('Maximum 200 characters!');
+    if (!text) return reply(`╔══〔 💬 QUOTE CARD 〕═════╗\n\n║ Usage: *${prefix}qc [text]*\n╚═══════════════════════╝`);
+    if (text.length > 200) return reply('❌ Maximum *200 characters* allowed. Your text: ' + text.length + ' chars.');
     let ppnyauser = await X.profilePictureUrl(m.sender, 'image').catch(_ => 'https://files.catbox.moe/nwvkbt.png');
     const rest = await quote(text, pushname, ppnyauser);
     X.sendImageAsStickerAV(m.chat, rest.result, m, {
@@ -2703,7 +2703,7 @@ case 'sticker':
 case 'stiker':
 case 's':{
     await X.sendMessage(m.chat, { react: { text: '🖼️', key: m.key } })
-if (!quoted) return reply(`Reply to Video/Image with caption ${prefix + command}`)
+if (!quoted) return reply(`╔══〔 🖼️ STICKER MAKER 〕══╗\n\n║ Usage: *${prefix}s*\n║ Reply to any image or video.\n╚═══════════════════════╝`)
 if (/image/.test(mime)) {
 let media = await quoted.download()
 let encmedia = await X.sendImageAsStickerAV(m.chat, media, m, {
@@ -2798,7 +2798,7 @@ break
 // View Once Opener
 case 'vv': {
     await X.sendMessage(m.chat, { react: { text: '👁️', key: m.key } })
-if (!m.quoted) return reply(`Reply to a *view once* image or video with *${prefix}vv* to open it`)
+if (!m.quoted) return reply(`╔══〔 👁️ VIEW ONCE REVEAL 〕╗\n\n║ Usage: *${prefix}vv*\n║ Reply to a view-once image/video.\n╚═══════════════════════╝`)
 let quotedMsg = m.quoted
 let quotedType = quotedMsg.mtype || ''
 let viewOnceContent = null
@@ -2863,10 +2863,10 @@ case 'frecord': {
 if (!isOwner) return reply(mess.OnlyOwner)
 if (global.fakePresence === 'recording') {
     global.fakePresence = 'off'
-    reply('❌ *Auto Recording OFF*')
+    reply('╔══〔 🎙️ FAKE RECORDING 〕══╗\n\n║ ❌ *Status* : OFF\n╚═══════════════════════╝')
 } else {
     global.fakePresence = 'recording'
-    reply('✅ *Auto Recording ON* — bot appears as recording audio.')
+    reply('╔══〔 🎙️ FAKE RECORDING 〕══╗\n\n║ ✅ *Status* : ON\n║ Bot now appears as recording.\n╚═══════════════════════╝')
 }
 }
 break
@@ -2879,10 +2879,10 @@ case 'ftype': {
 if (!isOwner) return reply(mess.OnlyOwner)
 if (global.fakePresence === 'typing') {
     global.fakePresence = 'off'
-    reply('❌ *Auto Typing OFF*')
+    reply('╔══〔 ⌨️ FAKE TYPING 〕════╗\n\n║ ❌ *Status* : OFF\n╚═══════════════════════╝')
 } else {
     global.fakePresence = 'typing'
-    reply('✅ *Auto Typing ON* — bot appears as typing.')
+    reply('╔══〔 ⌨️ FAKE TYPING 〕════╗\n\n║ ✅ *Status* : ON\n║ Bot now appears as typing.\n╚═══════════════════════╝')
 }
 }
 break
@@ -2920,16 +2920,16 @@ let avsArg = (args[0] || '').toLowerCase()
 if (avsArg === 'on' || avsArg === 'enable') {
     global.autoViewStatus = true
     try { if (typeof _savePhoneState === 'function') _savePhoneState(X.user?.id?.split(':')[0]?.split('@')[0] || '') } catch {}
-    reply('*👀 Auto View Status: ✅ ON*\n\nBot will automatically view all contact statuses.')
+    reply('╔══〔 👀 AUTO VIEW STATUS 〕╗\n\n║ ✅ *Status* : ON\n║ Bot will auto-view all statuses.\n╚═══════════════════════╝')
 } else if (avsArg === 'off' || avsArg === 'disable') {
     global.autoViewStatus = false
     try { if (typeof _savePhoneState === 'function') _savePhoneState(X.user?.id?.split(':')[0]?.split('@')[0] || '') } catch {}
-    reply('*👀 Auto View Status: ❌ OFF*\n\nBot will no longer auto-view statuses.')
+    reply('╔══〔 👀 AUTO VIEW STATUS 〕╗\n\n║ ❌ *Status* : OFF\n║ Bot will no longer auto-view statuses.\n╚═══════════════════════╝')
 } else {
     if (global.autoViewStatus) {
         global.autoViewStatus = false
         try { if (typeof _savePhoneState === 'function') _savePhoneState(X.user?.id?.split(':')[0]?.split('@')[0] || '') } catch {}
-        reply('*👀 Auto View Status: ❌ OFF*\n\nBot will no longer auto-view statuses.')
+        reply('╔══〔 👀 AUTO VIEW STATUS 〕╗\n\n║ ❌ *Status* : OFF\n║ Bot will no longer auto-view statuses.\n╚═══════════════════════╝')
     } else {
         global.autoViewStatus = true
         try { if (typeof _savePhoneState === 'function') _savePhoneState(X.user?.id?.split(':')[0]?.split('@')[0] || '') } catch {}
@@ -4279,7 +4279,7 @@ await reply(`✅ Plugin created at *${pluginFilePath}*`)
 break
 case 'cgplugin': case 'cgplug':{
 if (!isOwner) return  reply(mess.OnlyOwner)
-if (!q.includes("|")) return reply (`${command}, *Example :* *${prefix + command} pluginnya|isi barunya*`)
+if (!q.includes("|")) return reply(`╔══〔 🔧 EDIT PLUGIN 〕════╗\n\n║ Usage: *${prefix}cgplugin [name]|[new content]*\n║ Example: ${prefix}cgplugin myplug|new content here\n╚═══════════════════════╝`)
 let [mypler, ...rest] = q.split("|")
 let mypenis = rest.join("|")
 let pluginsDirect = path.resolve(__dirname, './plugin')
@@ -4815,9 +4815,9 @@ ${list}\n║ ${prefix}reject all — reject all\n║ ${prefix}reject [n]  — re
                                 try {
                                         const animeList = await Kusonime.info();
                                         if (animeList.length === 0) {
-                                                return reply('_[ Invalid ⚠️ ]_ No latest anime data found at this time.');
+                                                return reply('╔══〔 🎌 ANIME INFO 〕═════╗\n\n║ ⚠️ No latest anime data found right now.\n╚═══════════════════════╝');
                                         }
-                                        let captionText = `🎌 *Latest Anime from Kusonime* 🎌\n\n`;
+                                        let captionText = `╔══〔 🎌 LATEST ANIME 〕═══╗\n\n`;
                                         animeList.slice(0, 5).forEach((anime, index) => {
                                                 captionText += `📺 *${index + 1}. ${anime.title}*\n`;
                                                 captionText += `🔗 *URL*: ${anime.url}\n`;
@@ -5044,7 +5044,7 @@ case 'stickercrop':
 case 'scrop': {
   const _scIsImg = m.mtype === 'imageMessage'
   const _scIsQuote = m.quoted && (m.quoted.mtype === 'imageMessage' || m.quoted.mtype === 'stickerMessage')
-  if (!_scIsImg && !_scIsQuote) return reply(`Reply to an image with *${prefix}${command}* to crop it into a square sticker.`)
+  if (!_scIsImg && !_scIsQuote) return reply(`╔══〔 ✂️ SQUARE CROP 〕════╗\n\n║ Usage: *${prefix}scrop*\n║ Reply to an image to crop it\n║ into a square sticker.\n╚═══════════════════════╝`)
   try {
     await X.sendMessage(m.chat, { react: { text: '✂️', key: m.key } })
     const _scQuoted = m.quoted ? m.quoted : m
@@ -8321,7 +8321,7 @@ reply(qText)
 case 'answer': {
     await X.sendMessage(m.chat, { react: { text: '✅', key: m.key } })
 let userAnswer = text?.toLowerCase().trim()
-if (!userAnswer) return reply('Please provide your answer.')
+if (!userAnswer) return reply('❌ Please provide your answer. Example: *' + prefix + 'answer Paris*')
 // Handle tebakld game
 if (global.tebakldGames && global.tebakldGames[m.chat]) {
   let tg = global.tebakldGames[m.chat]
