@@ -1325,7 +1325,7 @@ if (mek.message && !mek.key.fromMe) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 m = smsg(X, mek, store)
-require("./client")(X, m, chatUpdate, store)
+await require("./client")(X, m, chatUpdate, store)
 
 } catch (err) {
     let em = (err?.message || '').toLowerCase()
