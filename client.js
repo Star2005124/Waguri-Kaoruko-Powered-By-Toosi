@@ -1378,15 +1378,19 @@ if (m.key.fromMe && global.ownerFontMode && global.ownerFontMode !== 'off' && bu
 //━━━━━━━━━━━━━━━━━━━━━━━━//
 // jangan di apa apain
 // Media download with retry — handles WhatsApp CDN socket hang up
-// Panel restart helper — tries pm2 first, falls back to process.exit(1)
+// Panel restart helper — works on Heroku, Render, Railway, VPS, pm2, bare server
 const _restartBot = () => {
+  if (process.env._BOT_CHILD) {
+    // Running under the built-in supervisor — just exit; supervisor restarts us in 3s
+    setTimeout(() => process.exit(1), 500)
+    return
+  }
+  // Running standalone (no supervisor) — try pm2, then exit with code 1
   const { exec: _rex } = require('child_process')
-  // pm2 restart: exit(1) tells pm2 to restart (exit 0 = "stop" in default pm2 config)
   _rex('pm2 restart all', (e1) => {
     if (!e1) return
     _rex('pm2 restart 0', (e2) => {
       if (!e2) return
-      // Not running under pm2 — exit with code 1 so any process manager restarts us
       process.exit(1)
     })
   })
