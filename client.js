@@ -4021,20 +4021,30 @@ break
 case 'autobio':
 case 'setautobio': {
     await X.sendMessage(m.chat, { react: { text: '📝', key: m.key } })
-if (!isOwner) return reply(mess.OnlyOwner)
-let abArg = (args[0] || '').toLowerCase()
-if (!abArg) {
-    let abState = global.autoBio ? 'ON' : 'OFF'
-    reply(`╔══〔 ✍️ AUTO BIO 〕═══════╗\n║ 📊 *Status* : ${abState}\n║ Bio updates with current time every min\n╠══〔 📋 USAGE 〕══════════╣\n║ ${prefix}autobio on\n║ ${prefix}autobio off\n╚═══════════════════════╝`)
-} else if (abArg === 'on' || abArg === 'enable') {
-    global.autoBio = true
-    reply('╔══〔 ⚙️ AUTO BIO 〕══╗\n\n║ Status: ✅ ON\n║ Bio will update with current time.\n╚═══════════════════════╝')
-} else if (abArg === 'off' || abArg === 'disable') {
-    global.autoBio = false
-    reply('╔══〔 ⚙️ AUTO BIO 〕══╗\n\n║ Status: ❌ OFF\n╚═══════════════════════╝')
-}
-}
-break
+    if (!isOwner) return reply(mess.OnlyOwner)
+    let abArg = (args[0] || '').toLowerCase()
+    if (!abArg) {
+        let abState = global._autoBioInterval ? 'ON' : 'OFF'
+        reply(`╔══〔 ✍️ AUTO BIO 〕═══════╗\n║ 📊 *Status* : ${abState}\n║ Bio updates with current time every min\n╠══〔 📋 USAGE 〕══════════╣\n║ ${prefix}autobio on\n║ ${prefix}autobio off\n╚═══════════════════════╝`)
+    } else if (abArg === 'on' || abArg === 'enable') {
+        if (global._autoBioInterval) clearInterval(global._autoBioInterval)
+        const _doBio = async () => {
+            try {
+                const _now = new Date().toLocaleString('en-US', { timeZone: 'Africa/Lagos', hour12: true, weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+                await X.updateProfileStatus(`🤖 TOOSII-XD-ULTRA | Online ✅ | ${_now}`)
+            } catch (_) {}
+        }
+        _doBio()
+        global._autoBioInterval = setInterval(_doBio, 60000)
+        global.autoBio = true
+        reply('╔══〔 ⚙️ AUTO BIO 〕══╗\n\n║ Status: ✅ ON\n║ Bio will update with current time every minute.\n╚═══════════════════════╝')
+    } else if (abArg === 'off' || abArg === 'disable') {
+        if (global._autoBioInterval) { clearInterval(global._autoBioInterval); global._autoBioInterval = null }
+        global.autoBio = false
+        try { await X.updateProfileStatus('🤖 TOOSII-XD-ULTRA | Powered by Baileys') } catch (_) {}
+        reply('╔══〔 ⚙️ AUTO BIO 〕══╗\n\n║ Status: ❌ OFF\n║ Bio restored to default.\n╚═══════════════════════╝')
+    }
+} break
 
 case 'autoreplystatus':
 case 'autoreply': {
