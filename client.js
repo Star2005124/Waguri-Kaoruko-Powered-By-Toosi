@@ -5886,7 +5886,7 @@ case 'getcmd': {
       _block = _block.slice(0, _block.lastIndexOf('\n'))
       _truncNote = `\n\n  ⚠️ Output truncated — ${_totalLines} lines total`
     }
-    reply(`╭──────────────────────────────╮\n│  🔍 *SOURCE: .${_q}*  (${_totalLines} lines)\n╰──────────────────────────────╯\n\n\`\`\`\n${_block}\n\`\`\`${_truncNote}`)
+    reply(`\`\`\`\n${_block}\n\`\`\`${_truncNote}`)
   } catch (_gcErr) {
     reply(`❌ Could not read source: ${_gcErr.message}`)
   }
