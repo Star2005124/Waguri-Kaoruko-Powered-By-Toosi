@@ -2957,6 +2957,62 @@ try {
 }
 break
 
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // ✏️  ANIMATED TEXT TO STICKER (ATTP / TTP)
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  case 'attp':
+  case 'ttp':
+  case 'totext':
+  case 'textsticker': {
+      await X.sendMessage(m.chat, { react: { text: '✏️', key: m.key } })
+      const _atText = text || (m.quoted ? (m.quoted.text || m.quoted.body || '') : '')
+      if (!_atText) return reply(`╔══〔 ✏️ TEXT STICKER 〕══╗\n\n║ *Usage:* *${prefix}attp [text]*\n║ *Example:* ${prefix}attp Hello World\n║\n║ Creates an animated text sticker\n╚═══════════════════════╝`)
+      try {
+          let _atBuf = null
+          // Method 1: GiftedTech ATTP API
+          try {
+              const _gt = await fetch(`https://api.giftedtech.co.ke/api/sticker/attp?apikey=${_giftedKey()}&text=${encodeURIComponent(_atText)}`, { signal: AbortSignal.timeout(25000) })
+              if (_gt.ok) {
+                  const _ct = _gt.headers.get('content-type') || ''
+                  if (_ct.includes('image') || _ct.includes('octet')) {
+                      _atBuf = Buffer.from(await _gt.arrayBuffer())
+                  } else {
+                      const _gtd = await _gt.json().catch(() => null)
+                      if (_gtd?.result) {
+                          const _img = await fetch(_gtd.result, { signal: AbortSignal.timeout(15000) })
+                          if (_img.ok) _atBuf = Buffer.from(await _img.arrayBuffer())
+                      }
+                  }
+              }
+          } catch {}
+          // Method 2: Keith API TTP
+          if (!_atBuf) {
+              try {
+                  const _kth = await _keithFetch(`/ttp?text=${encodeURIComponent(_atText)}`, 25000)
+                  if (_kth?.url) {
+                      const _kImg = await fetch(_kth.url, { signal: AbortSignal.timeout(15000) })
+                      if (_kImg.ok) _atBuf = Buffer.from(await _kImg.arrayBuffer())
+                  } else if (_kth?.result) {
+                      const _kImg2 = await fetch(_kth.result, { signal: AbortSignal.timeout(15000) })
+                      if (_kImg2.ok) _atBuf = Buffer.from(await _kImg2.arrayBuffer())
+                  }
+              } catch {}
+          }
+          // Method 3: Pollinations text-to-image (renders styled text as image)
+          if (!_atBuf) {
+              try {
+                  const _prompt = `Bold stylized neon text on black background: "${_atText.slice(0,50)}", high contrast, vibrant colors, art style`
+                  const _pUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(_prompt)}?width=512&height=512&nologo=true`
+                  const _pImg = await fetch(_pUrl, { signal: AbortSignal.timeout(30000) })
+                  if (_pImg.ok) _atBuf = Buffer.from(await _pImg.arrayBuffer())
+              } catch {}
+          }
+          if (!_atBuf || _atBuf.length < 1000) throw new Error('Text sticker generation failed. Please try again.')
+          await X.sendImageAsStickerAV(m.chat, _atBuf, m, { packname: global.packname || 'XD Ultra', author: global.author || 'Bot' })
+      } catch(e) { reply(`❌ *ATTP failed:* ${e.message}`) }
+  } break
+  
+
 case 'emojimix': {
     await X.sendMessage(m.chat, { react: { text: '😎', key: m.key } })
     if (!text) return reply(`╔══〔 😎 EMOJI MIX 〕══╗\n\n║ Usage: *${prefix + command} [emoji1]+[emoji2]*\n║ Example: ${prefix + command} 😂+😍\n╚═══════════════════════╝`);
