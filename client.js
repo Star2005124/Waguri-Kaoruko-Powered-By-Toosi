@@ -2131,8 +2131,7 @@ break
       }
   } break
 
-  case 'tt':  
-case 'tt':
+  case 'tt':
 case 'tiktok': {
     await X.sendMessage(m.chat, { react: { text: '🎵', key: m.key } })
 if (!text) return reply(`╔══〔 🎵 TIKTOK DOWNLOADER 〕══╗\n\n║ Usage:  *${prefix}tt [tiktok url]*\n║ Example: ${prefix}tt https://vm.tiktok.com/xxx\n╚═══════════════════════╝`)
@@ -2989,7 +2988,6 @@ break
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   case 'attp':
   case 'ttp':
-  case 'totext':
   case 'textsticker': {
       await X.sendMessage(m.chat, { react: { text: '✏️', key: m.key } })
       const _atText = text || (m.quoted ? (m.quoted.text || m.quoted.body || '') : '')
@@ -7647,12 +7645,17 @@ await X.groupLeave(m.chat)
 case 'pair': {
       await X.sendMessage(m.chat, { react: { text: '🔗', key: m.key } })
       await reply(
-          `╔══〔 🔗 PAIRING SITE 〕══╗\n\n\n╚═══════════════════════╝` +
-          `  Click the link below to get your pairing code:\n\n` +
-          `  🌐 https://toosii-xd-ultra.onrender.com/pair\n\n` +
-          `║ Enter your WhatsApp number\n` +
-          `║ Copy the code shown\n` +
-          `║ WhatsApp → Linked Devices → Link with phone number`
+          `╔══〔 🔗 PAIRING SITE 〕══╗\n` +
+          `║\n` +
+          `║  Click the link below to get your pairing code:\n` +
+          `║\n` +
+          `║  🌐 https://toosii-xd-ultra.onrender.com/pair\n` +
+          `║\n` +
+          `║  📱 Enter your WhatsApp number\n` +
+          `║  📋 Copy the code shown\n` +
+          `║  🔗 WhatsApp → Linked Devices → Link with phone number\n` +
+          `║\n` +
+          `╚═══════════════════════╝`
       )
   } break
 
@@ -8614,7 +8617,6 @@ let auddForm = new FormData()
 auddForm.append('url', audioUrl)
 auddForm.append('return', 'apple_music,spotify')
 let auddRes = await axios.post('https://api.audd.io/', auddForm, {
-    headers: { ...auddForm.getHeaders() },
     timeout: 25000
 })
 let auddData = auddRes.data
@@ -8628,7 +8630,6 @@ if (!auddData?.result) {
     let fallbackForm = new FormData()
     fallbackForm.append('url', audioUrl)
     let fallbackRes = await axios.post('https://api.audd.io/findLyrics/', fallbackForm, {
-        headers: { ...fallbackForm.getHeaders() },
         timeout: 20000
     })
     if (fallbackRes.data?.status === 'success' && fallbackRes.data?.result?.length) {
@@ -8640,8 +8641,7 @@ if (!auddData?.result) {
 let r = auddData.result
 // Build response
 let lines = []
-lines.push(`╔══〔 🎵 SONG IDENTIFIED! 〕══╗\n╚═══════════════════════╝`)
-lines.push(``)
+lines.push(`╔══〔 🎵 SONG IDENTIFIED! 〕══╗`)
 lines.push(`🎤 *Title:*   ${r.title || 'Unknown'}`)
 lines.push(`👤 *Artist:*  ${r.artist || 'Unknown'}`)
 if (r.album) lines.push(`💿 *Album:*   ${r.album}`)
@@ -12893,8 +12893,7 @@ case 'fluximg': {
     if (imgBuf.length < 1000) throw new Error('Invalid image returned')
     await X.sendMessage(m.chat, {
       image: imgBuf,
-      caption: `╔══〔 🎨 FLUX IMAGE AI 〕══╗\n║ 🖌️ *Prompt:* ${text.slice(0,100)}\n
-║ 🤖 *Model:* Flux by Keith\n╚═══════════════════════╝`
+      caption: `╔══〔 🎨 FLUX IMAGE AI 〕══╗\n║ 🖌️ *Prompt:* ${text.slice(0,100)}\n║ 🤖 *Model:* Flux by Keith\n╚═══════════════════════╝`
     }, { quoted: m })
   } catch (e) { reply('❌ Flux image generation failed: ' + e.message) }
 } break
@@ -13159,9 +13158,15 @@ case 'xmascard': {
   await X.sendMessage(m.chat, { react: { text: '🎄', key: m.key } })
   let xName = text || pushname
   try {
-    // Use an Xmas card image API
-    let imgUrl = `https://api.dicebear.com/7.x/pixel-art/svg?seed=${encodeURIComponent(xName)}&backgroundColor=b6e3f4`
-    reply(`╔══〔 🎄 CHRISTMAS CARD 〕══╗\n║ 🎅 *To:* ${xName}\n║\n║ 🎄 Wishing you a Merry Christmas\n║    and a Happy New Year! 🎁\n║\n║ ❄️ May your days be merry & bright\n║ 🌟 From: ${global.botname}\n╚═══════════════════════╝`)
+    // Fetch Xmas-themed avatar image (PNG from DiceBear)
+    let imgUrl = `https://api.dicebear.com/9.x/pixel-art/png?seed=${encodeURIComponent(xName)}&size=400&backgroundColor=b6e3f4,c0ebcc,fde8d8`
+    let imgCaption = `╔══〔 🎄 CHRISTMAS CARD 〕══╗\n║ 🎅 *To:* ${xName}\n║\n║ 🎄 Wishing you a Merry Christmas\n║    and a Happy New Year! 🎁\n║\n║ ❄️ May your days be merry & bright\n║ 🌟 From: ${global.botname || 'TOOSII-XD ULTRA'}\n╚═══════════════════════╝`
+    try {
+      let imgBuf = await getBuffer(imgUrl)
+      if (imgBuf && imgBuf.length > 500) {
+        await X.sendMessage(m.chat, { image: imgBuf, caption: imgCaption }, { quoted: m })
+      } else { await reply(imgCaption) }
+    } catch { await reply(imgCaption) }
   } catch (e) { reply('❌ Christmas card failed: ' + e.message) }
 } break
 
