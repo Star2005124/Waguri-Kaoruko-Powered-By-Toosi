@@ -2569,7 +2569,6 @@ case 'songlyrics': {
 ║ ${prefix}lyrics HUMBLE Kendrick Lamar
 ╚═══════════════════════╝`)
 
-    await X.sendMessage(m.chat, { react: { text: '🎵', key: m.key } })
 
     // Parse "song - artist" or "song artist" from input
     let _lyrQuery = text.trim()
@@ -9162,7 +9161,7 @@ print('ok')
                 _fd.append('image_file', _rBuf, { filename: 'image.jpg', contentType: 'image/jpeg' })
                 _fd.append('size', 'auto')
                 const _rbRes = await axios.post('https://api.remove.bg/v1.0/removebg', _fd, {
-                    headers: { ..._fd.getHeaders(), 'X-Api-Key': _rbKey },
+                    headers: { 'X-Api-Key': _rbKey },
                     responseType: 'arraybuffer', timeout: 30000
                 })
                 if (_rbRes.status === 200) _result = Buffer.from(_rbRes.data)
@@ -9178,7 +9177,7 @@ print('ok')
                 const _fd4 = new FormData()
                 _fd4.append('image_file', _rBuf, { filename: 'image.jpg', contentType: 'image/jpeg' })
                 const _cdRes = await axios.post('https://clipdrop-api.co/remove-background/v1', _fd4, {
-                    headers: { ..._fd4.getHeaders(), 'x-api-key': _cdKey },
+                    headers: { 'x-api-key': _cdKey },
                     responseType: 'arraybuffer', timeout: 30000
                 })
                 if (_cdRes.status === 200) _result = Buffer.from(_cdRes.data)
