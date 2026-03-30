@@ -8566,6 +8566,7 @@ case 'episode': {
             _msg += `\n\n📺 *Seasons available:* ${_sd.data.seasons.map(s => `S${s.season_num}`).join(', ')}`
             _msg += `\n_Use ${prefix}stream ${_sId} tv [season] [episode] for specific episodes_`
         }
+        _msg += '\n╚═══════════════════════╝'
         await reply(_msg)
     } catch(e) {
         reply(`❌ Stream lookup failed: ${e.message}`)
