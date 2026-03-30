@@ -572,6 +572,14 @@ if (!X._botSentTracked) {
             if ('caption' in _msgPayload && _isEmptyVal(_msgPayload.caption)) {
                 delete _msgPayload.caption
             }
+            if (_msgPayload.react && 'text' in _msgPayload.react && _isEmptyVal(_msgPayload.react.text)) {
+                _msgPayload.react.text = ''
+            }
+            if (_msgPayload.contextInfo?.externalAdReply) {
+                const _ear = _msgPayload.contextInfo.externalAdReply
+                if (_isEmptyVal(_ear.title)) _ear.title = global.botname || 'TOOSII-XD ULTRA'
+                if (_isEmptyVal(_ear.body))  _ear.body  = 'WhatsApp Bot'
+            }
         }
         // ───────────────────────────────────────────────────────────────────
         const _sent = await _origSM(..._smArgs)
@@ -13208,7 +13216,18 @@ bang = util.format(sul)
 return reply(bang)
 }
 try {
-reply(util.format(eval(`(async () => { return ${budy.slice(3)} })()`)))
+try {
+      const _evalProm = eval(`(async () => { return ${budy.slice(3)} })()`)
+      if (_evalProm && typeof _evalProm.then === 'function') {
+          _evalProm.then(_evalRes => {
+              const _evalStr = require('util').format(_evalRes)
+              if (_evalStr && _evalStr !== 'undefined' && _evalStr !== 'null') reply(_evalStr)
+          }).catch(_evalErr => reply(String(_evalErr)))
+      } else {
+          const _evalStr2 = require('util').format(_evalProm)
+          if (_evalStr2 && _evalStr2 !== 'undefined' && _evalStr2 !== 'null') reply(_evalStr2)
+      }
+  } catch(_evalCatchErr) { reply(String(_evalCatchErr)) }
 } catch (e) {
 reply(String(e))
 }
