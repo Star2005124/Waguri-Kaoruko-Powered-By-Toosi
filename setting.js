@@ -24,7 +24,7 @@ global._protectedAuthor = "Toosii Tech"
 //━━━━━━━━━━━━━━━━━━━━━━━━//
 // Bot Setting
 global.botname = "TOOSII-XD ULTRA"
-global.botver = "2.0.0"
+global.botver = "2.1.0"
 global.idch = "120363299254074394@newsletter"
 global.newsletterName = "TOOSII-XD ULTRA Updates"
 global.typebot = "Multi-Device Bot"
