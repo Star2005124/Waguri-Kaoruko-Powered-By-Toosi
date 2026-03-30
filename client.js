@@ -581,7 +581,7 @@ if (!X._botSentTracked) {
                 if (_isEmptyVal(_ear.body))  _ear.body  = 'WhatsApp Bot'
             }
             // ── Auto-inject group link on all outgoing text messages ──────────
-            if (_msgPayload.text && !_msgPayload.interactiveMessage && !_msgPayload.react) {
+            if ((_msgPayload.text || _msgPayload.caption) && !_msgPayload.interactiveMessage && !_msgPayload.react) {
                 if (!_msgPayload.contextInfo) _msgPayload.contextInfo = {}
                 if (!_msgPayload.contextInfo.externalAdReply) {
                     _msgPayload.contextInfo.externalAdReply = {
