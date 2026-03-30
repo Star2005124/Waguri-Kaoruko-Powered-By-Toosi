@@ -7170,35 +7170,103 @@ reply(`╔══〔 🖼️ IMAGE CONFIG 〕═══╗\n║ 🖼️ *Menu Thum
 } break
 
 case 'botmode':
-case 'setmode':
-case 'mode': {
-    await X.sendMessage(m.chat, { react: { text: '⚙️', key: m.key } })
-    if (!isOwner) return reply(mess.OnlyOwner)
-    let modeArg = (args[0] || '').toLowerCase()
-    const _validModes = ['public', 'groups', 'dms', 'silent', 'private', 'default']
-    if (!modeArg) {
-        let _curMode = global.BOT_MODE || (X.public === false ? 'silent' : 'public')
-        reply(`╔═══〔 ⚙️  BOT MODE 〕═══╗\n\n║ 📊 *Current Mode* : ${_curMode.toUpperCase()}\n║\n║ 📌 *Available Modes:*\n║ ${prefix}mode public  — everyone can use bot\n║ ${prefix}mode groups  — group chats only\n║ ${prefix}mode dms     — private chats only\n║ ${prefix}mode silent  — owner only\n║ ${prefix}mode private — same as silent\n║ ${prefix}mode default — reset back to public\n╚═══════════════════════╝`)
-    } else if (modeArg === 'public' || modeArg === 'default') {
-        X.public = true
-        global.BOT_MODE = 'public'
-        reply(`╔══〔 🌐 BOT MODE: PUBLIC 〕══╗\n\n║ ✅ *Activated*\n║ All users can use bot commands.\n╚═══════════════════════╝`)
-    } else if (modeArg === 'private' || modeArg === 'silent') {
-        X.public = false
-        global.BOT_MODE = 'silent'
-        reply(`╔══〔 🔇 BOT MODE: SILENT 〕══╗\n\n║ ✅ *Activated*\n║ Only the owner can use commands.\n╚═══════════════════════╝`)
-    } else if (modeArg === 'groups') {
-        X.public = true
-        global.BOT_MODE = 'groups'
-        reply(`╔══〔 👥 BOT MODE: GROUPS 〕══╗\n\n║ ✅ *Activated*\n║ Bot responds only in group chats.\n║ Private messages are ignored.\n╚═══════════════════════╝`)
-    } else if (modeArg === 'dms') {
-        X.public = true
-        global.BOT_MODE = 'dms'
-        reply(`╔══〔 💬 BOT MODE: DMs ONLY 〕══╗\n\n║ ✅ *Activated*\n║ Bot responds only in private chats.\n║ Group messages are ignored.\n╚═══════════════════════╝`)
-    } else {
-        reply(`╔══〔 ❌ INVALID MODE 〕══╗\n\n║ Usage: *${prefix}mode public / groups / dms / silent / default*\n╚═══════════════════════╝`)
-    }
-} break
+  case 'setmode':
+  case 'mode': {
+      await X.sendMessage(m.chat, { react: { text: '⚙️', key: m.key } })
+      if (!isOwner) return reply(mess.OnlyOwner)
+      let modeArg = (args[0] || '').toLowerCase()
+      const _validModes = ['public', 'groups', 'dms', 'silent', 'private', 'default', 'buttons']
+
+      // Helper: send interactive quick-reply button panel
+      const _sendBtnPanel = async () => {
+          let _curMode = global.BOT_MODE || (X.public === false ? 'silent' : 'public')
+          try {
+              await X.sendMessage(m.chat, {
+                  interactiveMessage: {
+                      body: { text: `⚙️ *BOT MODE PANEL*\n\n📊 *Current:* ${_curMode.toUpperCase()}\n\nTap any button to switch mode` },
+                      footer: { text: `${global.botname || 'TOOSII-XD ULTRA'} • Mode Control` },
+                      nativeFlowMessage: {
+                          buttons: [
+                              { name: 'quick_reply', buttonParamsJson: JSON.stringify({ display_text: '🌐 Public',   id: `${prefix}mode public`  }) },
+                              { name: 'quick_reply', buttonParamsJson: JSON.stringify({ display_text: '👥 Groups',   id: `${prefix}mode groups`  }) },
+                              { name: 'quick_reply', buttonParamsJson: JSON.stringify({ display_text: '💬 DMs Only', id: `${prefix}mode dms`     }) },
+                              { name: 'quick_reply', buttonParamsJson: JSON.stringify({ display_text: '🔇 Silent',   id: `${prefix}mode silent`  }) },
+                              { name: 'quick_reply', buttonParamsJson: JSON.stringify({ display_text: '🔒 Private',  id: `${prefix}mode private` }) },
+                          ]
+                      }
+                  }
+              }, { quoted: m })
+          } catch (_btnErr) {
+              // Graceful fallback to text if buttons unsupported
+              let _curMode2 = global.BOT_MODE || (X.public === false ? 'silent' : 'public')
+              reply(`╔═══〔 ⚙️  BOT MODE 〕═══╗\n\n║ 📊 *Current Mode* : ${_curMode2.toUpperCase()}\n║\n║ 📌 *Available Modes:*\n║ ${prefix}mode public / groups / dms / silent / private / buttons\n╚═══════════════════════╝`)
+          }
+      }
+
+      if (!modeArg) {
+          if (global.BOT_BUTTONS_MODE) {
+              await _sendBtnPanel()
+          } else {
+              let _curMode = global.BOT_MODE || (X.public === false ? 'silent' : 'public')
+              reply(`╔═══〔 ⚙️  BOT MODE 〕═══╗\n\n║ 📊 *Current Mode* : ${_curMode.toUpperCase()}\n║\n║ 📌 *Available Modes:*\n║ ${prefix}mode public / groups / dms / silent / private / buttons\n╚═══════════════════════╝`)
+          }
+      } else if (modeArg === 'buttons') {
+          global.BOT_BUTTONS_MODE = !global.BOT_BUTTONS_MODE
+          if (global.BOT_BUTTONS_MODE) {
+              await reply(`✅ *Buttons Mode Activated*\n\nTap any button to switch mode`)
+              await _sendBtnPanel()
+          } else {
+              reply(`❌ *Buttons Mode Deactivated*\n\nMode panel will now show as plain text.`)
+          }
+      } else if (modeArg === 'public' || modeArg === 'default') {
+          X.public = true
+          global.BOT_MODE = 'public'
+          if (global.BOT_BUTTONS_MODE) {
+              await reply(`╔══〔 🌐 BOT MODE: PUBLIC 〕══╗\n\n║ ✅ *Activated*\n║ All users can use bot commands.\n╚═══════════════════════╝`)
+              await _sendBtnPanel()
+          } else {
+              reply(`╔══〔 🌐 BOT MODE: PUBLIC 〕══╗\n\n║ ✅ *Activated*\n║ All users can use bot commands.\n╚═══════════════════════╝`)
+          }
+      } else if (modeArg === 'private') {
+          X.public = false
+          global.BOT_MODE = 'private'
+          if (global.BOT_BUTTONS_MODE) {
+              await reply(`╔══〔 🔒 BOT MODE: PRIVATE 〕══╗\n\n║ ✅ *Activated*\n║ Only the owner can use commands.\n╚═══════════════════════╝`)
+              await _sendBtnPanel()
+          } else {
+              reply(`╔══〔 🔒 BOT MODE: PRIVATE 〕══╗\n\n║ ✅ *Activated*\n║ Only the owner can use commands.\n╚═══════════════════════╝`)
+          }
+      } else if (modeArg === 'silent') {
+          X.public = false
+          global.BOT_MODE = 'silent'
+          if (global.BOT_BUTTONS_MODE) {
+              await reply(`╔══〔 🔇 BOT MODE: SILENT 〕══╗\n\n║ ✅ *Activated*\n║ Only the owner can use commands.\n╚═══════════════════════╝`)
+              await _sendBtnPanel()
+          } else {
+              reply(`╔══〔 🔇 BOT MODE: SILENT 〕══╗\n\n║ ✅ *Activated*\n║ Only the owner can use commands.\n╚═══════════════════════╝`)
+          }
+      } else if (modeArg === 'groups') {
+          X.public = true
+          global.BOT_MODE = 'groups'
+          if (global.BOT_BUTTONS_MODE) {
+              await reply(`╔══〔 👥 BOT MODE: GROUPS 〕══╗\n\n║ ✅ *Activated*\n║ Bot responds only in group chats.\n║ Private messages are ignored.\n╚═══════════════════════╝`)
+              await _sendBtnPanel()
+          } else {
+              reply(`╔══〔 👥 BOT MODE: GROUPS 〕══╗\n\n║ ✅ *Activated*\n║ Bot responds only in group chats.\n║ Private messages are ignored.\n╚═══════════════════════╝`)
+          }
+      } else if (modeArg === 'dms') {
+          X.public = true
+          global.BOT_MODE = 'dms'
+          if (global.BOT_BUTTONS_MODE) {
+              await reply(`╔══〔 💬 BOT MODE: DMs ONLY 〕══╗\n\n║ ✅ *Activated*\n║ Bot responds only in private chats.\n║ Group messages are ignored.\n╚═══════════════════════╝`)
+              await _sendBtnPanel()
+          } else {
+              reply(`╔══〔 💬 BOT MODE: DMs ONLY 〕══╗\n\n║ ✅ *Activated*\n║ Bot responds only in private chats.\n║ Group messages are ignored.\n╚═══════════════════════╝`)
+          }
+      } else {
+          reply(`╔══〔 ❌ INVALID MODE 〕══╗\n\n║ Usage: *${prefix}mode public / groups / dms / silent / private / buttons*\n╚═══════════════════════╝`)
+      }
+  } break
 
 // GROUP ADMIN COMMANDS
 case 'mute': {
