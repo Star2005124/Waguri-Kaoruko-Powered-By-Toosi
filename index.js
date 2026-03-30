@@ -1623,7 +1623,7 @@ You've just joined *${groupName}*
 
 ┌─────────────────────────────
 │ 👥 Members  : ${totalMembers}
-│ 🤖 Bot      : ${global.botname}
+│ 🤖 Bot      : ${global.botname || "TOOSII-XD ULTRA"}
 └─────────────────────────────
 
 _We're glad to have you here!_
@@ -1635,7 +1635,7 @@ _Please read the group rules and enjoy your stay._ 😊`
                             externalAdReply: {
                                 showAdAttribution: true,
                                 containsAutoReply: true,
-                                title: global.botname,
+                                title: global.botname || 'TOOSII-XD ULTRA',
                                 body: groupName,
                                 previewType: 'PHOTO',
                                 thumbnailUrl: '',
@@ -1656,7 +1656,7 @@ _Please read the group rules and enjoy your stay._ 😊`
 
 ┌─────────────────────────────
 │ 👥 Members  : ${totalMembers}
-│ 🤖 Bot      : ${global.botname}
+│ 🤖 Bot      : ${global.botname || "TOOSII-XD ULTRA"}
 └────────────────────────────
 
 _Safe travels! You're always welcome back._ 🌟`
@@ -1667,7 +1667,7 @@ _Safe travels! You're always welcome back._ 🌟`
                             externalAdReply: {
                                 showAdAttribution: true,
                                 containsAutoReply: true,
-                                title: global.botname,
+                                title: global.botname || 'TOOSII-XD ULTRA',
                                 body: groupName,
                                 previewType: 'PHOTO',
                                 thumbnailUrl: '',
@@ -1701,7 +1701,7 @@ _Use your powers wisely and responsibly!_ ⚡`
                             externalAdReply: {
                                 showAdAttribution: true,
                                 containsAutoReply: true,
-                                title: global.botname,
+                                title: global.botname || 'TOOSII-XD ULTRA',
                                 body: groupName,
                                 previewType: 'PHOTO',
                                 thumbnailUrl: '',
@@ -1734,7 +1734,7 @@ _You are now a regular member._ 🔄`
                             externalAdReply: {
                                 showAdAttribution: true,
                                 containsAutoReply: true,
-                                title: global.botname,
+                                title: global.botname || 'TOOSII-XD ULTRA',
                                 body: groupName,
                                 previewType: 'PHOTO',
                                 thumbnailUrl: '',
@@ -2205,7 +2205,7 @@ function startAutoBio() {
             let tz = global.botTimezone || 'Africa/Nairobi'
             let timeStr = moment().tz(tz).format('HH:mm:ss')
             let dateStr = moment().tz(tz).format('DD/MM/YYYY')
-            await X.updateProfileStatus(`${global.botname} | ${timeStr} | ${dateStr}`)
+            await X.updateProfileStatus(`${global.botname || "TOOSII-XD ULTRA"} | ${timeStr} | ${dateStr}`)
         } catch (err) {
             console.log('[Auto-Bio] Error:', err.message || err)
         }
