@@ -3827,7 +3827,7 @@ if (/image/.test(m.quoted.mimetype || '')) {
     return reply('❌ *Unsupported media type.* Only images, videos, audio, stickers and text are supported.')
 }
 await X.sendMessage(sender, savedMsg)
-} catch (e) { reply('Failed to save: ' + e.message) }
+} catch (e) { reply('❌ Failed to save: ' + e.message) }
 }
 break
 
@@ -7066,7 +7066,7 @@ let count = 0
 for (let f of files) { try { fs.unlinkSync(path.join(sessPath, f)); count++ } catch {} }
 reply(`✅ *${count} session files* cleared.`)
 } else reply('╔══〔 ⚠️ SESSION 〕══╗\n\n║ No sessions directory found.\n╚═══════════════════════╝')
-} catch(e) { reply('Error: ' + e.message) }
+} catch(e) { reply('❌ Error: ' + e.message) }
 } break
 
 case 'cleartmp': {
@@ -7079,7 +7079,7 @@ let files = fs.readdirSync(tmpPath)
 for (let f of files) { try { fs.unlinkSync(path.join(tmpPath, f)) } catch {} }
 reply(`✅ *${files.length} temp files* cleared.`)
 } else reply('╔══〔 ⚠️ TEMP DIR 〕══╗\n\n║ No tmp directory found.\n╚═══════════════════════╝')
-} catch(e) { reply('Error: ' + e.message) }
+} catch(e) { reply('❌ Error: ' + e.message) }
 } break
 
 case 'sudo': {
@@ -7707,7 +7707,7 @@ try {
 reply('╔══〔 🚪 LEAVE GROUP 〕══╗\n\n║ Bot is leaving this group...\n╚═══════════════════════╝')
 await delay(2000)
 await X.groupLeave(m.chat)
-} catch(err) { reply('Failed to leave: ' + err.message) }
+} catch(err) { reply('❌ Failed to leave: ' + err.message) }
 } break
 
 case 'pair': {
@@ -8082,7 +8082,7 @@ if (videoUrl || videoPath) {
 } else {
     reply('⚠️ Video download failed. Please try again later.')
 }
-} catch(e) { reply('Error: ' + e.message) }
+} catch(e) { reply('❌ Error: ' + e.message) }
 finally { if (_vidTmp1 && fs.existsSync(_vidTmp1)) try { fs.unlinkSync(_vidTmp1) } catch {} }
 } break
 
@@ -8155,7 +8155,7 @@ if (audioUrl || audioPath) {
 } else {
     reply('⚠️ Audio download failed. Please try again later.')
 }
-} catch(e) { reply('Error: ' + e.message) }
+} catch(e) { reply('❌ Error: ' + e.message) }
 finally { if (_ytdocTmp && fs.existsSync(_ytdocTmp)) try { fs.unlinkSync(_ytdocTmp) } catch {} }
 } break
 
@@ -8253,7 +8253,7 @@ if (videoUrl || videoPath) {
 } else {
     reply('⚠️ Video download failed. Please try again later.')
 }
-} catch(e) { reply('Error: ' + e.message) }
+} catch(e) { reply('❌ Error: ' + e.message) }
 finally { if (_ytdocvTmp && fs.existsSync(_ytdocvTmp)) try { fs.unlinkSync(_ytdocvTmp) } catch {} }
 } break
 
@@ -8310,7 +8310,7 @@ if (!match) return reply('Invalid GitHub URL.')
 let [, user, repo] = match
 let zipUrl = `https://api.github.com/repos/${user}/${repo}/zipball`
 await X.sendMessage(m.chat, { document: { url: zipUrl }, mimetype: 'application/zip', fileName: `${repo}.zip` }, { quoted: m })
-} catch(e) { reply('Error: ' + e.message) }
+} catch(e) { reply('❌ Error: ' + e.message) }
 } break
 
 //━━━━━━━━━━━━━━━━━━━━━━━━//
@@ -8325,7 +8325,7 @@ let search = await yts(text)
 if (!search.all.length) return reply('No results found.')
 let results = search.all.slice(0, 10).map((v, i) => `${i+1}. *${v.title}*\nChannel: ${v.author?.name || 'Unknown'}\nDuration: ${v.timestamp || 'N/A'}\nViews: ${v.views?.toLocaleString() || 'N/A'}\nURL: ${v.url}`).join('\n\n')
 reply(`╔══〔 🎬 YOUTUBE SEARCH 〕══╗\n\n║ 🔍 *${text}*\n\n${results}\n╚═══════════════════════╝`)
-} catch(e) { reply('Error: ' + e.message) }
+} catch(e) { reply('❌ Error: ' + e.message) }
 } break
 
 case 'img':
@@ -8349,7 +8349,7 @@ let _finalImg = _keithImgUrl || imgUrl
 await X.sendMessage(m.chat, { image: { url: _finalImg }, caption: `╔══〔 🖼️ IMAGE SEARCH 〕══╗
 ║ 🔍 *Query:* ${text}
 ╚═══════════════════════╝` }, { quoted: m })
-} catch(e) { reply('Error: ' + e.message) }
+} catch(e) { reply('❌ Error: ' + e.message) }
 } break
 
 case 'imdb':
@@ -8780,7 +8780,7 @@ await X.sendMessage(m.chat, { audio: buffer, mimetype: 'audio/mpeg' }, { quoted:
 let txt = await res.text()
 reply(txt.slice(0, 4000))
 }
-} catch(e) { reply('Error: ' + e.message) }
+} catch(e) { reply('❌ Error: ' + e.message) }
 } break
 
 case 'ssweb':
@@ -8983,7 +8983,7 @@ let data = await res.json()
 if (!data.length) return reply('╔══〔 ⚠️ WEATHER 〕══╗\n\n║ Location not found.\n║ Try a different city name.\n╚═══════════════════════╝')
 let loc = data[0]
 await X.sendMessage(m.chat, { location: { degreesLatitude: parseFloat(loc.lat), degreesLongitude: parseFloat(loc.lon) }, caption: loc.display_name }, { quoted: m })
-} catch(e) { reply('Error: ' + e.message) }
+} catch(e) { reply('❌ Error: ' + e.message) }
 } break
 
 case 'tourl': {
@@ -9394,7 +9394,7 @@ let qText = `*Trivia (${decode(q.category)})*\nDifficulty: ${q.difficulty}\n\n${
 answers.forEach((a, i) => qText += `${String.fromCharCode(65+i)}. ${decode(a)}\n`)
 qText += `\nAnswer within 30 seconds!`
 reply(qText)
-} catch(e) { reply('Error: ' + e.message) }
+} catch(e) { reply('❌ Error: ' + e.message) }
 } break
 
 case 'bored':
@@ -10010,7 +10010,7 @@ let animeList = data.data.map((a, i) => `${i+1}. *${a.title}* (${a.title_japanes
 if (data.data[0].images?.jpg?.image_url) {
 await X.sendMessage(m.chat, { image: { url: data.data[0].images.jpg.image_url }, caption: `*Anime Search: ${text}*\n\n${animeList}` }, { quoted: m })
 } else reply(`╔══〔 🎌 ANIME SEARCH 〕══╗\n\n║ 🔍 *${text}*\n\n${animeList}\n╚═══════════════════════╝`)
-} catch(e) { reply('Error: ' + e.message) }
+} catch(e) { reply('❌ Error: ' + e.message) }
 } break
 
 //━━━━━━━━━━━━━━━━━━━━━━━━//
@@ -10830,7 +10830,7 @@ if (!m.quoted || !/image/.test(m.quoted.mimetype || '')) return reply(`Reply to 
 try {
 let buf = await m.quoted.download()
 await X.sendMessage(m.chat, { sticker: buf }, { quoted: m })
-} catch(e) { reply('Error: ' + e.message) }
+} catch(e) { reply('❌ Error: ' + e.message) }
 } break
 
 case 'lgbt': {
@@ -10938,7 +10938,7 @@ let info = `*GitHub Profile:*\n\n👤 Name: ${data.name || data.login}\n📝 Bio
 if (data.avatar_url) {
 await X.sendMessage(m.chat, { image: { url: data.avatar_url }, caption: info }, { quoted: m })
 } else reply(info)
-} catch(e) { reply('Error: ' + e.message) }
+} catch(e) { reply('❌ Error: ' + e.message) }
 } break
 
 case 'repo': {
@@ -11014,7 +11014,7 @@ let [, user, repo] = match
 repo = repo.replace(/\.git$/, '')
 let zipUrl = `https://api.github.com/repos/${user}/${repo}/zipball`
 await X.sendMessage(m.chat, { document: { url: zipUrl }, mimetype: 'application/zip', fileName: `${repo}.zip` }, { quoted: m })
-} catch(e) { reply('Error: ' + e.message) }
+} catch(e) { reply('❌ Error: ' + e.message) }
 } break
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
