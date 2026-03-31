@@ -7263,7 +7263,7 @@ case 'botmode':
               await reply(`╔══〔 🔕 BOT MODE: SILENT 〕══╗\n\n║ ✅ *Activated*\n║ Only the owner and sudo users can use commands.\n╚═══════════════════════╝`)
               await _sendBtnPanel()
           } else {
-              reply(`╔══〔 🔕 BOT MODE: SILENT 〕══╗\n\n║ ✅ *Activated*\n║ Only the owner can use commands.\n╚═══════════════════════╝`)
+              reply(`╔══〔 🔕 BOT MODE: SILENT 〕══╗\n\n║ ✅ *Activated*\n║ Only the owner and sudo users can use commands.\n╚═══════════════════════╝`)
           }
       } else if (modeArg === 'groups') {
           X.public = true
