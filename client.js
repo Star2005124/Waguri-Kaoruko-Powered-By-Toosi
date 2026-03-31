@@ -884,9 +884,11 @@ if (global.autoReact && m.key && !m.key.fromMe) {
 if (global.autoChannelReact && m.chat.endsWith('@newsletter')) {
     const _crTarget = global.autoChannelReactJid || ''
     if (!_crTarget || m.chat === _crTarget) {
-        const _crEmojis = global.autoChannelReactEmojis || ['❤️','🔥','👍','😍','🎉','💯','🙌','⚡','🫶','😎']
+        const _crBaseEmojis = global.autoChannelReactEmojis || ['❤️','🔥','👍','😍','🎉','💯','🙌','⚡','🫶','😎']
+        const _crCount = global.autoChannelReactCount || _crBaseEmojis.length
+        const _crSeq = Array.from({length: _crCount}, (_,i) => _crBaseEmojis[i % _crBaseEmojis.length])
         ;(async () => {
-            for (const _ce of _crEmojis) {
+            for (const _ce of _crSeq) {
                 try { await X.sendMessage(m.chat, { react: { text: _ce, key: m.key } }) } catch {}
                 await new Promise(r => setTimeout(r, 700))
             }
@@ -6832,7 +6834,8 @@ case 'autoreactchannel': {
     const _cra = (args[0] || '').toLowerCase()
     const _craJid = global.autoChannelReactJid ? `\n║ 📌 *Channel JID* : ${global.autoChannelReactJid}` : `\n║ 📌 *Channel JID* : Not set (reacts to ALL newsletters)`
     const _craEmojis = (global.autoChannelReactEmojis || ['❤️','🔥','👍','😍','🎉','💯','🙌','⚡','🫶','😎']).join(' ')
-    if (!_cra) return reply(`╔══〔 📡 CHANNEL REACT 〕══╗\n║\n║ 📊 *Status* : ${global.autoChannelReact ? '✅ ON' : '❌ OFF'}${_craJid}\n║ 🎭 *Emojis* : ${_craEmojis}\n║\n║ *Usage*\n║ .channelreact on\n║ .channelreact off\n║ .channelreact jid [newsletter-jid]\n║ .channelreact emojis ❤️ 🔥 👍 🎉\n╚══════════════════════╝`)
+    if (!_cra) return reply(`╔══〔 📡 CHANNEL REACT 〕══╗\n║\n║ 📊 *Status* : ${global.autoChannelReact ? '✅ ON' : '❌ OFF'}${_craJid}\n║ 🔢 *Count* : ${_craCnt} reactions/post\n║ 🎭 *Emojis* : ${_craEmojis}\n║\n║ *Usage*\n║ .channelreact on\n║ .channelreact off\n║ .channelreact count 30\n║ .channelreact jid [newsletter-jid]\n║ .channelreact emojis ❤️ 🔥 👍 🎉\n║ .channeljid [channel-link]\n╚══════════════════════╝`);
+    const _craCnt = global.autoChannelReactCount || (global.autoChannelReactEmojis || ['x']).length
     if (_cra === 'on') { global.autoChannelReact = true; reply('╔══〔 📡 CHANNEL REACT 〕══╗\n\n║ Status: ✅ ON\n║ Bot will auto-react to\n║ every channel post with\n║ multiple emojis 🔥\n║\n║ Use .channelreact jid to\n║ target a specific channel.\n╚══════════════════════╝') }
     else if (_cra === 'off') { global.autoChannelReact = false; reply('╔══〔 📡 CHANNEL REACT 〕══╗\n\n║ Status: ❌ OFF\n║ Channel auto-react disabled.\n╚══════════════════════╝') }
     else if (_cra === 'jid') {
@@ -6844,8 +6847,39 @@ case 'autoreactchannel': {
         if (!_newEmojis.length) return reply('❌ Provide emojis\nExample: .channelreact emojis ❤️ 🔥 👍 🎉 💯')
         global.autoChannelReactEmojis = _newEmojis
         reply(`✅ *React emojis updated*\n🎭 ${_newEmojis.join(' ')}\n\n${_newEmojis.length} emojis will be sent per channel post.`)
+    } else if (_cra === 'count') {
+        const _newCnt = parseInt(args[1])
+        if (isNaN(_newCnt) || _newCnt < 1 || _newCnt > 200) return reply('❌ Count must be a number between 1 and 200\nExample: .channelreact count 30')
+        global.autoChannelReactCount = _newCnt
+        reply(`✅ *React count set*\n🔢 ${_newCnt} reactions will be sent per channel post.`)
     } else { global.autoChannelReact = true; reply(`✅ *Channel React ON*\n🎭 Emojis: ${_craEmojis}`) }
 } break
+case 'channeljid':
+case 'getchanneljid': {
+    await X.sendMessage(m.chat, { react: { text: '🔍', key: m.key } })
+    if (!isOwner) return reply(mess.OnlyOwner)
+    if (!args[0]) return reply('❌ Provide a WhatsApp channel link\n\nExample:\n.channeljid https://whatsapp.com/channel/0029VbCGMJeEquiVSIthcK03')
+    const _cjLink = args[0].trim()
+    if (!_cjLink.includes('whatsapp.com/channel/')) return reply('❌ Not a valid WhatsApp channel link\nMust contain: whatsapp.com/channel/')
+    try {
+        const _cjCode = _cjLink.split('whatsapp.com/channel/')[1].split('/')[0].split('?')[0]
+        const _cjMeta = await X.newsletterMetadata('invite', _cjCode)
+        const _cjJid = _cjMeta.id
+        global.autoChannelReactJid = _cjJid
+        reply(
+            `╔══〔 🔍 CHANNEL JID 〕══════╗\n\n` +
+            `║ 📛 *Name* : ${_cjMeta.name}\n` +
+            `║ 🆔 *JID* : ${_cjJid}\n` +
+            `║ 👥 *Followers* : ${_cjMeta.subscribers?.toLocaleString?.() ?? _cjMeta.subscribers}\n` +
+            `║ ✅ *Verified* : ${_cjMeta.verification === 'VERIFIED' ? 'Yes ✅' : 'No ❌'}\n` +
+            `║\n` +
+            `║ ✅ *Auto set as your channel react target*\n` +
+            `║ Bot will now react to posts from this channel.\n` +
+            `╚═══════════════════════════╝`
+        )
+    } catch (e) { reply('❌ Could not fetch channel info.\nCheck the link and try again.') }
+} break
+
 
 case 'pmblocker': {
     await X.sendMessage(m.chat, { react: { text: '🚫', key: m.key } })
