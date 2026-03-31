@@ -7132,7 +7132,7 @@ case 'sudo': {
         if (_sdList.includes(_sdTarget)) return reply(`⚠️ @${_sdTarget.split('@')[0]} is already a sudo user.`)
         _sdList.push(_sdTarget)
         _sdWrite(_sdList)
-        await X.sendMessage(m.chat, { text: `╔══〔 ✅ SUDO ADDED 〕════╗\n\n║ 🛡️ @${_sdTarget.split('@')[0]} is now a *sudo user*!\n║ Total sudo users: ${_sdList.length}\n╚═══════════════════════╝`, mentions: [_sdTarget] }, { quoted: m })
+        await X.sendMessage(m.chat, { text: `╔══〔 ✅ SUDO ADDED 〕════╗\n\n║ 🛡️ @${_sdTarget.split('@')[0]} is now a *sudo user*!\n║ Total sudo users: ${_sdList.length}\n║\n║ ⚠️ *For permanent sudo (survives restarts):*\n║ Add \`${_sdTarget.split('@')[0]}\` to *SUDO_USERS* env var\n╚═══════════════════════╝`, mentions: [_sdTarget] }, { quoted: m })
 
     // .sudo remove / .sudo del @user
     } else if (_sdAction === 'remove' || _sdAction === 'del') {
