@@ -6866,12 +6866,16 @@ case 'getchanneljid': {
         const _cjMeta = await X.newsletterMetadata('invite', _cjCode)
         const _cjJid = _cjMeta.id
         global.autoChannelReactJid = _cjJid
+        const _cjName = _cjMeta.name || _cjMeta.title || _cjMeta.subject || _cjMeta.channelName || 'N/A'
+        const _cjSubs = ((_cjMeta.subscriberCount ?? _cjMeta.subscribers ?? _cjMeta.followerCount) || 'N/A').toLocaleString ? ((_cjMeta.subscriberCount ?? _cjMeta.subscribers ?? _cjMeta.followerCount) || 0).toLocaleString() : 'N/A'
+        const _cjVerif = ((_cjMeta.verification || _cjMeta.verifiedName || '') === 'VERIFIED') ? 'Yes ✅' : 'No ❌'
+        if (_cjName === 'N/A') console.log('[channeljid] raw:', JSON.stringify(_cjMeta).slice(0,400))
         reply(
             `╔══〔 🔍 CHANNEL JID 〕══════╗\n\n` +
-            `║ 📛 *Name* : ${_cjMeta.name}\n` +
+            `║ 📛 *Name* : ${_cjName}\n` +
             `║ 🆔 *JID* : ${_cjJid}\n` +
-            `║ 👥 *Followers* : ${_cjMeta.subscribers?.toLocaleString?.() ?? _cjMeta.subscribers}\n` +
-            `║ ✅ *Verified* : ${_cjMeta.verification === 'VERIFIED' ? 'Yes ✅' : 'No ❌'}\n` +
+            `║ 👥 *Followers* : ${_cjSubs}\n` +
+            `║ ✅ *Verified* : ${_cjVerif}\n` +
             `║\n` +
             `║ ✅ *Auto set as your channel react target*\n` +
             `║ Bot will now react to posts from this channel.\n` +
