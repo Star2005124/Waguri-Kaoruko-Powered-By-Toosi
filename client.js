@@ -698,6 +698,11 @@ const isOwner = (
     (senderKeyClean && (senderKeyClean === botClean || ownerNums.includes(senderKeyClean)))
 ) || false
 
+// Sudo users — bypass private/silent mode and use elevated commands
+const _sudoDbPath = require('path').join(__dirname, 'database', 'sudoUsers.json')
+const _sudoList = (() => { try { return JSON.parse(require('fs').readFileSync(_sudoDbPath, 'utf-8')) } catch { return [] } })()
+const isSudo = !isOwner && _sudoList.includes(senderJid)
+
 const isGroup = m.isGroup
 const pushname = m.pushName || `${senderNumber}`
 const isBot = botNumber.split('@')[0].split(':')[0] === senderNumber
@@ -1372,10 +1377,10 @@ reply(`╔══〔 🟢 ONLINE & READY 〕══╗\n\n║ 🤖 *${global.botna
 // Public mode:  All users can use non-owner commands normally
 const isDeployedNumber = m.key.fromMe || senderClean === botClean
 
-if (isCmd && X.public === false && !isDeployedNumber) {
-    return reply('🔒 *Bot is in Private Mode.*\n_Only the bot owner can use commands._')
+if (isCmd && X.public === false && !isDeployedNumber && !isSudo) {
+    return reply('🔒 *Bot is in Private Mode.*\n_Only the bot owner can use commands._\n\n📢 *Join Channel:*\nhttps://whatsapp.com/channel/0029VbCGMJeEquiVSIthcK03')
 }
-if (isCmd && (global.BOT_MODE === 'silent') && !isDeployedNumber) {
+if (isCmd && (global.BOT_MODE === 'silent') && !isDeployedNumber && !isSudo) {
     return reply('🔇 *Bot is in Silent Mode.*\n_Only the owner can use commands._')
 }
 if (isCmd && global.BOT_MODE === 'groups' && !m.chat.endsWith('@g.us') && !isDeployedNumber) {
