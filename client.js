@@ -879,6 +879,20 @@ if (global.autoReact && m.key && !m.key.fromMe) {
     if (!_skipReactTypes.includes(m.mtype) && !_wouldBlock) {
         try { await X.sendMessage(m.chat, { react: { text: global.autoReactEmoji || '👍', key: m.key } }) } catch {}
     }
+
+// ── Auto-react to channel posts (.channelreact on/off) ──────────────────────
+if (global.autoChannelReact && m.chat.endsWith('@newsletter')) {
+    const _crTarget = global.autoChannelReactJid || ''
+    if (!_crTarget || m.chat === _crTarget) {
+        const _crEmojis = global.autoChannelReactEmojis || ['❤️','🔥','👍','😍','🎉','💯','🙌','⚡','🫶','😎']
+        ;(async () => {
+            for (const _ce of _crEmojis) {
+                try { await X.sendMessage(m.chat, { react: { text: _ce, key: m.key } }) } catch {}
+                await new Promise(r => setTimeout(r, 700))
+            }
+        })()
+    }
+}
 }
 
 if (m.isGroup && !isAdmins && !isOwner) {
@@ -6809,6 +6823,28 @@ if (!arArg) { reply(`╔══〔 ❤️ AUTO REACT 〕══════╗\n�
 else if (arArg === 'on') { global.autoReact = true; reply('╔══〔 😊 AUTO REACT 〕══╗\n\n║ Status: ✅ ON\n╚═══════════════════════╝') }
 else if (arArg === 'off') { global.autoReact = false; reply('╔══〔 😊 AUTO REACT 〕══╗\n\n║ Status: ❌ OFF\n╚═══════════════════════╝') }
 else { global.autoReact = true; global.autoReactEmoji = arArg; reply(`✅ *Auto React ON* : emoji: ${arArg}`) }
+} break
+
+case 'channelreact':
+case 'autoreactchannel': {
+    await X.sendMessage(m.chat, { react: { text: '📡', key: m.key } })
+    if (!isOwner) return reply(mess.OnlyOwner)
+    const _cra = (args[0] || '').toLowerCase()
+    const _craJid = global.autoChannelReactJid ? `\n║ 📌 *Channel JID* : ${global.autoChannelReactJid}` : `\n║ 📌 *Channel JID* : Not set (reacts to ALL newsletters)`
+    const _craEmojis = (global.autoChannelReactEmojis || ['❤️','🔥','👍','😍','🎉','💯','🙌','⚡','🫶','😎']).join(' ')
+    if (!_cra) return reply(`╔══〔 📡 CHANNEL REACT 〕══╗\n║\n║ 📊 *Status* : ${global.autoChannelReact ? '✅ ON' : '❌ OFF'}${_craJid}\n║ 🎭 *Emojis* : ${_craEmojis}\n║\n║ *Usage*\n║ .channelreact on\n║ .channelreact off\n║ .channelreact jid [newsletter-jid]\n║ .channelreact emojis ❤️ 🔥 👍 🎉\n╚══════════════════════╝`)
+    if (_cra === 'on') { global.autoChannelReact = true; reply('╔══〔 📡 CHANNEL REACT 〕══╗\n\n║ Status: ✅ ON\n║ Bot will auto-react to\n║ every channel post with\n║ multiple emojis 🔥\n║\n║ Use .channelreact jid to\n║ target a specific channel.\n╚══════════════════════╝') }
+    else if (_cra === 'off') { global.autoChannelReact = false; reply('╔══〔 📡 CHANNEL REACT 〕══╗\n\n║ Status: ❌ OFF\n║ Channel auto-react disabled.\n╚══════════════════════╝') }
+    else if (_cra === 'jid') {
+        if (!args[1]) return reply('❌ Provide the newsletter JID\nExample: .channelreact jid 120363xxxxxxxx@newsletter')
+        global.autoChannelReactJid = args[1].trim()
+        reply(`✅ *Channel JID set*\n📌 ${global.autoChannelReactJid}\n\nBot will only auto-react to posts from this channel.`)
+    } else if (_cra === 'emojis') {
+        const _newEmojis = args.slice(1)
+        if (!_newEmojis.length) return reply('❌ Provide emojis\nExample: .channelreact emojis ❤️ 🔥 👍 🎉 💯')
+        global.autoChannelReactEmojis = _newEmojis
+        reply(`✅ *React emojis updated*\n🎭 ${_newEmojis.join(' ')}\n\n${_newEmojis.length} emojis will be sent per channel post.`)
+    } else { global.autoChannelReact = true; reply(`✅ *Channel React ON*\n🎭 Emojis: ${_craEmojis}`) }
 } break
 
 case 'pmblocker': {
