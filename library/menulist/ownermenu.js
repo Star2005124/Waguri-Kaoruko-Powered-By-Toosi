@@ -58,6 +58,8 @@ const ownerMenu = `
   ║ .chatbot
   ║ .autobio
   ║ .autoreact
+  ║ .channelreact
+  ║ .channeljid
   ║ .autoreplystatus
   ║ .autoviewstatus
   ║ .autolikestatus
