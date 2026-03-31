@@ -704,7 +704,10 @@ const isOwner = (
 // Sudo users — bypass private/silent mode and use elevated commands
 const _sudoDbPath = require('path').join(__dirname, 'database', 'sudoUsers.json')
 const _sudoList = (() => { try { return JSON.parse(require('fs').readFileSync(_sudoDbPath, 'utf-8')) } catch { return [] } })()
-const isSudo = !isOwner && _sudoList.some(s => s.split(':')[0].split('@')[0] === senderClean)
+// SUDO_USERS env var (comma-separated numbers) — persists across deploys/restarts
+const _sudoEnv = (process.env.SUDO_USERS || '').split(',').map(s => s.trim()).filter(Boolean).map(s => s.includes('@') ? s : s.replace(/\D/g,'') + '@s.whatsapp.net')
+const _sudoMerged = [...new Set([..._sudoList, ..._sudoEnv])]
+const isSudo = !isOwner && _sudoMerged.some(s => s.split(':')[0].split('@')[0] === senderClean)
 
 const isGroup = m.isGroup
 const pushname = m.pushName || `${senderNumber}`
@@ -7116,10 +7119,12 @@ case 'sudo': {
     // .sudo list / .sudo (no args)
     if (!_sdAction || _sdAction === 'list') {
         let _sdList = _sdRead()
-        if (!_sdList.length) return reply(`╔══〔 🛡️ SUDO USERS 〕════╗\n\n║ _No sudo users added yet._\n║ ${prefix}sudo add @user\n╚═══════════════════════╝`)
+        const _sdEnvList = (process.env.SUDO_USERS || '').split(',').map(s => s.trim()).filter(Boolean).map(s => s.includes('@') ? s : s.replace(/\D/g,'') + '@s.whatsapp.net')
+        const _sdAll = [...new Set([..._sdList, ..._sdEnvList])]
+        if (!_sdAll.length) return reply(`╔══〔 🛡️ SUDO USERS 〕════╗\n\n║ _No sudo users added yet._\n║ ${prefix}sudo add @user\n╚═══════════════════════╝`)
         await X.sendMessage(m.chat, {
-            text: `╔══〔 🛡️ SUDO USERS 〕════╗\n\n${_sdList.map((u,i) => `  ${i+1}. @${u.split('@')[0]}`).join('\n')}\n\n║ _Total: ${_sdList.length} user(s)_\n╚═══════════════════════╝`,
-            mentions: _sdList
+            text: `╔══〔 🛡️ SUDO USERS 〕════╗\n\n${_sdAll.map((u,i) => `  ${i+1}. @${u.split('@')[0]}${_sdEnvList.includes(u) ? ' 🔒' : ''}`).join('\n')}\n\n║ _Total: ${_sdAll.length} sudo user(s)_\n║ _🔒 = permanent (SUDO_USERS env var)_\n╚═══════════════════════╝`,
+            mentions: _sdAll
         }, { quoted: m })
 
     // .sudo add @user / .sudo add 254xxx
@@ -7132,7 +7137,7 @@ case 'sudo': {
         if (_sdList.includes(_sdTarget)) return reply(`⚠️ @${_sdTarget.split('@')[0]} is already a sudo user.`)
         _sdList.push(_sdTarget)
         _sdWrite(_sdList)
-        await X.sendMessage(m.chat, { text: `╔══〔 ✅ SUDO ADDED 〕════╗\n\n║ 🛡️ @${_sdTarget.split('@')[0]} is now a *sudo user*!\n║ Total sudo users: ${_sdList.length}\n║\n║ ⚠️ *For permanent sudo (survives restarts):*\n║ Add \`${_sdTarget.split('@')[0]}\` to *SUDO_USERS* env var\n╚═══════════════════════╝`, mentions: [_sdTarget] }, { quoted: m })
+        await X.sendMessage(m.chat, { text: `╔══〔 ✅ SUDO ADDED 〕════╗\n\n║ 🛡️ @${_sdTarget.split('@')[0]} is now a *sudo user*!\n║ Total: ${_sdList.length} user(s)\n║\n║ ⚠️ *To make permanent* (survives restarts):\n║ Add to *SUDO_USERS* env var:\n║ ${_sdTarget.split('@')[0]}\n╚═══════════════════════╝`, mentions: [_sdTarget] }, { quoted: m })
 
     // .sudo remove / .sudo del @user
     } else if (_sdAction === 'remove' || _sdAction === 'del') {
