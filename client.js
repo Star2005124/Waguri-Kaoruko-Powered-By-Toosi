@@ -583,7 +583,7 @@ if (!X._botSentTracked) {
             // ── Append channel link at bottom of every outgoing text/caption ──────────
             const _chLink = global.channelLink || ''
             if (_chLink && !_msgPayload.interactiveMessage && !_msgPayload.react) {
-                const _footer = '\n\n📢 ' + _chLink
+                const _footer = '\n\n📢 *Join Channel:*\n' + _chLink
                 if (_msgPayload.text && !_msgPayload.text.includes(_chLink)) {
                     _msgPayload.text = _msgPayload.text + _footer
                 } else if (_msgPayload.caption && !_msgPayload.caption.includes(_chLink)) {
