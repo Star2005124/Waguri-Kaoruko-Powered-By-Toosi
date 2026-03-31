@@ -314,20 +314,37 @@
   <img src="https://i.imgur.com/dBaSKWF.gif" height="20" width="100%">
   </p>
 
-  ## 🌟 Show Your Support
+## 🌟 Show Your Support
 
-  <p align="center">
-  <a href="https://github.com/TOOSII102/TOOSII-XD-ULTRA/stargazers">
-  <img src="https://img.shields.io/github/stars/TOOSII102/TOOSII-XD-ULTRA?style=for-the-badge&color=FFD700&logo=github&logoColor=white&label=⭐ Star This Repo" alt="Stars"/>
-  </a>
-  <a href="https://github.com/TOOSII102/TOOSII-XD-ULTRA/fork">
-  <img src="https://img.shields.io/github/forks/TOOSII102/TOOSII-XD-ULTRA?style=for-the-badge&color=25D366&logo=github&logoColor=white&label=🍴 Fork This Repo" alt="Forks"/>
-  </a>
-  </p>
+<p align="center">
+<img src="https://raw.githubusercontent.com/TOOSII102/toosii-tech-web/main/public/logo.png" width="90" alt="Toosii Tech" />
+<br/><br/>
+<i>If TOOSII-XD ULTRA has been useful to you, show some love! Every star, fork, and follow helps keep this project alive and growing. 🙏</i>
+</p>
 
-  <p align="center">
-  <img src="https://i.imgur.com/dBaSKWF.gif" height="20" width="100%">
-  </p>
+<p align="center">
+<a href="https://github.com/TOOSII102/TOOSII-XD-ULTRA/stargazers">
+<img src="https://img.shields.io/github/stars/TOOSII102/TOOSII-XD-ULTRA?style=for-the-badge&color=FFD700&logo=github&logoColor=white&label=⭐ Star This Repo" alt="Stars"/>
+</a>
+<a href="https://github.com/TOOSII102/TOOSII-XD-ULTRA/fork">
+<img src="https://img.shields.io/github/forks/TOOSII102/TOOSII-XD-ULTRA?style=for-the-badge&color=25D366&logo=github&logoColor=white&label=🍴 Fork This Repo" alt="Forks"/>
+</a>
+</p>
+
+<p align="center">
+<a href="https://whatsapp.com/channel/0029VbCGMJeEquiVSIthcK03">
+<img src="https://img.shields.io/badge/📡_Follow-Our_WhatsApp_Channel-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" height="38" alt="Follow Channel"/>
+</a>
+<a href="https://chat.whatsapp.com/CwNhH3QNvrVFdcKNgaKg4g">
+<img src="https://img.shields.io/badge/💬_Join-Our_Community-128C7E?style=for-the-badge&logo=whatsapp&logoColor=white" height="38" alt="Join Community"/>
+</a>
+</p>
+
+<p align="center">
+<a href="https://buymeacoffee.com/toosiitech">
+<img src="https://img.shields.io/badge/☕_Buy_Me-A_Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black" height="38" alt="Buy Me A Coffee"/>
+</a>
+</p>
 
   ## ⚠️ Disclaimer
 
