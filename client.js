@@ -701,7 +701,7 @@ const isOwner = (
 // Sudo users — bypass private/silent mode and use elevated commands
 const _sudoDbPath = require('path').join(__dirname, 'database', 'sudoUsers.json')
 const _sudoList = (() => { try { return JSON.parse(require('fs').readFileSync(_sudoDbPath, 'utf-8')) } catch { return [] } })()
-const isSudo = !isOwner && _sudoList.includes(senderJid)
+const isSudo = !isOwner && _sudoList.some(s => s.split(':')[0].split('@')[0] === senderClean)
 
 const isGroup = m.isGroup
 const pushname = m.pushName || `${senderNumber}`
