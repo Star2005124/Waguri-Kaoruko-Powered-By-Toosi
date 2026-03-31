@@ -5696,7 +5696,6 @@ case 'chatai':{
   }
 }
 break;
-case 'veniceai':
 case 'conciseai':{
   if (!text) return reply(`╔══〔 📌 CONCISE AI 〕══╗\n\n║ Usage: *${prefix}${command} [message]*\n║ Example: ${prefix}${command} Hello, how are you?\n╚═══════════════════════╝`)
   try {
