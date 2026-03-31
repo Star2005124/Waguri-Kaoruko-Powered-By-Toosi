@@ -6789,7 +6789,7 @@ case 'getcmd': {
 
 //━━━━━━━━━━━━━━━━━━━━━━━━//
 // OWNER MENU COMMANDS
-// autotyping handled above (case 'autotyping'/'faketyping'/'faketype'/'ftype')
+// autotyping/faketyping/faketype/ftype handled above
 
 case 'autoreact': {
     await X.sendMessage(m.chat, { react: { text: '👍', key: m.key } })
