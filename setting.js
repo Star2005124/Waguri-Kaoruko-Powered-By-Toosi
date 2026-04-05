@@ -5,8 +5,8 @@
 by Toosii Tech • 2024 - 2026
 
 >> Contact Links:
-・WhatsApp : wa.me/254748340864
-・Telegram : t.me/toosiitech
+・WhatsApp : wa.me/601165811519
+・Telegram : t.me/JustNamedStar
 
 ⚠️ PROPRIETARY SOFTWARE - DO NOT MODIFY
 Any unauthorized modification, redistribution,
@@ -16,26 +16,26 @@ or removal of credits is strictly prohibited.
 //═════════════════════════════════//
 //━━━━━━━━━━━━━━━━━━━━━━━━//
 // Owner Setting - DO NOT MODIFY
-global.owner = ["254748340864",]
-global.ownername = "Toosii Tech"
-global._protectedOwner = "254748340864"
-global._protectedBrand = "TOOSII-XD ULTRA"
-global._protectedAuthor = "Toosii Tech"
+global.owner = ["601165811519",]
+global.ownername = "Star"
+global._protectedOwner = "Star"
+global._protectedBrand = "Waguri Kaoruko"
+global._protectedAuthor = "Star"
 //━━━━━━━━━━━━━━━━━━━━━━━━//
 // Bot Setting
-global.botname = "TOOSII-XD ULTRA"
-global.botver = "2.1.0"
-global.idch = "120363299254074394@newsletter"
-global.newsletterName = "TOOSII-XD ULTRA Updates"
-global.typebot = "Multi-Device Bot"
+global.botname = "Waguri Kaoruko"
+global.botver = "7.1.0"
+global.idch = "120363423633701707@newsletter"
+global.newsletterName = "Waguri Kaoruko Updates"
+global.typebot = "Advanced Multi-Device Bot"
 global.session = "session"
-global.thumb = "https://files.catbox.moe/qbcebp.jpg"
-global.wagc = "https://wa.me/254748340864"
-global.groupLink = "https://chat.whatsapp.com/CwNhH3QNvrVFdcKNgaKg4g"
+global.thumb = "https://i.postimg.cc/MTv2QdTF/Waguri-alive.jpg"
+global.wagc = "https://wa.me/601165811519"
+global.groupLink = "https://chat.whatsapp.com/ITqQAe76gcZF8aTIdBNyNh?mode=gi_t"
 global.channelLink = "https://whatsapp.com/channel/0029VbCGMJeEquiVSIthcK03"
 global.welcome = false
-global.adminevent = false
-global.fakePresence = 'off'
+global.adminevent = true
+global.fakePresence = 'true'
 global.autoViewStatus = false
 global.autoLikeStatus = false
 global.statusMentionWarns = {}
@@ -43,10 +43,10 @@ global.statusMentionDeleteList = {}
 global.autoLikeEmoji = ''
 global.statusToGroup = ''
 global.botPrefix = '.'   // Any string: '.' '!' '🔥' '⚡' 'bot' 'toosiikenya' 'XD~'
-global.antiCall = false
-global.autoRead = false
+global.antiCall = true
+global.autoRead = true
 global.chatBot = false
-global.autoBio = false
+global.autoBio = true
 //━━━━━━━━━━━━━━━━━━━━━━━━//
 // AI ChatBot Mode Settings (set via .setaimode command)
 global.aiBotDM = false        // Auto-reply in private/DM chats
@@ -63,38 +63,38 @@ global.antiDelete = false
 global.autoReact = false
 global.autoReactEmoji = '👍'
 global.pmBlocker = false
-global.antiBadword = false
+global.antiBadword = true
 global.antiTag = false
 global.antiSticker = false
 global.antiDemote = false
-global.menuThumb = ''
-global.botTimezone = 'Africa/Nairobi'
+global.menuThumb = 'https://i.postimg.cc/MTv2QdTF/Waguri-alive.jpg'
+global.botTimezone = 'Asia/Tokyo'
 global.botPic = ''
-global.botUrl = 'https://wa.me/254748340864'
+global.botUrl = 'https://wa.me/601163926220'
 //━━━━━━━━━━━━━━━━━━━━━━━━//
-// GitHub Repo URL (used by .update command — set this to your repo)
-global.repoUrl = 'https://github.com/TOOSII102/TOOSII-XD-ULTRA'
-global.ownerFontMode = 'off' // Set via .setfont [name], disable via .fontoff
+// GitHub Repo URL (used by .update command — set this tyour repo 
+global.repoUrl = 'https://github.com/Star2005124/Waguri-Kaoruko-Powered-By-Toosi'
+global.ownerFontMode = 'true' // Set via .setfont [name], disable via .fontoff
 //━━━━━━━━━━━━━━━━━━━━━━━━//
 // Sticker Marker
-global.packname = "TOOSII-XD ULTRA"
-global.author = "© Toosii Tech"
+global.packname = "Made by Waguri!"
+global.author = "© Star"
 //━━━━━━━━━━━━━━━━━━━━━━━━//
 // Social Links
-global.telegram = "https://t.me/toosiitech"
-global.sessionUrl = process.env.SESSION_URL || "https://toosii-xd-session-generator-woyo.onrender.com/pair"
-global.ownerNumber = "+254748340864"
+global.telegram = "https://t.me/JustNamedStar"
+global.sessionUrl = process.env.SESSION_URL || "Coming Soon... :3"
+global.ownerNumber = "+601165811519"
 //━━━━━━━━━━━━━━━━━━━━━━━━//
 // Respon Message
 global.mess = {
     success: '✅ *Success!* Operation completed.',
     admin: '🚫 *Admin Only* — This command requires group admin privileges.',
-    botAdmin: '⚠️ *Bot Not Admin* — Please promote me to group admin first, then try again.',
-    OnlyOwner: '🔒 *Owner Only* — This command is restricted to the bot owner.',
+    botAdmin: '⚠️ *Bot Is Not AN Admin* — Can you Pwease promote me to group admin first, then try again.',
+    OnlyOwner: '🔒 *Owner Only* — This command is restricted to Star.',
     OnlyGrup: '👥 *Group Only* — This command can only be used in group chats.',
     private: '📩 *Private Chat Only* — Please send this command in my DM.',
     wait: '⏳ _Processing..._',
-    error: '❌ *Error* — Something went wrong. Please try again.',
+    error: '❌ *Error* — I am dizzy right now... I process over 100 request a minute. Please try again later.',
 }
 //━━━━━━━━━━━━━━━━━━━━━━━━//
 // File Update
